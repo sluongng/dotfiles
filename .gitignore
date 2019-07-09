@@ -1,3 +1,6 @@
+# Ignore Coc.nvim dependency folder
+# Install extension via CocInstall inside neovim
 node_modules
+
 .*
 *~

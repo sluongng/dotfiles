@@ -2,14 +2,17 @@
 
 Son Luong's configuration files for a Linux(Ubuntu 19.04) environment
 
-** This project is a WIP **
+**This project is a WIP**
 
 ## Goals
 
--[ ] Backup most dotfiles
--[ ] Security sanitization
--[ ] Create migration script(bash or make) to apply these dotfiles quickly
--[ ] Create Dockerfile to host remote dev environment
+- [ ] Backup most dotfiles
+
+- [ ] Security sanitization
+
+- [ ] Create migration script(bash or make) to apply these dotfiles quickly
+
+- [ ] Create Dockerfile to host remote dev environment
 
 ## Components
 

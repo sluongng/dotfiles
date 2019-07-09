@@ -72,6 +72,7 @@ plugins=(
   docker
   docker-compose
   git
+	github
   sudo
   zsh-autosuggestions
   mvn
