@@ -1,0 +1,15 @@
+set hlsearch
+set scrolloff=5
+set ignorecase smartcase
+
+set clipboard+=unnamed
+
+set number relativenumber
+set ruler
+
+imap jj <Esc>
+
+nnoremap gi <Esc>:action GotoImplementation<cr>
+nnoremap gd <Esc>:action GotoDeclaration<cr>
+nnoremap gs <Esc>:action ShowIntentionActions<cr>
+nnoremap ge <Esc>:action ShowErrorDescription<cr>
