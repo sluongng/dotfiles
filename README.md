@@ -49,8 +49,10 @@ Son Luong's configuration files for a Linux(Ubuntu 19.04) environment
 	  - Vim-Go
 
 		- Coc.nvim
+
 			- Language servers 
-			- Extensions
+
+			- Extensions 
 
 - IdeaVim: vimrc for JetBrains' IDEs (IntelliJ, GoLand,...)
 
