@@ -16,23 +16,39 @@ Son Luong's configuration files for a Linux(Ubuntu 19.04) environment
 
 ## Components
 
+- Automation:
+
+  - Telegram: installation script and desktop file (for Ubuntu)
+
 - ZSH shell:
+
   - Replace GNU with Rust/Golang tools
+
 	- Language specific settings
 
-- Tmux config:
+- Tmux config
+
   - Selection with Vim mode
 
-- NeoVim:
-	- VimPlug:
+- NeoVim
+
+	- VimPlug
+
 		- fugitive
+
 		- surround
+
 		- vim-gitgutter
+
 		- AirLine
+
 		- FZF
+
 		- NERDTree
+
 	  - Vim-Go
-		- Coc.nvim: 
+
+		- Coc.nvim
 			- Language servers 
 			- Extensions
 
