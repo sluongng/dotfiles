@@ -43,3 +43,5 @@ export GOPATH=$HOME/work/golang
 alias cat=bat
 alias ls=lsd
 alias fd=fdfind
+alias docker=podman
+alias pm=podman
