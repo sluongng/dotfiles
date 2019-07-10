@@ -43,5 +43,9 @@ export GOPATH=$HOME/work/golang
 alias cat=bat
 alias ls=lsd
 alias fd=fdfind
+
+## Podmand need 2 aliaes
+## - docker for backward compatibility with scripts
+## - pm for ease of use with CLI
 alias docker=podman
 alias pm=podman
