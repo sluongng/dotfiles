@@ -39,9 +39,10 @@ order by places.dir != '$(sql_escape $PWD)', count(*) desc limit 1"
 }
 ZSH_AUTOSUGGEST_STRATEGY=histdb_top
 
+
 # Git
 export GPG_TTY=$(tty)
-
+export GIT_EDITOR=nvim
 
 # FZF
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
@@ -142,6 +143,9 @@ unset -f bind-git-helper
 
 ## END: FZF + GIT
 
+# ENV variables
+export VISUAL=nvim
+export EDITOR="${VISUAL}"
 
 # JAVA
 export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
