@@ -5,21 +5,23 @@ set ruler
 set cmdheight=2
 set clipboard+=unnamedplus
 
+" Enable syntax highlighting
 syntax enable
 
+" Highlight search results
 set hlsearch
 
+" Tab as spaces
+set expandtab shiftwidth=2 tabstop=2
+
+" No bell on error, dont use swapfile
 set noerrorbells novisualbell
-
 set nobackup nowb noswapfile
-
-set shiftwidth=2
-set tabstop=2
 
 
 " Shortcuts
-imap jj <esc>
 let mapleader = ","
+imap jj <esc>
 
 
 " Plugins
