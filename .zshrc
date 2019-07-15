@@ -13,7 +13,7 @@ plugins=(
 
   # Git
   git
-	github
+  github
 
   # Containers
   docker
@@ -169,6 +169,8 @@ alias cat=bat
 # alias ls=exa # exa is not actively mantained
 alias ls=lsd
 alias fd=fdfind
+
+# Containers
 alias kb=kubectl
 source <(kubectl completion zsh)
 
