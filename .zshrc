@@ -7,16 +7,23 @@ export ZSH="/home/nb/.oh-my-zsh"
 ZSH_THEME="sunaku"
 
 plugins=(
-  docker
-  docker-compose
-  git
-	github
+  # Shell QoL
   sudo
   zsh-autosuggestions
-  mvn
-  node
+
+  # Git
+  git
+	github
+
+  # Containers
+  docker
   kubectl
+  minikube
+
+  # Languages
+  mvn
   spring
+  node
   golang
 )
 
@@ -162,6 +169,8 @@ alias cat=bat
 # alias ls=exa # exa is not actively mantained
 alias ls=lsd
 alias fd=fdfind
+alias kb=kubectl
+source <(kubectl completion zsh)
 
 ## Podmand need 2 aliaes
 ## - docker for backward compatibility with scripts
