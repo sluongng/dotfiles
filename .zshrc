@@ -19,12 +19,22 @@ plugins=(
   docker
   kubectl
   minikube
+  helm
 
   # Languages
   mvn
   spring
   node
   golang
+
+  # Tools
+  tmux
+  fd
+  fzf
+  ripgrep
+
+  # OS
+  ubuntu
 )
 
 source $ZSH/oh-my-zsh.sh
