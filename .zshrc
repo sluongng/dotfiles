@@ -13,6 +13,7 @@ plugins=(
 
   # Git
   git
+  gitfast
   github
 
   # Containers
