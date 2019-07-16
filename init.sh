@@ -17,9 +17,11 @@
 # Goals:
 # - Provisioned all configuration files
 
+DIR_DOTFILE=~/.dotfiles
+
 # Clone repo
 if [ ! -d "~/.dotfiles" ]; then
-  git clone git@github.com:sluongng/dotfiles.git ~/.dotfiles
+  git clone git@github.com:sluongng/dotfiles.git ${DIR_DOTFILE}
 else 
   echo 'Directory .dotfiles already exist, pulling instead of cloning'
   git -C ~/.dotfiles pull
@@ -41,14 +43,14 @@ else
 fi
 
 if [ -f "~/config/nvim/init.vim" ]; then
-  cp ~/config/nvim/init.vim ~/.config/nvim/init.vim.bak
+  cp ~/.config/nvim/init.vim ~/.config/nvim/init.vim.bak
   echo 'Done back up neovim config'
 else
   echo 'No init.vim(neovim config) found'
 fi
 
-if [ -f "~/config/nvim/coc-config.json" ]; then
-  cp ~/.dotfiles/config/nvim/coc-config.json ~/.dotfiles/.config/nvim/coc-config.json.bak
+if [ -f "~/config/nvim/coc-settings.json" ]; then
+  cp ~/.config/nvim/coc-settings.json ~/.config/nvim/coc-settings.json.bak
   echo 'Done back up coc.nvim config'
 else
   echo 'No coc-config.json(coc.nvim config) found'
@@ -62,18 +64,18 @@ else
 fi
 
 # Provisioning directories
-mkdir -p ~/config/nvim/
+mkdir -p ~/.config/nvim/
 
 # Link all the dotfiles
-ln -sfn ~/.dotfiles/.zshrc ~/.zshrc
+ln -sfn ${DIR_DOTFILE}/.zshrc ~/.zshrc
 echo 'Linked .zshrc from dotfiles'
 
-ln -sfn ~/.dotfiles/.vimrc ~/.vimrc
-ln -sfn ~/.dotfiles/.vimrc ~/config/nvim/init.vim
+ln -sfn ${DIR_DOTFILE}/.vimrc ~/.vimrc
+ln -sfn ${DIR_DOTFILE}/.vimrc ~/.config/nvim/init.vim
 echo 'Linked .vimrc from dotfiles'
 
-ln -sfn ~/.dotfiles/config/nvim/coc-config.json ~/.config/nvim/coc-config.json
-echo 'Linked coc-config.json from dotfiles'
+ln -sfn ${DIR_DOTFILE}/config/nvim/coc-settings.json ~/.config/nvim/coc-settings.json
+echo 'Linked coc-settings.json from dotfiles'
 
-ln -sfn ~/.dotfiles/.tmux.conf ~/.tmux.conf
+ln -sfn ${DIR_DOTFILE}/.tmux.conf ~/.tmux.conf
 echo 'Linked .tmux.conf from dotfiles'
