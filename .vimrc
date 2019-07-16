@@ -60,6 +60,9 @@ let NERDTreeShowHidden=1
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Coc.Nvim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/neoclide/coc.nvim
 
+"" Extensions
+let g:coc_global_extensions = ["coc-json", "coc-java"]
+
 "" Use C-j and C-k to navigate completion suggestions
 inoremap <expr> <C-j> pumvisible() ? "\<C-n>" : "\<C-j>"
 inoremap <expr> <C-k> pumvisible() ? "\<C-p>" : "\<C-k>"
