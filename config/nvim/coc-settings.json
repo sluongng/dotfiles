@@ -1,0 +1,18 @@
+{ 
+  "suggest.autoTrigger": "always",
+
+	"languageserver": {
+
+		"golang": {
+		  "command": "gopls",
+		  "rootPatterns": ["go.mod", ".git/"],
+		  "filetypes": ["go"]
+		},
+
+		"dockerfile": {
+			"command": "docker-langserver",
+			"filetypes": ["dockerfile"],
+			"args": ["--stdio"]
+		}
+	}
+}
