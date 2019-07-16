@@ -18,43 +18,62 @@
 # - Provisioned all configuration files
 
 # Clone repo
-git clone https://github.com/sluongng/dotfiles ~/.dotfiles
+if [ ! -d "~/.dotfiles" ]; then
+  git clone https://github.com/sluongng/dotfiles ~/.dotfiles
+else 
+  echo 'Directory .dotfiles already exist, pulling instead of cloning'
+  git -C ~/.dotfiles pull
+fi
 
 # Backup existing files
 if [ -f "~/.zshrc" ]; then
   cp ~/.zshrc ~/.zshrc.bak
   echo 'Done back up zsh config'
+else
+  echo 'No .zshrc found'
 fi
 
 if [ -f "~/.vimrc" ]; then
   cp ~/.vimrc ~/.vimrc.bak
   echo 'Done back up vim config'
+else
+  echo 'No .vimrc found'
 fi
 
-if [ -f "~/.config/nvim/init.vim" ]; then
-  cp ~/.config/nvim/init.vim ~/.config/nvim/init.vim.bak
+if [ -f "~/config/nvim/init.vim" ]; then
+  cp ~/config/nvim/init.vim ~/.config/nvim/init.vim.bak
   echo 'Done back up neovim config'
+else
+  echo 'No init.vim(neovim config) found'
 fi
 
-if [ -f "~/.config/nvim/coc-config.json" ]; then
-  cp ~/.dotfiles/.config/nvim/coc-config.json ~/.dotfiles/.config/nvim/coc-config.json.bak
+if [ -f "~/config/nvim/coc-config.json" ]; then
+  cp ~/.dotfiles/config/nvim/coc-config.json ~/.dotfiles/.config/nvim/coc-config.json.bak
   echo 'Done back up coc.nvim config'
+else
+  echo 'No coc-config.json(coc.nvim config) found'
 fi
 
 if [ -f "~/.tmux.conf" ]; then
   cp ~/.tmux.conf ~/.tmux.conf.bak
   echo 'Done back up tmux config'
+else
+  echo 'No .tmux.conf(tmux config) found'
 fi
 
 # Provisioning directories
-mkdir -p ~/.config/nvim/
+mkdir -p ~/config/nvim/
 
 # Link all the dotfiles
 ln -sfn ~/.dotfiles/.zshrc ~/.zshrc
+echo 'Linked .zshrc from dotfiles'
 
 ln -sfn ~/.dotfiles/.vimrc ~/.vimrc
-ln -sfn ~/.dotfiles/.vimrc ~/.config/nvim/init.vim
+ln -sfn ~/.dotfiles/.vimrc ~/config/nvim/init.vim
+echo 'Linked .vimrc from dotfiles'
 
-ln -sfn ~/.dotfiles/.config/nvim/coc-config.json ~/.config/nvim/coc-config.json
+ln -sfn ~/.dotfiles/config/nvim/coc-config.json ~/.config/nvim/coc-config.json
+echo 'Linked coc-config.json from dotfiles'
 
 ln -sfn ~/.dotfiles/.tmux.conf ~/.tmux.conf
+echo 'Linked .tmux.conf from dotfiles'
