@@ -1,4 +1,5 @@
-" Editor Settings
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 set history=900
 set number relativenumber
 set ruler
@@ -24,7 +25,9 @@ let mapleader = ","
 imap jj <esc>
 
 
-" Plugins
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+" Doc: https://github.com/junegunn/vim-plug
+
 call plug#begin('~/.local/share/nvim/plugged')
 
 Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
@@ -46,15 +49,18 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 call plug#end()
 
 
-" NERDTree
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> NERDTree >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+" Doc: https://github.com/scrooloose/nerdtree
+
 map <C-n> :NERDTreeToggle<CR>
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 let NERDTreeShowHidden=1
 
 
-" Coc.Nvim
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Coc.Nvim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+" Doc: https://github.com/neoclide/coc.nvim
 
-" Use C-j and C-k to navigate completion suggestions
+"" Use C-j and C-k to navigate completion suggestions
 inoremap <expr> <C-j> pumvisible() ? "\<C-n>" : "\<C-j>"
 inoremap <expr> <C-k> pumvisible() ? "\<C-p>" : "\<C-k>"
 
@@ -64,8 +70,30 @@ inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
 "" Use <c-space>for trigger completion
 inoremap <silent><expr> <c-space> coc#refresh()
 
+"" Goto mapping
+nmap <silent> gd <Plug>(coc-definition)
+nmap <silent> gi <Plug>(coc-implementation)
+nmap <silent> gr <Plug>(coc-references)
+nmap <silent> gy <Plug>(coc-type-definition)
+nmap <silent> ge <Plug>(coc-diagnostic-next)
 
-" Airline
+"" Refactoring
+nmap <leader>rn <Plug>(coc-rename)
+nmap <leader>qf <Plug>(coc-fix-current)
+
+"" Use `:Format` to format current buffer
+command! -nargs=0 Format :call CocAction('format')
+
+"" Use `:Fold` to fold current buffer
+command! -nargs=? Fold :call     CocAction('fold', <f-args>)
+
+"" Use `:OR` for organize import of current buffer
+command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport') 
+
+
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+" Doc: https://github.com/vim-airline/vim-airline
+
 "" Enable Extensions
 let g:airline#extensions#coc#enabled = 1
 
