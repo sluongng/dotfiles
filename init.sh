@@ -41,6 +41,11 @@ if [ -f "~/.config/nvim/coc-config.json" ]; then
   echo 'Done back up coc.nvim config'
 fi
 
+if [ -f "~/.tmux.conf" ]; then
+  cp ~/.tmux.conf ~/.tmux.conf.bak
+  echo 'Done back up tmux config'
+fi
+
 # Provisioning directories
 mkdir -p ~/.config/nvim/
 
@@ -51,3 +56,5 @@ ln -sfn ~/.dotfiles/.vimrc ~/.vimrc
 ln -sfn ~/.dotfiles/.vimrc ~/.config/nvim/init.vim
 
 ln -sfn ~/.dotfiles/.config/nvim/coc-config.json ~/.config/nvim/coc-config.json
+
+ln -sfn ~/.dotfiles/.tmux.conf ~/.tmux.conf
