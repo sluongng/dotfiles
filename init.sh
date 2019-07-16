@@ -19,7 +19,7 @@
 
 # Clone repo
 if [ ! -d "~/.dotfiles" ]; then
-  git clone https://github.com/sluongng/dotfiles ~/.dotfiles
+  git clone git@github.com:sluongng/dotfiles.git ~/.dotfiles
 else 
   echo 'Directory .dotfiles already exist, pulling instead of cloning'
   git -C ~/.dotfiles pull
