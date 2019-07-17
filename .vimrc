@@ -9,10 +9,12 @@ set cmdheight=2
 set clipboard+=unnamedplus
 
 " Enable syntax highlighting
-syntax enable
+set syntax=enable
 
 " Highlight search results
+" Use Ctrl-L to clear search highlighting
 set hlsearch
+nnoremap <silent> <C-l> :nohl<CR><C-l>
 
 " Tab as spaces
 set expandtab shiftwidth=2 tabstop=2
@@ -21,9 +23,10 @@ set expandtab shiftwidth=2 tabstop=2
 set noerrorbells novisualbell
 set nobackup nowb noswapfile
 
-
 " Shortcuts
 let mapleader = ","
+
+" Fast way to escape
 imap jj <esc>
 
 
@@ -63,7 +66,12 @@ let NERDTreeShowHidden=1
 " Doc: https://github.com/neoclide/coc.nvim
 
 "" Extensions
-let g:coc_global_extensions = ["coc-json", "coc-java", "coc-snippets"]
+let g:coc_global_extensions = [
+  \"coc-vimlsp", 
+  \"coc-json", 
+  \"coc-java", 
+  \"coc-snippets",
+\]
 
 "" Use C-j and C-k to navigate completion suggestions
 inoremap <expr> <C-j> pumvisible() ? "\<C-n>" : "\<C-j>"
@@ -133,4 +141,64 @@ nmap <leader>+ <Plug>AirlineSelectNextTab
 "" Extention: CocNvim
 let airline#extensions#coc#stl_format_err = '%E{[%e(#%fe)]}'
 let airline#extensions#coc#stl_format_warn = '%W{[%w(#%fw)]}'
+
+
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
+" Golang
+" Doc: https://github.com/fatih/vim-go/blob/master/doc/vim-go.txt 
+" (Search 'go-syntax')
+
+"" Indentation
+au FileType go set noexpandtab
+au FileType go set shiftwidth=2
+au FileType go set softtabstop=2
+au FileType go set tabstop=2
+
+"" Syntax Highlight
+
+let g:go_highlight_functions = 1
+let g:go_highlight_function_parameters = 1
+let g:go_highlight_function_calls = 1
+
+let g:go_highlight_types = 1
+let g:go_highlight_extra_types = 1
+
+let g:go_highlight_fields = 1
+let g:go_highlight_methods = 1
+let g:go_highlight_operators = 1
+let g:go_highlight_structs = 1
+let g:go_highlight_generate_tags = 1
+let g:go_highlight_format_strings = 1
+let g:go_highlight_variable_declarations = 1
+let g:go_highlight_variable_assignments = 1
+
+let g:go_highlight_build_constraints = 1
+let g:go_highlight_array_whitespace_error = 1
+let g:go_highlight_chan_whitespace_error = 1
+
+"" Highlight variable with same name
+let g:go_auto_sameids = 1
+
+
+" Java
+
+"" Indentation
+au FileType java set noexpandtab
+au FileType java set shiftwidth=4
+au FileType java set softtabstop=4
+au FileType java set tabstop=4
+
+
+" Kotlin
+" TODO: WIP
+
+
+" JS
+" TODO: WIP
+
+
+" TypeScript
+" TODO: WIP
 
