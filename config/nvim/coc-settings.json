@@ -1,6 +1,9 @@
 { 
   "suggest.autoTrigger": "always",
-
+  "snippets.ultisnips.directories": [
+    "UltiSnips",
+    "gosnippets/UltiSnips"
+  ],
 	"languageserver": {
 
 		"golang": {

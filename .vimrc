@@ -1,5 +1,7 @@
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+set nocompatible
+
 set history=900
 set number relativenumber
 set ruler
@@ -61,14 +63,14 @@ let NERDTreeShowHidden=1
 " Doc: https://github.com/neoclide/coc.nvim
 
 "" Extensions
-let g:coc_global_extensions = ["coc-json", "coc-java"]
+let g:coc_global_extensions = ["coc-json", "coc-java", "coc-snippets"]
 
 "" Use C-j and C-k to navigate completion suggestions
 inoremap <expr> <C-j> pumvisible() ? "\<C-n>" : "\<C-j>"
 inoremap <expr> <C-k> pumvisible() ? "\<C-p>" : "\<C-k>"
 
-"" Use Enter to confirm conpletion
-inoremap <expr> <cr> pumvisible() ? "\<C-y>" : "\<C-g>u\<CR>"
+"" Use Enter to confirm first conpletion
+inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm() : "\<C-g>u\<CR>"
 
 "" Use <c-space>for trigger completion
 inoremap <silent><expr> <c-space> coc#refresh()
@@ -79,6 +81,19 @@ nmap <silent> gi <Plug>(coc-implementation)
 nmap <silent> gr <Plug>(coc-references)
 nmap <silent> gy <Plug>(coc-type-definition)
 nmap <silent> ge <Plug>(coc-diagnostic-next)
+
+"" Show documentation in preview window
+nnoremap <silent> gk :call <SID>show_documentation()<CR>
+function! s:show_documentation()
+  if (index(['vim', 'help'], &filetype) >= 0)
+    execute 'h '.expand('<cword>')
+  else
+    call CocAction('doHover')
+  endif
+endfunction
+
+"" Auto clode the preview window when completion is done
+autocmd! CompleteDone * if pumvisible() == 0 | pclose | endif
 
 "" Refactoring
 nmap <leader>rn <Plug>(coc-rename)
