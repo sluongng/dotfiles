@@ -2,11 +2,13 @@
 
 set nocompatible
 
-set history=900
-set number relativenumber
 set ruler
 set cmdheight=2
+set history=9000
+set number relativenumber
 set clipboard+=unnamedplus
+
+set scrolloff=2
 
 " Enable syntax highlighting
 set syntax=enable

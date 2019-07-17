@@ -1,13 +1,21 @@
-set hlsearch
-set scrolloff=5
+" Documentation: https://github.com/JetBrains/ideavim
+
+set hlsearch incsearch 
 set ignorecase smartcase
+set number relativenumber
+set showmode
+set ruler
+
+set scrolloff=5
 
 set clipboard+=unnamed
 
-set number relativenumber
-set ruler
+" Emulate Vim Plugins
+set surround
+set multiple-cursors
 
-imap jj <Esc>
+inoremap jj <Esc>
+vnoremap jj <Esc>
 
 nnoremap gi <Esc>:action GotoImplementation<cr>
 nnoremap gd <Esc>:action GotoDeclaration<cr>

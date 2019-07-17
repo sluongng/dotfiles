@@ -46,6 +46,13 @@ else
   echo 'No .vimrc found'
 fi
 
+if [ -f "${DIR_HOME}/.ideavimrc" ]; then
+  cp ${DIR_HOME}/.ideavimrc ${DIR_HOME}/.ideavimrc.bak
+  echo 'Done back up IntelliJ IDEA Vim config'
+else
+  echo 'No .ideavimrc found'
+fi
+
 if [ -f "${DIR_CONFIG}/nvim/init.vim" ]; then
   cp ${DIR_CONFIG}/nvim/init.vim ${DIR_CONFIG}/nvim/init.vim.bak
   echo 'Done back up neovim config'
@@ -77,6 +84,9 @@ echo 'Linked .zshrc from dotfiles'
 ln -sfn ${DIR_DOTFILE}/.vimrc ${DIR_HOME}/.vimrc
 ln -sfn ${DIR_DOTFILE}/.vimrc ${DIR_CONFIG}/nvim/init.vim
 echo 'Linked .vimrc from dotfiles'
+
+ln -sfn ${DIR_DOTFILE}/.ideavimrc ${DIR_HOME}/.ideavimrc
+echo 'Linked .ideavimrc from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/nvim/coc-settings.json ${DIR_CONFIG}/nvim/coc-settings.json
 echo 'Linked coc-settings.json from dotfiles'
