@@ -23,11 +23,11 @@ tree -I .git -a
 
 ## Goals
 
-- [ ] Backup most dotfiles
+- [X] Backup most dotfiles
 
-- [ ] Security sanitization
+- [X] Security sanitization
 
-- [ ] Create migration script(bash or make) to apply these dotfiles quickly
+- [X] Create migration script(bash or make) to apply these dotfiles quickly
 
 - [ ] Create Dockerfile to host remote dev environment
 
