@@ -28,6 +28,7 @@ if [ ! -d "${DIR_HOME}/.dotfiles" ]; then
 else 
   echo 'Directory .dotfiles already exist, pulling instead of cloning'
   git -C ${DIR_HOME}/.dotfiles pull
+  exit 0
 fi
 
 # Backup existing files
