@@ -6,10 +6,13 @@ export ZSH="/home/nb/.oh-my-zsh"
 
 ZSH_THEME="sunaku"
 
+ZSH_TMUX_AUTOSTART=true
+
 plugins=(
   # Shell QoL
   sudo
   zsh-autosuggestions
+  web-search
 
   # Git
   git
@@ -24,9 +27,10 @@ plugins=(
 
   # Languages
   mvn
-  spring
-  node
+  pip
+  npm
   golang
+  spring
 
   # Tools
   tmux
@@ -34,9 +38,24 @@ plugins=(
   fzf
   ripgrep
 
-  # OS
-  ubuntu
+  # Editor / IDE
+  vscode
 )
+
+# Check if Linux or MacOS
+if [ "$(uname 2> /dev/null)" != "Linux" ]; then
+  # Load MacOS specific plugins
+  plugins+=(
+    osx
+    brew
+  )
+else
+  # Load Ubuntu specific plugins
+  plugins+=(
+    ubuntu
+    command-not-found
+  )
+fi
 
 source $ZSH/oh-my-zsh.sh
 ## End oh-my-zsh
