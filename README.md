@@ -41,7 +41,7 @@ tree -I .git -a
 
   - Replace GNU with Rust/Golang tools
 
-	- Language specific settings
+  - Language specific settings
 
 - Tmux config
 
@@ -49,27 +49,27 @@ tree -I .git -a
 
 - NeoVim
 
-	- VimPlug
+  - VimPlug
 
-		- fugitive
+    - fugitive
 
-		- surround
+    - surround
 
-		- vim-gitgutter
+    - vim-gitgutter
 
-		- AirLine
+    - AirLine
 
-		- FZF
+    - FZF
 
-		- NERDTree
+    - NERDTree
 
-	  - Vim-Go
+    - Vim-Go
 
-		- Coc.nvim
+    - Coc.nvim
 
-			- Language servers 
+      - Language servers
 
-			- Extensions 
+      - Extensions
 
 - IdeaVim: vimrc for JetBrains' IDEs (IntelliJ, GoLand,...)
 
