@@ -49,6 +49,8 @@ tree -I .git -a
 
 - NeoVim
 
+  - Editor Settings
+
   - VimPlug
 
     - fugitive
