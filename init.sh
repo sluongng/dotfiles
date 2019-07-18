@@ -67,6 +67,20 @@ else
   echo 'No coc-config.json(coc.nvim config) found'
 fi
 
+if [ -f "${DIR_CONFIG}/libinput-gestures.conf" ]; then
+  cp ${DIR_CONFIG}/config/libinput-gestures.conf ${DIR_CONFIG}/config/libinput-gestures.conf
+  echo 'Done back up libinput-gestures config'
+else
+  echo 'No libinput-gestures config found'
+fi
+
+if [ -f "${DIR_CONFIG}/alacritty/alacritty.yml" ]; then
+  cp ${DIR_CONFIG}/alacritty/alacritty.yml ${DIR_CONFIG}/alacritty/alacritty.yml
+  echo 'Done back up alacritty config'
+else
+  echo 'No alacritty config found'
+fi
+
 if [ -f "${DIR_HOME}/.tmux.conf" ]; then
   cp ${DIR_HOME}/.tmux.conf ${DIR_HOME}/.tmux.conf.bak
   echo 'Done back up tmux config'
@@ -76,6 +90,7 @@ fi
 
 # Provisioning directories
 mkdir -p ${DIR_CONFIG}/nvim/
+mkdir -p ${DIR_CONFIG}/alacritty/
 
 # Link all the dotfiles
 ln -sfn ${DIR_DOTFILE}/.zshrc ${DIR_HOME}/.zshrc
@@ -93,3 +108,9 @@ echo 'Linked coc-settings.json from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/.tmux.conf ${DIR_HOME}/.tmux.conf
 echo 'Linked .tmux.conf from dotfiles'
+
+ln -sfn ${DIR_DOTFILE}/config/libinput-gestures.conf ${DIR_CONFIG}/libinput-gestures.conf
+echo 'Linked libinput-gestures config from dotfiles'
+
+ln -sfn ${DIR_DOTFILE}/config/alacritty/alacritty.yml ${DIR_CONFIG}/alacritty/alacritty.yml
+echo 'Linked alacritty config from dotfiles'
