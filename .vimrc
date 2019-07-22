@@ -23,7 +23,7 @@ set expandtab shiftwidth=2 tabstop=2
 
 " No bell on error, dont use swapfile
 set noerrorbells novisualbell
-set nobackup nowb noswapfile
+set nobackup nowritebackup noswapfile
 
 " Shortcuts
 let mapleader = ","
@@ -148,9 +148,13 @@ let airline#extensions#coc#stl_format_warn = '%W{[%w(#%fw)]}'
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
+" File Type handling
+" Doc: ':h filetype'
+filetype plugin on
+
 " Golang
-" Doc: https://github.com/fatih/vim-go/blob/master/doc/vim-go.txt 
-" (Search 'go-syntax')
+"   Doc: https://github.com/fatih/vim-go/blob/master/doc/vim-go.txt 
+"        or ':h go-syntax'
 
 "" Indentation
 au FileType go set noexpandtab
@@ -183,6 +187,11 @@ let g:go_highlight_chan_whitespace_error = 1
 "" Highlight variable with same name
 let g:go_auto_sameids = 1
 
+" Markdown
+augroup Markdown
+  autocmd!
+  autocmd FileType markdown set wrap
+augroup END
 
 " Java
 

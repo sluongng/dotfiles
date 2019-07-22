@@ -44,17 +44,21 @@ plugins=(
 
 # Check if Linux or MacOS
 if [ "$(uname 2> /dev/null)" != "Linux" ]; then
+  
   # Load MacOS specific plugins
   plugins+=(
     osx
     brew
   )
+
 else
+  
   # Load Ubuntu specific plugins
   plugins+=(
     ubuntu
     command-not-found
   )
+
 fi
 
 source $ZSH/oh-my-zsh.sh
@@ -193,6 +197,9 @@ export PATH=$PATH:~/.local/bin
 # Golang
 export PATH=$PATH:/usr/local/go/bin
 export GOPATH=$HOME/work/golang
+
+# Rust
+export PATH=$PATH:~/.cargo/bin
 
 # Toolings
 alias cat=bat
