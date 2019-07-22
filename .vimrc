@@ -61,7 +61,14 @@ call plug#end()
 " Doc: https://github.com/scrooloose/nerdtree
 
 map <C-n> :NERDTreeToggle<CR>
+
+"" Open NERDTree when no file was specified
+autocmd StdinReadPre * let s:std_in=1
+autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
+
+"" Close when NERDTree is the only window left
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
 let NERDTreeShowHidden=1
 
 
@@ -75,6 +82,7 @@ let g:coc_global_extensions = [
   \"coc-java", 
   \"coc-snippets",
   \"coc-pairs", 
+  \"coc-rls", 
 \]
 
 "" Use C-j and C-k to navigate completion suggestions
