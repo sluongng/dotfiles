@@ -3,6 +3,7 @@
 set nocompatible
 
 set ruler
+set hidden
 set cmdheight=2
 set history=9000
 set number relativenumber
@@ -73,6 +74,7 @@ let g:coc_global_extensions = [
   \"coc-json", 
   \"coc-java", 
   \"coc-snippets",
+  \"coc-pairs", 
 \]
 
 "" Use C-j and C-k to navigate completion suggestions
