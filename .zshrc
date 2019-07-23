@@ -1,7 +1,7 @@
 # Default template oh-my-zsh:
 # https://github.com/robbyrussell/oh-my-zsh/blob/master/templates/zshrc.zsh-template
 
-## Start oh-my-zsh
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Start oh-my-zsh
 export ZSH="/home/nb/.oh-my-zsh"
 
 ZSH_THEME="sunaku"
@@ -62,7 +62,7 @@ else
 fi
 
 source $ZSH/oh-my-zsh.sh
-## End oh-my-zsh
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> End oh-my-zsh
 
 
 # Zsh autosuggestions and histdb
@@ -100,7 +100,9 @@ export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {} 2> /dev
 export FZF_TMUX=1
 export FZF_TMUX_HEIGHT=50%
 
-## START: FZF + GIT
+
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> START: FZF + GIT
+
 ## Enable a powerful set of shortcuts <Ctrl+g><Ctrl+$> to quickly browse git-related resources
 ## Source: https://gist.github.com/junegunn/8b572b8d4b5eddd8b85e5f4d40f17236
 
@@ -182,7 +184,7 @@ bind-git-helper() {
 bind-git-helper f b t r h
 unset -f bind-git-helper
 
-## END: FZF + GIT
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END: FZF + GIT
 
 # ENV variables
 export VISUAL=nvim

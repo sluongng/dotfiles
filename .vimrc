@@ -80,6 +80,7 @@ let g:coc_global_extensions = [
   \"coc-vimlsp", 
   \"coc-json", 
   \"coc-java", 
+  \"coc-xml", 
   \"coc-snippets",
   \"coc-pairs", 
   \"coc-rls", 
