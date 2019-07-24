@@ -17,6 +17,7 @@ set syntax=enable
 " Highlight search results
 " Use Ctrl-L to clear search highlighting
 set hlsearch
+nnoremap <silent> <Esc><Esc> :nohlsearch<CR>
 nnoremap <silent> <C-l> :nohl<CR><C-l>
 
 " Tab as spaces
@@ -30,7 +31,7 @@ set nobackup nowritebackup noswapfile
 let mapleader = ","
 
 " Fast way to escape
-imap jj <esc>
+imap jj <Esc>
 
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
