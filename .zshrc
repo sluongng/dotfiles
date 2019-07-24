@@ -207,7 +207,7 @@ export PATH=$PATH:~/.cargo/bin
 alias cat=bat
 # alias ls=exa # exa is not actively mantained
 alias ls=lsd
-alias fd=fdfind
+# alias fd=fdfind
 
 # Containers
 alias kb=kubectl
