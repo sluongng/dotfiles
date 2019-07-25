@@ -197,9 +197,8 @@ export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 export PATH=$PATH:~/.local/bin
 
 # Golang
-export PATH=$PATH:/usr/local/go/bin
 export GOPATH=$HOME/work/golang
-export PATH=$PATH:${GOPATH}/bin
+export PATH=$PATH:/usr/local/go/bin:${GOPATH}/bin
 
 # Rust
 export PATH=$PATH:~/.cargo/bin
