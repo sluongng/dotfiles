@@ -7,7 +7,7 @@
 	"languageserver": {
 
 		"golang": {
-		  "command": "gopls",
+		  "command": "bingo",
 		  "rootPatterns": ["go.mod", ".git/"],
 		  "filetypes": ["go"]
 		},

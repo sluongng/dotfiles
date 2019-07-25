@@ -44,6 +44,7 @@ Plug 'Xuyuanp/nerdtree-git-plugin'
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
+Plug 'junegunn/vim-peekaboo'
 
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
@@ -84,6 +85,8 @@ let g:coc_global_extensions = [
   \"coc-xml", 
   \"coc-snippets",
   \"coc-pairs", 
+  \"coc-git", 
+  \"coc-tabnine", 
   \"coc-rls", 
 \]
 
