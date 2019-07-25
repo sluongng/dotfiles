@@ -199,6 +199,7 @@ export PATH=$PATH:~/.local/bin
 # Golang
 export PATH=$PATH:/usr/local/go/bin
 export GOPATH=$HOME/work/golang
+export PATH=$PATH:${GOPATH}/bin
 
 # Rust
 export PATH=$PATH:~/.cargo/bin
