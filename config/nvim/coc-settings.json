@@ -5,8 +5,8 @@
     "gosnippets/UltiSnips"
   ],
 	"languageserver": {
-
 		"golang": {
+			"trace.server": "verbose",
 		  "command": "bingo",
 		  "rootPatterns": ["go.mod", ".git/"],
 		  "filetypes": ["go"]
