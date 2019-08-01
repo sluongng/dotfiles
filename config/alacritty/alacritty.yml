@@ -101,14 +101,8 @@ tabspaces: 4
 # Font configuration (changes require restart)
 font:
   normal:
-    family: SF Mono 
+    family: Cousine Nerd Font
     style: Regular
-  bold:
-    family: SF Mono 
-    style: Bold 
-  italic:
-    family: SF Mono 
-    style: Italic 
   # Normal (roman) font face
   #normal:
     # Font family

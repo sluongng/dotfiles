@@ -190,6 +190,9 @@ unset -f bind-git-helper
 export VISUAL=nvim
 export EDITOR="${VISUAL}"
 
+# Ubuntu Snap
+export PATH=$PATH:/snap/bin
+
 # JAVA
 export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 
