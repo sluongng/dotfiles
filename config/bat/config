@@ -1,0 +1,5 @@
+# Documentation: https://github.com/sharkdp/bat#configuration-file
+
+--theme="DarkNeon"
+
+--style="changes,plain"

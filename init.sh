@@ -68,17 +68,24 @@ else
 fi
 
 if [ -f "${DIR_CONFIG}/libinput-gestures.conf" ]; then
-  cp ${DIR_CONFIG}/config/libinput-gestures.conf ${DIR_CONFIG}/config/libinput-gestures.conf
+  cp ${DIR_CONFIG}/config/libinput-gestures.conf ${DIR_CONFIG}/config/libinput-gestures.conf.bak
   echo 'Done back up libinput-gestures config'
 else
   echo 'No libinput-gestures config found'
 fi
 
 if [ -f "${DIR_CONFIG}/alacritty/alacritty.yml" ]; then
-  cp ${DIR_CONFIG}/alacritty/alacritty.yml ${DIR_CONFIG}/alacritty/alacritty.yml
+  cp ${DIR_CONFIG}/alacritty/alacritty.yml ${DIR_CONFIG}/alacritty/alacritty.yml.bak
   echo 'Done back up alacritty config'
 else
   echo 'No alacritty config found'
+fi
+
+if [ -f "${DIR_CONFIG}/bat/config" ]; then
+  cp ${DIR_CONFIG}/bat/config ${DIR_CONFIG}/bat/config.bak
+  echo 'Done back up bat config'
+else
+  echo 'No bat config found'
 fi
 
 if [ -f "${DIR_HOME}/.tmux.conf" ]; then
@@ -91,6 +98,7 @@ fi
 # Provisioning directories
 mkdir -p ${DIR_CONFIG}/nvim/
 mkdir -p ${DIR_CONFIG}/alacritty/
+mkdir -p ${DIR_CONFIG}/bat/
 
 # Link all the dotfiles
 ln -sfn ${DIR_DOTFILE}/.zshrc ${DIR_HOME}/.zshrc
@@ -114,3 +122,6 @@ echo 'Linked libinput-gestures config from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/alacritty/alacritty.yml ${DIR_CONFIG}/alacritty/alacritty.yml
 echo 'Linked alacritty config from dotfiles'
+
+ln -sfn ${DIR_DOTFILE}/config/bat/config ${DIR_CONFIG}/bat/config
+echo 'Linked bat config from dotfiles'
