@@ -190,7 +190,7 @@ unset -f bind-git-helper
 export VISUAL=nvim
 export EDITOR="${VISUAL}"
 
-# Ubuntu Snap
+# Ubuntu Snap (this is a problem for Wayland, not for X11)
 export PATH=$PATH:/snap/bin
 
 # JAVA
