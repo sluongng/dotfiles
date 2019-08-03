@@ -7,7 +7,7 @@
 	"languageserver": {
 		"golang": {
 			"trace.server": "verbose",
-		  "command": "bingo",
+		  "command": "gopls",
 		  "rootPatterns": ["go.mod", ".git/"],
 		  "filetypes": ["go"]
 		},

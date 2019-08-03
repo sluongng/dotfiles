@@ -203,6 +203,9 @@ let g:go_highlight_chan_whitespace_error = 1
 "" Highlight variable with same name
 let g:go_auto_sameids = 1
 
+"" Disbale vim-go :GoDef to use gopls + coc.nvim 
+let g:go_def_mapping_enabled = 0
+
 " Markdown
 augroup Markdown
   autocmd!
