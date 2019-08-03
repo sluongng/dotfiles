@@ -61,9 +61,15 @@ else
 
 fi
 
+# Disable Magic Pasting
+# Doc: https://stackoverflow.com/questions/25614613/how-to-disable-zsh-substitution-autocomplete-with-url-and-backslashes
+DISABLE_MAGIC_FUNCTIONS=true
+
 source $ZSH/oh-my-zsh.sh
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> End oh-my-zsh
 
+# Fix environment for Wayland + zsh + snapd
+source /etc/profile.d/apps-bin-path.sh
 
 # Zsh autosuggestions and histdb
 source $HOME/.oh-my-zsh/custom/plugins/zsh-histdb/sqlite-history.zsh
