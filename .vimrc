@@ -6,6 +6,7 @@ set ruler
 set hidden
 set cmdheight=2
 set history=9000
+set signcolumn=yes
 set number relativenumber
 set clipboard+=unnamedplus
 
