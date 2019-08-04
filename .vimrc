@@ -91,6 +91,9 @@ let g:coc_global_extensions = [
   \"coc-rls", 
 \]
 
+"" Use Tab instead of C-j to move during snippet
+let g:coc_snippet_next = '<tab>'
+
 "" Use C-j and C-k to navigate completion suggestions
 inoremap <expr> <C-j> pumvisible() ? "\<C-n>" : "\<C-j>"
 inoremap <expr> <C-k> pumvisible() ? "\<C-p>" : "\<C-k>"
