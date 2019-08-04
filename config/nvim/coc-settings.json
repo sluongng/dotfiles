@@ -6,7 +6,6 @@
   ],
 	"languageserver": {
 		"golang": {
-			"trace.server": "verbose",
 		  "command": "gopls",
 		  "rootPatterns": ["go.mod", ".git/"],
 		  "filetypes": ["go"]
