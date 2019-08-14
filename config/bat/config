@@ -3,3 +3,5 @@
 --theme="DarkNeon"
 
 --style="changes,plain"
+
+# --pager="none"

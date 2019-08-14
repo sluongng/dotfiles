@@ -15,7 +15,7 @@ set surround
 set multiple-cursors
 
 inoremap jj <Esc>
-vnoremap jj <Esc>
+vnoremap jk <Esc>
 
 nnoremap gi <Esc>:action GotoImplementation<cr>
 nnoremap gd <Esc>:action GotoDeclaration<cr>
