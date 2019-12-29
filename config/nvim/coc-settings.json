@@ -1,5 +1,8 @@
 { 
   "suggest.autoTrigger": "always",
+  "diagnostic.virtualText": true,
+	"coc.preferences.hoverTarget": "float",
+	"suggest.floatEnable": true,
   "snippets.ultisnips.directories": [
     "UltiSnips",
     "gosnippets/UltiSnips"
@@ -8,6 +11,9 @@
 		"golang": {
 		  "command": "gopls",
 		  "rootPatterns": ["go.mod", ".git/"],
+			"initializationOptions": {
+				"hoverKind": "FullDocumentation"
+			},
 		  "filetypes": ["go"]
 		},
 
