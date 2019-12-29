@@ -1,3 +1,42 @@
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+" Doc: https://github.com/junegunn/vim-plug
+
+call plug#begin('~/.local/share/nvim/plugged')
+
+Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
+Plug 'Xuyuanp/nerdtree-git-plugin'
+
+Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
+Plug 'junegunn/fzf.vim'
+Plug 'junegunn/vim-peekaboo'
+
+" Theme / Look
+Plug 'joshdick/onedark.vim'
+Plug 'luochen1990/rainbow'
+
+" Utils
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-surround'
+
+" Bottom bar
+Plug 'vim-airline/vim-airline'
+Plug 'airblade/vim-gitgutter'
+
+" LSP client
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
+
+" Golang
+Plug 'fatih/vim-go'
+
+" Python
+Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
+
+" Multilanguage
+Plug 'sheerun/vim-polyglot'
+
+call plug#end()
+
+
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 set nocompatible
@@ -6,14 +45,11 @@ set ruler
 set hidden
 set cmdheight=2
 set history=9000
-set signcolumn=yes
+set signcolumn=auto
 set number relativenumber
 set clipboard+=unnamedplus
 
 set scrolloff=2
-
-" Enable syntax highlighting
-set syntax=enable
 
 " Highlight search results
 " Use Ctrl-L to clear search highlighting
@@ -35,29 +71,22 @@ let mapleader = ","
 imap jj <Esc>
 
 
-">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-" Doc: https://github.com/junegunn/vim-plug
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Color / Theme >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-call plug#begin('~/.local/share/nvim/plugged')
+" Enable syntax highlighting
+set syntax=on
 
-Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
-Plug 'Xuyuanp/nerdtree-git-plugin'
+let g:onedark_terminal_italics = 1
+if (has("autocmd") && !has("gui_running"))
+  augroup colorset
+    autocmd!
+    let s:white = { "gui": "#ABB2BF", "cterm": "145", "cterm16" : "7" }
+    autocmd ColorScheme * call onedark#set_highlight("Normal", { "fg": s:white }) " `bg` will not be styled since there is no `bg` setting
+  augroup END
+endif
+colorscheme onedark
 
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plug 'junegunn/fzf.vim'
-Plug 'junegunn/vim-peekaboo'
-
-Plug 'tpope/vim-fugitive'
-Plug 'tpope/vim-surround'
-
-Plug 'vim-airline/vim-airline'
-Plug 'airblade/vim-gitgutter'
-
-Plug 'fatih/vim-go'
-
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
-
-call plug#end()
+let g:rainbow_active = 1
 
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> NERDTree >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -90,6 +119,38 @@ let g:coc_global_extensions = [
   \"coc-tabnine", 
   \"coc-rls", 
 \]
+
+" Improve default update time wait from 4000(4 seconds)
+" :help CursorHold
+set updatetime=200
+" Highlight text on idle
+autocmd CursorHold * silent call CocActionAsync('highlight')
+
+" Show docs if idle more than 2 seconds
+function! MyStopInsert(timerid)
+    " echom "Executed timer " . a:timerid
+    " Fo some reason stopinsert doesn't exit insert mode immediately
+    " execute("stopinsert")
+    call CocActionAsync('doHover')
+    call MyStopTimer()
+endfun
+function! MyStartTimer()
+    call MyStopTimer()
+    let b:mytimer = timer_start(2000, "MyStopInsert")
+    " echom "Started timer " . b:mytimer
+endfun
+function! MyStopTimer()
+    if exists("b:mytimer")
+        " echom "Stopping timer " . b:mytimer
+        call timer_stop(b:mytimer)
+        unlet b:mytimer
+    endif
+endfun
+augroup MyEscTimer
+    autocmd!
+    autocmd CursorHold * call MyStartTimer()
+    autocmd CursorMoved * call MyStopTimer()
+augroup end
 
 "" Use Tab instead of C-j to move during snippet
 let g:coc_snippet_next = '<tab>'
@@ -174,22 +235,19 @@ filetype plugin on
 " Golang
 "   Doc: https://github.com/fatih/vim-go/blob/master/doc/vim-go.txt 
 "        or ':h go-syntax'
-
 "" Indentation
 au FileType go set noexpandtab
 au FileType go set shiftwidth=2
 au FileType go set softtabstop=2
 au FileType go set tabstop=2
-
 "" Syntax Highlight
-
 let g:go_highlight_functions = 1
 let g:go_highlight_function_parameters = 1
 let g:go_highlight_function_calls = 1
-
+"" Syntax Highlight
 let g:go_highlight_types = 1
 let g:go_highlight_extra_types = 1
-
+"" Syntax Highlight
 let g:go_highlight_fields = 1
 let g:go_highlight_methods = 1
 let g:go_highlight_operators = 1
@@ -198,14 +256,12 @@ let g:go_highlight_generate_tags = 1
 let g:go_highlight_format_strings = 1
 let g:go_highlight_variable_declarations = 1
 let g:go_highlight_variable_assignments = 1
-
+"" Syntax Highlight
 let g:go_highlight_build_constraints = 1
 let g:go_highlight_array_whitespace_error = 1
 let g:go_highlight_chan_whitespace_error = 1
-
 "" Highlight variable with same name
 let g:go_auto_sameids = 1
-
 "" Disbale vim-go :GoDef to use gopls + coc.nvim 
 let g:go_def_mapping_enabled = 0
 
@@ -216,21 +272,20 @@ augroup Markdown
 augroup END
 
 " Java
-
 "" Indentation
 au FileType java set noexpandtab
 au FileType java set shiftwidth=4
 au FileType java set softtabstop=4
 au FileType java set tabstop=4
 
+" Rust
+let g:rustfmt_options = '--edition 2018'
 
 " Kotlin
 " TODO: WIP
 
-
-" JS
+" JavaScript
 " TODO: WIP
-
 
 " TypeScript
 " TODO: WIP

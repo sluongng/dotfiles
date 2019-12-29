@@ -46,21 +46,17 @@ plugins=(
 
 # Check if Linux or MacOS
 if [ "$(uname 2> /dev/null)" != "Linux" ]; then
-  
   # Load MacOS specific plugins
   plugins+=(
     osx
     brew
   )
-
 else
-  
   # Load Ubuntu specific plugins
   plugins+=(
     ubuntu
     command-not-found
   )
-
 fi
 
 # Disable Magic Pasting
@@ -72,25 +68,6 @@ source $ZSH/oh-my-zsh.sh
 # Fix environment for Wayland + zsh + snapd
 source /etc/profile.d/apps-bin-path.sh
 
-# Zsh autosuggestions and histdb
-source $HOME/.oh-my-zsh/custom/plugins/zsh-histdb/sqlite-history.zsh
-autoload -Uz add-zsh-hook
-add-zsh-hook precmd histdb-update-outcome
-
-_zsh_autosuggest_strategy_histdb_top() {
-    local query="select commands.argv from
-history left join commands on history.command_id = commands.rowid
-left join places on history.place_id = places.rowid
-where commands.argv LIKE '$(sql_escape $1)%'
-group by commands.argv
-order by places.dir != '$(sql_escape $PWD)', count(*) desc limit 1"
-    suggestion=$(_histdb_query "$query")
-}
-ZSH_AUTOSUGGEST_STRATEGY=histdb_top
-
-# Ignore duplicate in history when run find (or FZF)
-setopt HIST_FIND_NO_DUPS
-
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> End oh-my-zsh
 
 
@@ -98,8 +75,10 @@ setopt HIST_FIND_NO_DUPS
 export GPG_TTY=$(tty)
 export GIT_EDITOR=nvim
 
+
 # FZF
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
 
 ## Use sharkdp/fd for faster finding
 export FZF_DEFAULT_COMMAND='fd --type file'
@@ -199,6 +178,7 @@ unset -f bind-git-helper
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> END: FZF + GIT
 
+
 # ENV variables
 export VISUAL=nvim
 export EDITOR="${VISUAL}"
@@ -221,21 +201,15 @@ export PATH=$PATH:~/.cargo/bin
 
 # Toolings
 alias cat=bat
-# alias ls=exa # exa is not actively mantained
-alias ls=lsd
 alias gotop=gotop-cjbassi
-
+alias ls=lsd
+# alias ls=exa # exa is not actively mantained
 
 # Containers
 alias kb=kubectl
 source <(kubectl completion zsh)
 
-## Podmand need 2 aliaes
-## - docker for backward compatibility with scripts
-## - pm for ease of use with CLI
-alias docker=podman
-alias pm=podman
-
 # QoL commands
 ## List out all dir in ${PATH}
 alias path="echo ${PATH} | sed 's/:/\n/g'"
+
