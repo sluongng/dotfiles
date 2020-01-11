@@ -199,6 +199,38 @@ command! -nargs=? Fold :call     CocAction('fold', <f-args>)
 command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport') 
 
 
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fzf.vim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+" Doc: https://github.com/junegunn/fzf.vim
+
+" Make fzf use neovim floating window
+if has('nvim')
+  "" Make the window a bit easier to see on dark background
+  let $FZF_DEFAULT_OPTS .= ' --border'
+
+  function! FloatingFZF()
+    let width = float2nr(&columns * 0.8)
+    let height = float2nr(&lines * 0.6)
+    let opts = {
+          \ 'relative': 'editor',
+          \ 'row': (&lines - height) / 2,
+          \ 'col': (&columns - width) / 2,
+          \ 'width': width,
+          \ 'height': height,
+          \ 'style': 'minimal'
+          \ }
+    let buf = nvim_create_buf(v:false, v:true)
+    let win = nvim_open_win(buf, v:true, opts)
+    call setwinvar(win, '&winhl', 'NormalFloat:Error')
+  endfunction
+
+  let g:fzf_layout = { 'window': 'call FloatingFZF()' }
+endif
+
+" Some QoL shortcuts
+nnoremap <leader>a :Commands<CR>
+nnoremap <leader>f :FZF<CR>
+
+
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/vim-airline/vim-airline
 
