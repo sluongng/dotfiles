@@ -29,6 +29,9 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'fatih/vim-go'
 
 " Python
+"" Should run the following commands: 
+"" > pip3 install pynvim --upgrade
+"" > :UpdateRemotePlugins
 Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
 
 " Multilanguage
