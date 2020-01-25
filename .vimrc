@@ -120,7 +120,7 @@ let g:coc_global_extensions = [
   \"coc-pairs", 
   \"coc-git", 
   \"coc-tabnine", 
-  \"coc-rls", 
+  \"coc-rust-analyzer", 
 \]
 
 " Improve default update time wait from 4000(4 seconds)
