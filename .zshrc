@@ -212,4 +212,3 @@ source <(kubectl completion zsh)
 # QoL commands
 ## List out all dir in ${PATH}
 alias path="echo ${PATH} | sed 's/:/\n/g'"
-
