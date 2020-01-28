@@ -52,17 +52,17 @@ set signcolumn=auto
 set number relativenumber
 set clipboard+=unnamedplus
 let g:clipboard = {
-      \   'name': 'myClipboard',
-      \   'copy': {
-      \      '+': 'tmux load-buffer -',
-      \      '*': 'tmux load-buffer -',
-      \    },
-      \   'paste': {
-      \      '+': 'tmux save-buffer -',
-      \      '*': 'tmux save-buffer -',
-      \   },
-      \   'cache_enabled': 1,
-      \ }
+    \ 'name': 'xsel',
+    \ 'copy': {
+    \     '+': 'xsel -ib',
+    \     '*': 'xsel -ip'
+    \ },
+    \ 'paste': {
+    \     '+': 'xsel -ob',
+    \     '*': 'xsel -op'
+    \ },
+    \ 'cache_enabled': 1
+    \ }
 
 set scrolloff=2
 
