@@ -142,30 +142,30 @@ set updatetime=200
 autocmd CursorHold * silent call CocActionAsync('highlight')
 
 " Show docs if idle more than 2 seconds
-function! MyStopInsert(timerid)
-    " echom "Executed timer " . a:timerid
-    " Fo some reason stopinsert doesn't exit insert mode immediately
-    " execute("stopinsert")
-    call CocActionAsync('doHover')
-    call MyStopTimer()
-endfun
-function! MyStartTimer()
-    call MyStopTimer()
-    let b:mytimer = timer_start(2000, "MyStopInsert")
-    " echom "Started timer " . b:mytimer
-endfun
-function! MyStopTimer()
-    if exists("b:mytimer")
-        " echom "Stopping timer " . b:mytimer
-        call timer_stop(b:mytimer)
-        unlet b:mytimer
-    endif
-endfun
-augroup MyEscTimer
-    autocmd!
-    autocmd CursorHold * call MyStartTimer()
-    autocmd CursorMoved * call MyStopTimer()
-augroup end
+" function! MyStopInsert(timerid)
+"     " echom "Executed timer " . a:timerid
+"     " Fo some reason stopinsert doesn't exit insert mode immediately
+"     " execute("stopinsert")
+"     call CocActionAsync('doHover')
+"     call MyStopTimer()
+" endfun
+" function! MyStartTimer()
+"     call MyStopTimer()
+"     let b:mytimer = timer_start(2000, "MyStopInsert")
+"     " echom "Started timer " . b:mytimer
+" endfun
+" function! MyStopTimer()
+"     if exists("b:mytimer")
+"         " echom "Stopping timer " . b:mytimer
+"         call timer_stop(b:mytimer)
+"         unlet b:mytimer
+"     endif
+" endfun
+" augroup MyEscTimer
+"     autocmd!
+"     autocmd CursorHold * call MyStartTimer()
+"     autocmd CursorMoved * call MyStopTimer()
+" augroup end
 
 "" Use Tab instead of C-j to move during snippet
 let g:coc_snippet_next = '<tab>'
