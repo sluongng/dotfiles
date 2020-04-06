@@ -90,6 +90,11 @@ export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {} 2> /dev
 
 ## Use Tmux for FZF panel
 export FZF_TMUX=1
+## Enable FZF in a tmux floating window
+## Note that -p only supported when you use tmux 3.2 or above
+## If tmux 3.2 is not yet out, `brew install --HEAD tmux` to
+## install it from latest source.
+export FZF_TMUX_OPTS="-p 70%"
 export FZF_TMUX_HEIGHT=50%
 
 
