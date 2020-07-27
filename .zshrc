@@ -7,6 +7,7 @@ export ZSH="/home/nb/.oh-my-zsh"
 ZSH_THEME="sunaku"
 
 ZSH_TMUX_AUTOSTART=true
+ZSH_TMUX_AUTOQUIT=false
 
 plugins=(
   # Shell QoL
@@ -21,6 +22,7 @@ plugins=(
 
   # Containers
   docker
+  docker-compose
   kubectl
   minikube
   helm
