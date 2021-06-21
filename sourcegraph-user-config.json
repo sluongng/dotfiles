@@ -1,0 +1,98 @@
+{
+  // add settings here (Ctrl+Space to see hints)
+  "search.repositoryGroups": {
+    "bazel": [
+      // Rules groups
+      {
+        "regex": "github\\.com/bazelbuild/"
+      },
+      {
+        "regex": "github\\.com/bazelruby"
+      },
+      {
+        "regex": "github\\.com/google/cargo-raze"
+      },
+      // Org with prod ready setup
+      {
+        "regex": "github\\.com/kubevirt/kubevirt"
+      },
+      {
+        "regex": "github\\.com/google/gvisor"
+      },
+      {
+        "regex": "github\\.com/vaticle"
+      },
+      {
+        "regex": "gitlab\\.com/gitlab-org/cluster-integration/gitlab-agent"
+      },
+      {
+        "regex": "github\\.com/dropbox/dbx_build_tools"
+      },
+      {
+        "regex": "github\\.com/wix"
+      },
+      {
+        "regex": "github\\.com/abseil"
+      },
+      {
+        "regex": "github\\.com/dynatrace-oss/barista"
+      },
+      // Bazel Startups
+      {
+        "regex": "github\\.com/buildbarn"
+      },
+      {
+        "regex": "github\\.com/buildbuddy-io"
+      },
+      {
+        "regex": "github\\.com/stackb"
+      },
+      {
+        "regex": "github\\.com/aspect-dev"
+      },
+      {
+        "regex": "github\\.com/tweag"
+      },
+      // Misc
+      {
+        "regex": "github\\.com/guymers/containers_by_bazel"
+      },
+    ],
+    "gitlab": [
+      {
+        "regex": "gitlab\\.com/gitlab-org/gitlab$"
+      },
+      {
+        "regex": "gitlab\\.com/gitlab-org/gitlab-runner"
+      },
+      {
+        "regex": "gitlab\\.com/gitlab-org/gitaly"
+      },
+      {
+        "regex": "gitlab\\.com/gitlab-org/gitlab-shell"
+      },
+      {
+        "regex": "gitlab\\.com/gitlab-org/gitlab-pages"
+      },
+      {
+        "regex": "gitlab\\.com/gitlab-org/charts/gitlab$"
+      },
+      {
+        "regex": "gitlab\\.com/gitlab-org/charts/gitlab-runner$"
+      }
+    ]
+  },
+  "search.includeArchived": false,
+  "search.defaultPatternType": "regexp",
+  "quicklinks": [
+    {
+      "name": "Bazel Build Github",
+      "url": "https://github.com/bazelbuild/"
+    },
+    {
+      "name": "Bazel Command-Line Reference",
+      "url": "https://docs.bazel.build/versions/master/command-line-reference.html"
+    }
+  ],
+  "git.blame.lineDecorations": true
+}
