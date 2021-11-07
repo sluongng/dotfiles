@@ -18,7 +18,6 @@ plugins=(
   # Git
   git
   gitfast
-  github
 
   # Containers
   docker
@@ -206,11 +205,15 @@ export PATH=$PATH:/usr/local/go/bin:${GOPATH}/bin
 # Rust
 export PATH=$PATH:~/.cargo/bin
 
+# Git
+export PATH=~/bin:$PATH
+
 # Toolings
 alias cat=bat
 alias gotop=gotop-cjbassi
 alias ls=lsd
 # alias ls=exa # exa is not actively mantained
+alias bazel=bazelisk
 
 # Containers
 alias kb=kubectl
@@ -219,3 +222,9 @@ source <(kubectl completion zsh)
 # QoL commands
 ## List out all dir in ${PATH}
 alias path="echo ${PATH} | sed 's/:/\n/g'"
+
+# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
+export PATH="$PATH:$HOME/.rvm/bin"
+
+# rvm
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
