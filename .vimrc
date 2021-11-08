@@ -349,7 +349,7 @@ au FileType java set softtabstop=4
 au FileType java set tabstop=4
 
 " Rust
-let g:rustfmt_options = '--edition 2018'
+let g:rustfmt_options = '--edition 2021'
 
 " Kotlin
 " TODO: WIP
@@ -361,32 +361,30 @@ let g:rustfmt_options = '--edition 2018'
 " TODO: WIP
 
 " sourcegraph
-if exists('g:loaded_fugitive')
-    function! GetSourcegraphURL(config) abort
-        if a:config['remote'] =~ "^git@github.com"
-            let repository = substitute(matchstr(a:config['remote'], 'github\.com.*'), ':', '/', '')
-            let repository = substitute(repository, '.git', '', '')
-            let commit = a:config['commit']
-            let path = a:config['path']
-            let url = printf("https://sourcegraph.com/%s@%s/-/blob/%s",
-                \ repository,
-                \ commit,
-                \ path)
-            let fromLine = a:config['line1']
-            let toLine = a:config['line2']
-            if fromLine > 0 && fromLine == toLine
-                let url .= '#L' . fromLine
-            elseif toLine > 0
-                let url .= '#L' . fromLine . '-' . toLine
-            endif
-            return url
+function! GetSourcegraphURL(config) abort
+    if a:config['remote'] =~ '^git@\(github\|gitlab\).com'
+        let repository = substitute(matchstr(a:config['remote'], '\(github\|gitlab\)\.com.*'), ':', '/', '')
+        let repository = substitute(repository, '.git', '', '')
+        let commit = a:config['commit']
+        let path = a:config['path']
+        let url = printf("https://sourcegraph.com/%s@%s/-/blob/%s",
+            \ repository,
+            \ commit,
+            \ path)
+        let fromLine = a:config['line1']
+        let toLine = a:config['line2']
+        if fromLine > 0 && fromLine == toLine
+            let url .= '#L' . fromLine
+        elseif toLine > 0
+            let url .= '#L' . fromLine . '-' . toLine
         endif
-        return ''
-    endfunction
-    if !exists('g:fugitive_browse_handlers')
-        let g:fugitive_browse_handlers = []
+        return url
     endif
-    if index(g:fugitive_browse_handlers, function('GetSourcegraphURL')) < 0
-        call insert(g:fugitive_browse_handlers, function('GetSourcegraphURL'))
-    endif
+    return ''
+endfunction
+if !exists('g:fugitive_browse_handlers')
+    let g:fugitive_browse_handlers = []
+endif
+if index(g:fugitive_browse_handlers, function('GetSourcegraphURL')) < 0
+    call insert(g:fugitive_browse_handlers, function('GetSourcegraphURL'))
 endif
