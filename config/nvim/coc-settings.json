@@ -1,26 +1,62 @@
-{ 
+{
   "suggest.autoTrigger": "always",
-  "diagnostic.virtualText": true,
-	"coc.preferences.hoverTarget": "float",
-	"suggest.floatEnable": true,
+  "suggest.floatEnable": true,
   "snippets.ultisnips.directories": [
     "UltiSnips",
     "gosnippets/UltiSnips"
   ],
-	"languageserver": {
-		"golang": {
-		  "command": "gopls",
-		  "rootPatterns": ["go.mod", ".git/"],
-			"initializationOptions": {
-				"hoverKind": "FullDocumentation"
-			},
-		  "filetypes": ["go"]
-		},
-
-		"dockerfile": {
-			"command": "docker-langserver",
-			"filetypes": ["dockerfile"],
-			"args": ["--stdio"]
-		}
-	}
+  "python.formatting.provider": "black",
+  "json.format.enable": true,
+  "languageserver": {
+    "golang": {
+      "command": "gopls",
+      "rootPatterns": [
+        "go.mod"
+      ],
+      "initializationOptions": {
+        "buildFlags": [
+          "-tags='integration'"
+        ],
+        "hoverKind": "FullDocumentation",
+        "staticcheck": true,
+        "gofumpt": true,
+        "directoryFilters": [
+          "-bazel-out",
+          "-bazel-bin",
+          "-bazel-og"
+        ],
+        "analyses": {
+          "fieldalignment": true,
+          "fillreturns": true,
+          "undeclarename": true,
+          "unusedparams": true,
+          "nonewvars": true
+        }
+      },
+      "filetypes": [
+        "go"
+      ]
+    },
+    "dockerfile": {
+      "command": "docker-langserver",
+      "filetypes": [
+        "dockerfile"
+      ],
+      "args": [
+        "--stdio"
+      ]
+    },
+    "terraform": {
+      "command": "terraform-ls",
+      "args": [
+        "serve"
+      ],
+      "filetypes": [
+        "terraform",
+        "tf"
+      ],
+      "initializationOptions": {},
+      "settings": {}
+    }
+  }
 }
