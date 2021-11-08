@@ -3,39 +3,49 @@
 
 call plug#begin('~/.local/share/nvim/plugged')
 
-Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
+"" Utilities
+Plug 'preservim/nerdtree', { 'on':  'NERDTreeToggle' }
+Plug 'preservim/nerdcommenter'
 Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'unkiwii/vim-nerdtree-sync'
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
 Plug 'junegunn/vim-peekaboo'
 
-" Theme / Look
-Plug 'joshdick/onedark.vim'
-Plug 'luochen1990/rainbow'
-
-" Utils
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
+Plug 'tpope/vim-repeat'
 
-" Bottom bar
+"" Status bar
 Plug 'vim-airline/vim-airline'
 Plug 'airblade/vim-gitgutter'
 
-" LSP client
+"" TreeSitter
+Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+
+"" LSP Client
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
-" Golang
+"" Golang
 Plug 'fatih/vim-go'
 
-" Python
-"" Should run the following commands: 
-"" > pip3 install pynvim --upgrade
-"" > :UpdateRemotePlugins
+"" Bazel
+"
+" Add maktaba and bazel to the runtimepath.
+" (The latter must be installed before it can be used.)
+Plug 'google/vim-maktaba'
+Plug 'bazelbuild/vim-bazel'
+
+"" Ruby
+Plug 'vim-ruby/vim-ruby'
+Plug 'rodjek/vim-puppet'
+
+"" Python
 Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
 
-" Multilanguage
-Plug 'sheerun/vim-polyglot'
+"" Coloring
+Plug 'joshdick/onedark.vim', { 'branch': 'main'}
 
 call plug#end()
 
@@ -51,6 +61,8 @@ set history=9000
 set signcolumn=auto
 set number relativenumber
 set clipboard+=unnamedplus
+set scrolloff=5
+
 let g:clipboard = {
     \ 'name': 'xsel',
     \ 'copy': {
@@ -64,7 +76,16 @@ let g:clipboard = {
     \ 'cache_enabled': 1
     \ }
 
-set scrolloff=2
+" Mouse support
+set mouse=a
+
+" show invisible characters
+set list
+" but only show tabs and trailing whitespace
+set listchars=tab:>·,trail:·
+
+" Enable syntax highlighting
+set syntax=enable
 
 " Highlight search results
 " Use Ctrl-L to clear search highlighting
@@ -79,30 +100,29 @@ set expandtab shiftwidth=2 tabstop=2
 set noerrorbells novisualbell
 set nobackup nowritebackup noswapfile
 
+" Indentation
+"" Retain indentation on next line
+set autoindent
+"" Increase/decrease indentation automatically
+set smartindent
+
 " Shortcuts
-let mapleader = ","
+let mapleader = ";"
 
 " Fast way to escape
 imap jj <Esc>
 
+" Put the new window below
+set splitbelow
+" Put the new window right
+set splitright
 
-">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Color / Theme >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+" Don't use Ex mode
+map Q <Nop>
 
-" Enable syntax highlighting
-set syntax=on
-
-let g:onedark_terminal_italics = 1
-if (has("autocmd") && !has("gui_running"))
-  augroup colorset
-    autocmd!
-    let s:white = { "gui": "#ABB2BF", "cterm": "145", "cterm16" : "7" }
-    autocmd ColorScheme * call onedark#set_highlight("Normal", { "fg": s:white }) " `bg` will not be styled since there is no `bg` setting
-  augroup END
-endif
+" Color
+let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 colorscheme onedark
-
-let g:rainbow_active = 1
-
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> NERDTree >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/scrooloose/nerdtree
@@ -118,21 +138,22 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 
 let NERDTreeShowHidden=1
 
+" let g:nerdtree_sync_cursorline=1
+let g:NERDTreeHighlightCursorline=1
+
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Coc.Nvim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/neoclide/coc.nvim
 
 "" Extensions
 let g:coc_global_extensions = [
-  \"coc-vimlsp", 
-  \"coc-json", 
-  \"coc-java", 
-  \"coc-xml", 
+  \"coc-vimlsp",
+  \"coc-json",
+  \"coc-java",
+  \"coc-xml",
   \"coc-snippets",
-  \"coc-pairs", 
-  \"coc-git", 
-  \"coc-tabnine", 
-  \"coc-rust-analyzer", 
+  \"coc-tabnine",
+  \"coc-rust-analyzer",
 \]
 
 " Improve default update time wait from 4000(4 seconds)
@@ -140,32 +161,6 @@ let g:coc_global_extensions = [
 set updatetime=200
 " Highlight text on idle
 autocmd CursorHold * silent call CocActionAsync('highlight')
-
-" Show docs if idle more than 2 seconds
-" function! MyStopInsert(timerid)
-"     " echom "Executed timer " . a:timerid
-"     " Fo some reason stopinsert doesn't exit insert mode immediately
-"     " execute("stopinsert")
-"     call CocActionAsync('doHover')
-"     call MyStopTimer()
-" endfun
-" function! MyStartTimer()
-"     call MyStopTimer()
-"     let b:mytimer = timer_start(2000, "MyStopInsert")
-"     " echom "Started timer " . b:mytimer
-" endfun
-" function! MyStopTimer()
-"     if exists("b:mytimer")
-"         " echom "Stopping timer " . b:mytimer
-"         call timer_stop(b:mytimer)
-"         unlet b:mytimer
-"     endif
-" endfun
-" augroup MyEscTimer
-"     autocmd!
-"     autocmd CursorHold * call MyStartTimer()
-"     autocmd CursorMoved * call MyStopTimer()
-" augroup end
 
 "" Use Tab instead of C-j to move during snippet
 let g:coc_snippet_next = '<tab>'
@@ -255,7 +250,9 @@ endif
 
 " Some QoL shortcuts
 nnoremap <leader>a :Commands<CR>
+nnoremap <leader>b :Buffers<CR>
 nnoremap <leader>f :FZF<CR>
+nnoremap <leader>r :Rg<CR>
 
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -283,6 +280,17 @@ nmap <leader>+ <Plug>AirlineSelectNextTab
 let airline#extensions#coc#stl_format_err = '%E{[%e(#%fe)]}'
 let airline#extensions#coc#stl_format_warn = '%W{[%w(#%fw)]}'
 
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+lua <<EOF
+require'nvim-treesitter.configs'.setup {
+  ensure_installed = "maintained", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
+  ignore_install = { "javascript" }, -- List of parsers to ignore installing
+  highlight = {
+    enable = true,              -- false will disable the whole extension
+    disable = {},  -- list of language that will be disabled
+  },
+}
+EOF
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -323,6 +331,9 @@ let g:go_highlight_chan_whitespace_error = 1
 let g:go_auto_sameids = 1
 "" Disbale vim-go :GoDef to use gopls + coc.nvim 
 let g:go_def_mapping_enabled = 0
+"" Format with gopls
+let g:go_fmt_command="gopls"
+let g:go_gopls_gofumpt=1
 
 " Markdown
 augroup Markdown
@@ -349,3 +360,33 @@ let g:rustfmt_options = '--edition 2018'
 " TypeScript
 " TODO: WIP
 
+" sourcegraph
+if exists('g:loaded_fugitive')
+    function! GetSourcegraphURL(config) abort
+        if a:config['remote'] =~ "^git@github.com"
+            let repository = substitute(matchstr(a:config['remote'], 'github\.com.*'), ':', '/', '')
+            let repository = substitute(repository, '.git', '', '')
+            let commit = a:config['commit']
+            let path = a:config['path']
+            let url = printf("https://sourcegraph.com/%s@%s/-/blob/%s",
+                \ repository,
+                \ commit,
+                \ path)
+            let fromLine = a:config['line1']
+            let toLine = a:config['line2']
+            if fromLine > 0 && fromLine == toLine
+                let url .= '#L' . fromLine
+            elseif toLine > 0
+                let url .= '#L' . fromLine . '-' . toLine
+            endif
+            return url
+        endif
+        return ''
+    endfunction
+    if !exists('g:fugitive_browse_handlers')
+        let g:fugitive_browse_handlers = []
+    endif
+    if index(g:fugitive_browse_handlers, function('GetSourcegraphURL')) < 0
+        call insert(g:fugitive_browse_handlers, function('GetSourcegraphURL'))
+    endif
+endif
