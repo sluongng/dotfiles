@@ -9,10 +9,6 @@
 # Assumptions:
 # - Has git installed
 # - Has networking tools such as curl, wget, ping, traceroute etc..
-# - Has custom tools installed
-#   + FZF, fd, ripgrep
-#   + nvim
-#   + tmux
 #
 # Goals:
 # - Provisioned all configuration files
@@ -20,7 +16,6 @@
 DIR_DOTFILE=~/.dotfiles
 DIR_HOME=${HOME}
 DIR_CONFIG=${DIR_HOME}/.config
-
 
 # Clone repo
 if [ ! -d "${DIR_HOME}/.dotfiles" ]; then
@@ -125,3 +120,20 @@ echo 'Linked alacritty config from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/bat/config ${DIR_CONFIG}/bat/config
 echo 'Linked bat config from dotfiles'
+
+# Install Homebrew and brew packages
+# TODO: Detects MacOS
+(
+  # TODO: Check and skip if 'brew' exists
+  echo 'Installing Homebrew (requires sudo)'
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+  # TODO: Check if Brewfile exists
+  echo 'Installing all MacOS brew packages using Brewfile'
+  cd ${DIR_DOTFILE}
+  brew bundle install
+)
+
+# TODO: What about Ubuntu and apt/snap packages?
+
+# TODO: Install and update neovim + coc.nvim + treesitter plugins/extensions
