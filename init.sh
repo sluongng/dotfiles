@@ -134,6 +134,9 @@ echo 'Linked bat config from dotfiles'
   brew bundle install
 )
 
+# TODO: Install oh-my-zsh and fzf
+
 # TODO: What about Ubuntu and apt/snap packages?
 
 # TODO: Install and update neovim + coc.nvim + treesitter plugins/extensions
+
