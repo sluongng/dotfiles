@@ -24,7 +24,7 @@ DIR_CONFIG=${DIR_HOME}/.config
 
 # Clone repo
 if [ ! -d "${DIR_HOME}/.dotfiles" ]; then
-  git clone git@github.com:sluongng/dotfiles.git ${DIR_DOTFILE}
+  git clone https://github.com/sluongng/dotfiles.git ${DIR_DOTFILE}
 else 
   echo 'Directory .dotfiles already exist, pulling instead of cloning'
   git -C ${DIR_HOME}/.dotfiles pull
