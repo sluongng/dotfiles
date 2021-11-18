@@ -2,7 +2,7 @@
 # https://github.com/robbyrussell/oh-my-zsh/blob/master/templates/zshrc.zsh-template
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Start oh-my-zsh
-export ZSH="/home/nb/.oh-my-zsh"
+export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="sunaku"
 
@@ -49,7 +49,7 @@ plugins=(
 if [ "$(uname 2> /dev/null)" != "Linux" ]; then
   # Load MacOS specific plugins
   plugins+=(
-    osx
+    macos
     brew
   )
 else
@@ -58,6 +58,9 @@ else
     ubuntu
     command-not-found
   )
+
+  # Fix environment for Wayland + zsh + snapd
+  source /etc/profile.d/apps-bin-path.sh
 fi
 
 # Disable Magic Pasting
@@ -65,9 +68,6 @@ fi
 DISABLE_MAGIC_FUNCTIONS=true
 
 source $ZSH/oh-my-zsh.sh
-
-# Fix environment for Wayland + zsh + snapd
-source /etc/profile.d/apps-bin-path.sh
 
 # Enhanced zsh history
 
