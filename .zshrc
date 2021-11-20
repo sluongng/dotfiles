@@ -114,8 +114,13 @@ export FZF_DEFAULT_OPTS='--layout=reverse'
 export FZF_CTRL_T_COMMAND="${FZF_DEFAULT_COMMAND}"
 export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {} 2> /dev/null | head -50'"
 
+## Navigate to dir
+export FZF_ALT_C_COMMAND='fd --type directory'
+export FZF_ALT_C_OPTS="--preview 'lsd -l {}'"
+
 ## Use Tmux for FZF panel
 export FZF_TMUX=1
+export FZF_TMUX_OPTS='-p 70%'
 export FZF_TMUX_HEIGHT=50%
 
 # FZF + GIT
