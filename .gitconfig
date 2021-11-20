@@ -1,0 +1,16 @@
+[alias]
+	co = checkout
+	ci = commit
+	st = status
+[core]
+	editor = nvim
+[user]
+	email = sluongng@gmail.com
+	name = Son Luong Ngoc
+[commit]
+	verbose = true
+[pull]
+	rebase = true
+[rebase]
+	autoStash = true
+	autoSquash = true
