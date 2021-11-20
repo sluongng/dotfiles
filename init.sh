@@ -76,6 +76,13 @@ else
   echo 'No alacritty config found'
 fi
 
+if [ -f "${DIR_CONFIG}/kitty/kitty.conf" ]; then
+  cp ${DIR_CONFIG}/kitty/kitty.conf ${DIR_CONFIG}/kitty/kitty.conf.bak
+  echo 'Done back up kitty config'
+else
+  echo 'No kitty config found'
+fi
+
 if [ -f "${DIR_CONFIG}/bat/config" ]; then
   cp ${DIR_CONFIG}/bat/config ${DIR_CONFIG}/bat/config.bak
   echo 'Done back up bat config'
@@ -93,6 +100,7 @@ fi
 # Provisioning directories
 mkdir -p ${DIR_CONFIG}/nvim/
 mkdir -p ${DIR_CONFIG}/alacritty/
+mkdir -p ${DIR_CONFIG}/kitty/
 mkdir -p ${DIR_CONFIG}/bat/
 
 # Link all the dotfiles
@@ -117,6 +125,10 @@ echo 'Linked libinput-gestures config from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/alacritty/alacritty.yml ${DIR_CONFIG}/alacritty/alacritty.yml
 echo 'Linked alacritty config from dotfiles'
+
+ln -sfn ${DIR_DOTFILE}/config/kitty/kitty.conf ${DIR_CONFIG}/kitty/kitty.conf
+ln -sfn ${DIR_DOTFILE}/config/kitty/one-dark.conf ${DIR_CONFIG}/kitty/one-dark.conf
+echo 'Linked kitty config from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/bat/config ${DIR_CONFIG}/bat/config
 echo 'Linked bat config from dotfiles'
