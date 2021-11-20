@@ -157,8 +157,8 @@ export PATH="$PATH:$HOME/.rvm/bin"
 # Toolings
 alias cat=bat
 alias gotop=gotop-cjbassi
-alias ls=lsd
-# alias ls=exa # exa is not actively mantained
+# alias ls=lsd
+alias ls=exa # exa is not actively mantained
 alias bazel=bazelisk
 
 # Containers
