@@ -63,18 +63,23 @@ set number relativenumber
 set clipboard+=unnamedplus
 set scrolloff=5
 
-let g:clipboard = {
-    \ 'name': 'xsel',
-    \ 'copy': {
-    \     '+': 'xsel -ib',
-    \     '*': 'xsel -ip'
-    \ },
-    \ 'paste': {
-    \     '+': 'xsel -ob',
-    \     '*': 'xsel -op'
-    \ },
-    \ 'cache_enabled': 1
-    \ }
+if has('macunix')
+  " No need to set this on MacOS
+elseif has('unix')
+  " Set clipboard control to xsel on Ubuntu
+  let g:clipboard = {
+    \  'name': 'xsel',
+    \  'copy': {
+    \    '+': 'xsel -ib',
+    \    '*': 'xsel -ip'
+    \  },
+    \  'paste': {
+    \    '+': 'xsel -ob',
+    \    '*': 'xsel -op'
+    \  },
+    \  'cache_enabled': 1
+    \}
+endif
 
 " Mouse support
 set mouse=a
