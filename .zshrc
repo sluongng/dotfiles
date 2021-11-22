@@ -154,6 +154,18 @@ export PATH=~/bin:$PATH
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
 
+# M1 Mac
+# Brew switched to /opt/homebrew
+if [[ `uname -m` == 'arm64' && `uname` == 'Darwin' ]]; then
+  export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
+  export LIB=/opt/homebrew/lib:$LIB
+  export INCLUDE=/opt/homebrew/include:$INCLUDE
+
+  # Need to compile git
+  export C_INCLUDE_PATH=$INCLUDE
+  export LIBRARY_PATH=$LIB
+fi
+
 # Toolings
 alias cat=bat
 alias gotop=gotop-cjbassi
