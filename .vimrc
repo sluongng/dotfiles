@@ -17,6 +17,9 @@ Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
 
+"" Indentation
+Plug 'lukas-reineke/indent-blankline.nvim'
+
 "" Status bar
 Plug 'vim-airline/vim-airline'
 Plug 'airblade/vim-gitgutter'
@@ -35,6 +38,8 @@ Plug 'fatih/vim-go'
 " Add maktaba and bazel to the runtimepath.
 " (The latter must be installed before it can be used.)
 Plug 'google/vim-maktaba'
+Plug 'google/vim-codefmt'
+Plug 'google/vim-glaive'
 Plug 'bazelbuild/vim-bazel'
 
 "" Ruby
@@ -49,6 +54,7 @@ Plug 'joshdick/onedark.vim', { 'branch': 'main'}
 
 call plug#end()
 
+call glaive#Install()
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -87,7 +93,7 @@ set mouse=a
 " show invisible characters
 set list
 " but only show tabs and trailing whitespace
-set listchars=tab:>·,trail:·
+set listchars=tab:»·,nbsp:+,trail:·,extends:→,precedes:←
 
 " Enable syntax highlighting
 set syntax=enable
@@ -110,6 +116,19 @@ set nobackup nowritebackup noswapfile
 set autoindent
 "" Increase/decrease indentation automatically
 set smartindent
+
+"" Indent-blankline.nvim
+lua <<EOF
+vim.opt.list = true
+vim.opt.listchars:append("space:⋅")
+
+require("indent_blankline").setup {
+    show_end_of_line = true, 
+    space_char_blankline = " ",
+    show_current_context = true,
+    show_current_context_start = true,
+}
+EOF
 
 " Shortcuts
 let mapleader = ";"
@@ -146,6 +165,7 @@ let NERDTreeShowHidden=1
 " let g:nerdtree_sync_cursorline=1
 let g:NERDTreeHighlightCursorline=1
 
+let g:semshi#filetypes = ["python", "bzl"]
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Coc.Nvim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/neoclide/coc.nvim
@@ -250,6 +270,7 @@ if has('nvim')
     autocmd BufWipeout <buffer> execute 'bwipeout' s:frame
   endfunction
 
+  let $FZF_PREVIEW_COMMAND="bat --style=numbers --color=always {}"
   let g:fzf_layout = { 'window': 'call FloatingFZF(0.9, 0.6, "Comment")' }
 endif
 
@@ -288,10 +309,13 @@ let airline#extensions#coc#stl_format_warn = '%W{[%w(#%fw)]}'
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 lua <<EOF
 require'nvim-treesitter.configs'.setup {
-  ensure_installed = "maintained", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
-  ignore_install = { "javascript" }, -- List of parsers to ignore installing
+  ensure_installed = "all",
+  -- List of parsers to ignore installing
+  ignore_install = { "php", "phpdoc", },
+  -- Install parsers synchronously (only applied to `ensure_installed`)
+  sync_install = false,
   highlight = {
-    enable = true,              -- false will disable the whole extension
+    enable = true, -- false will disable the whole extension
     disable = {},  -- list of language that will be disabled
   },
 }
@@ -338,6 +362,7 @@ let g:go_auto_sameids = 1
 let g:go_def_mapping_enabled = 0
 "" Format with gopls
 let g:go_fmt_command="gopls"
+let g:go_gopls_enabled=0
 let g:go_gopls_gofumpt=1
 
 " Markdown
@@ -385,6 +410,26 @@ function! GetSourcegraphURL(config) abort
         endif
         return url
     endif
+
+    if a:config['remote'] =~ '^https://\(github\|gitlab\).com'
+        let repository = substitute(matchstr(a:config['remote'], '\(github\|gitlab\)\.com.*'), ':', '/', '')
+        let repository = substitute(repository, '.git', '', '')
+        let commit = a:config['commit']
+        let path = a:config['path']
+        let url = printf("https://sourcegraph.com/%s@%s/-/blob/%s",
+            \ repository,
+            \ commit,
+            \ path)
+        let fromLine = a:config['line1']
+        let toLine = a:config['line2']
+        if fromLine > 0 && fromLine == toLine
+            let url .= '#L' . fromLine
+        elseif toLine > 0
+            let url .= '#L' . fromLine . '-' . toLine
+        endif
+        return url
+    endif
+
     return ''
 endfunction
 if !exists('g:fugitive_browse_handlers')
@@ -393,3 +438,16 @@ endif
 if index(g:fugitive_browse_handlers, function('GetSourcegraphURL')) < 0
     call insert(g:fugitive_browse_handlers, function('GetSourcegraphURL'))
 endif
+
+augroup autoformat_settings
+  autocmd FileType bzl AutoFormatBuffer buildifier
+  autocmd FileType c,cpp,proto,javascript,arduino AutoFormatBuffer clang-format
+  autocmd FileType dart AutoFormatBuffer dartfmt
+  autocmd FileType go AutoFormatBuffer gofmt
+  autocmd FileType gn AutoFormatBuffer gn
+  autocmd FileType html,css,sass,scss,less,json AutoFormatBuffer js-beautify
+  autocmd FileType java AutoFormatBuffer google-java-format
+  autocmd FileType python AutoFormatBuffer yapf
+  autocmd FileType rust AutoFormatBuffer rustfmt
+  autocmd FileType vue AutoFormatBuffer prettier
+augroup END
