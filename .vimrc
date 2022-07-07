@@ -391,7 +391,24 @@ let g:rustfmt_options = '--edition 2021'
 " TODO: WIP
 
 " sourcegraph
-function! GetSourcegraphURL(config) abort
+function! GetCodeSearchURL(config) abort
+    " BazelBuild specific
+    if a:config['remote'] =~ '^\%(https\=://\|git://\|git@\)github\.com[/:]bazelbuild/bazel\zs.\{-\}\ze\%(\.git\)\=$'
+        let commit = a:config['commit']
+        let path = a:config['path']
+        let url = printf("https://cs.opensource.google/bazel/bazel/+/%s:%s",
+            \ commit,
+            \ path)
+        let fromLine = a:config['line1']
+        let toLine = a:config['line2']
+        if fromLine > 0 && fromLine == toLine
+            let url .= ';l=' . fromLine
+        elseif toLine > 0
+            let url .= ';l=' . fromLine . '-' . toLine
+        endif
+        return url
+    endif
+
     if a:config['remote'] =~ '^git@\(github\|gitlab\).com'
         let repository = substitute(matchstr(a:config['remote'], '\(github\|gitlab\)\.com.*'), ':', '/', '')
         let repository = substitute(repository, '.git', '', '')
@@ -435,8 +452,8 @@ endfunction
 if !exists('g:fugitive_browse_handlers')
     let g:fugitive_browse_handlers = []
 endif
-if index(g:fugitive_browse_handlers, function('GetSourcegraphURL')) < 0
-    call insert(g:fugitive_browse_handlers, function('GetSourcegraphURL'))
+if index(g:fugitive_browse_handlers, function('GetCodeSearchURL')) < 0
+    call insert(g:fugitive_browse_handlers, function('GetCodeSearchURL'))
 endif
 
 augroup autoformat_settings
