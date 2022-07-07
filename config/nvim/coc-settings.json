@@ -7,36 +7,15 @@
   ],
   "python.formatting.provider": "black",
   "json.format.enable": true,
+  "go.goplsPath": "/Users/sngoc/work/golang/bin/gopls",
+  "go.goplsOptions": {
+    "directoryFilters": [
+      "-bazel-bin",
+      "-bazel-out",
+      "-bazel-testlogs"
+    ]
+  },
   "languageserver": {
-    "golang": {
-      "command": "gopls",
-      "rootPatterns": [
-        "go.mod"
-      ],
-      "initializationOptions": {
-        "buildFlags": [
-          "-tags='integration'"
-        ],
-        "hoverKind": "FullDocumentation",
-        "staticcheck": true,
-        "gofumpt": true,
-        "directoryFilters": [
-          "-bazel-out",
-          "-bazel-bin",
-          "-bazel-og"
-        ],
-        "analyses": {
-          "fieldalignment": true,
-          "fillreturns": true,
-          "undeclarename": true,
-          "unusedparams": true,
-          "nonewvars": true
-        }
-      },
-      "filetypes": [
-        "go"
-      ]
-    },
     "dockerfile": {
       "command": "docker-langserver",
       "filetypes": [
@@ -58,5 +37,6 @@
       "initializationOptions": {},
       "settings": {}
     }
-  }
+  },
+  "java.enabled": false
 }

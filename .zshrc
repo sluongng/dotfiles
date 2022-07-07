@@ -32,8 +32,7 @@ plugins=(
   npm
   golang
   spring
-  cargo
-  rustup
+  rust
 
   # Tools
   tmux
@@ -90,6 +89,9 @@ source $ZSH/oh-my-zsh.sh
 # Ignore duplicate in history when run find (or FZF)
 setopt HIST_FIND_NO_DUPS
 
+# Ignore history that is longer than 100 characters
+# ZSH_AUTOSUGGEST_HISTORY_IGNORE='?(#c100,)'
+
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> End oh-my-zsh
 
 # Git
@@ -101,6 +103,9 @@ export GIT_EDITOR=nvim
 # Use a more visible colour for nulls.  Default is bright black (1;30), which
 # can be difficult to read on terminals with dark background colours.
 export JQ_COLORS='0;33:0;39:0;39:0;39:0;32:1;39:1;39'
+
+# Ripgrep sane defaults
+export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
 
 # FZF
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
@@ -134,7 +139,7 @@ export EDITOR="${VISUAL}"
 export PATH=$PATH:/snap/bin
 
 # JAVA
-export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
+# export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
 
 # Python
 export PATH=$PATH:~/.local/bin
@@ -148,6 +153,10 @@ export PATH=$PATH:~/.cargo/bin
 
 # Git
 export PATH=~/bin:$PATH
+if [[ `uname` == 'Darwin' ]]; then
+  export XML_CATALOG_FILES="$(brew --prefix)/etc/xml/catalog"
+  export MANPATH=$HOME/share/man:$MANPATH
+fi
 
 # rvm
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
@@ -166,6 +175,11 @@ if [[ `uname -m` == 'arm64' && `uname` == 'Darwin' ]]; then
   export LIBRARY_PATH=$LIB
 fi
 
+# File that keeps secrets
+if [[ -f ~/secret.sh ]]; then
+  source ~/secret.sh
+fi
+
 # Toolings
 alias cat=bat
 alias gotop=gotop-cjbassi
@@ -180,3 +194,10 @@ source <(kubectl completion zsh)
 # QoL commands
 ## List out all dir in ${PATH}
 alias path="echo ${PATH} | sed 's/:/\n/g'"
+
+# Use bat for man pager
+export MANPAGER="nvim +Man!"
+export MANROFFOPT="-c"
+
+# Bazel / Gazelle
+export GO_REPOSITORY_USE_HOST_CACHE=1
