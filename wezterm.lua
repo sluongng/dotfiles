@@ -7,9 +7,21 @@ return {
     },
     font_size = 11.0,
 
+
     -- System configs
+    check_for_updates = false,
+    animation_fps = 1,
+    cursor_blink_ease_in = 'Constant',
+    cursor_blink_ease_out = 'Constant',
+	cursor_blink_rate = 0,
     hide_tab_bar_if_only_one_tab = true,
     native_macos_fullscreen_mode = true,
+    window_padding = {
+        left = 0,
+        right = 0,
+        top = 0,
+        bottom = 0,
+    },
 
 
     leader = { 
@@ -46,14 +58,16 @@ return {
         { key = 'n', mods = 'SUPER', action = wezterm.action{SendString = '\x1bn'} },
         { key = 'o', mods = 'SUPER', action = wezterm.action{SendString = '\x1bo'} },
         { key = 'p', mods = 'SUPER', action = wezterm.action{SendString = '\x1bp'} },
-        { key = 'q', mods = 'SUPER', action = wezterm.action{SendString = '\x1bq'} },
+        -- leave CMD + Q for close app
+        -- { key = 'q', mods = 'SUPER', action = wezterm.action{SendString = '\x1bq'} },
         { key = 'r', mods = 'SUPER', action = wezterm.action{SendString = '\x1br'} },
         { key = 's', mods = 'SUPER', action = wezterm.action{SendString = '\x1bs'} },
         { key = 't', mods = 'SUPER', action = wezterm.action{SendString = '\x1bt'} },
         { key = 'u', mods = 'SUPER', action = wezterm.action{SendString = '\x1bu'} },
-        -- leave CMD + C for paste
+        -- leave CMD + V for paste
         -- { key = 'v', mods = 'SUPER', action = wezterm.action{SendString = '\x1bv'} },
-        { key = 'w', mods = 'SUPER', action = wezterm.action{SendString = '\x1bw'} },
+        -- leave CMD + W for close tab
+        -- { key = 'w', mods = 'SUPER', action = wezterm.action{SendString = '\x1bw'} },
         { key = 'x', mods = 'SUPER', action = wezterm.action{SendString = '\x1bx'} },
         { key = 'y', mods = 'SUPER', action = wezterm.action{SendString = '\x1by'} },
         { key = 'z', mods = 'SUPER', action = wezterm.action{SendString = '\x1bz'} },
