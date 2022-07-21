@@ -13,7 +13,7 @@ return {
     animation_fps = 1,
     cursor_blink_ease_in = 'Constant',
     cursor_blink_ease_out = 'Constant',
-	cursor_blink_rate = 0,
+    cursor_blink_rate = 0,
     hide_tab_bar_if_only_one_tab = true,
     native_macos_fullscreen_mode = true,
     window_padding = {
