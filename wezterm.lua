@@ -1,5 +1,45 @@
 local wezterm = require 'wezterm'
 
+-- -- The filled in variant of the < symbol
+-- local SOLID_LEFT_ARROW = utf8.char(0xe0b2)
+-- -- The filled in variant of the > symbol
+-- local SOLID_RIGHT_ARROW = utf8.char(0xe0b0)
+-- 
+-- wezterm.on(
+--   'format-tab-title',
+--   function(tab, tabs, panes, config, hover, max_width)
+--     local edge_background = '#0b0022'
+--     local background = '#1b1032'
+--     local foreground = '#808080'
+-- 
+--     if tab.is_active then
+--       background = '#2b2042'
+--       foreground = '#c0c0c0'
+--     elseif hover then
+--       background = '#3b3052'
+--       foreground = '#909090'
+--     end
+-- 
+--     local edge_foreground = background
+-- 
+--     -- ensure that the titles fit in the available space,
+--     -- and that we have room for the edges.
+--     local title = wezterm.truncate_right(tab.active_pane.title, max_width - 2)
+-- 
+--     return {
+--       { Background = { Color = edge_background } },
+--       { Foreground = { Color = edge_foreground } },
+--       { Text = SOLID_LEFT_ARROW },
+--       { Background = { Color = background } },
+--       { Foreground = { Color = foreground } },
+--       { Text = title },
+--       { Background = { Color = edge_background } },
+--       { Foreground = { Color = edge_foreground } },
+--       { Text = SOLID_RIGHT_ARROW },
+--     }
+--   end
+-- )
+
 return {
     -- Font configs
     font = wezterm.font {
@@ -14,7 +54,6 @@ return {
     cursor_blink_ease_in = 'Constant',
     cursor_blink_ease_out = 'Constant',
     cursor_blink_rate = 0,
-    hide_tab_bar_if_only_one_tab = true,
     native_macos_fullscreen_mode = true,
     window_padding = {
         left = 0,
@@ -23,19 +62,28 @@ return {
         bottom = 0,
     },
 
+    -- Tab bar style
+    tab_bar_at_bottom = true,
+    hide_tab_bar_if_only_one_tab = true,
 
     leader = { 
-        key = 'b',
+        -- key = 'b',
+        key = 'a',
         mods = 'CTRL',
         timeout_milliseconds = 1000,
     },
     keys = {
         -- Send 'CTRL-b' to the terminal when pressing CTRL-b, CTRL-b
-        { key = 'b', mods = 'CTRL',     action = wezterm.action.SendString '\x02' },
+        -- { key = 'b', mods = 'LEADER|CTRL',     action = wezterm.action.SendString '\x02' },
+        { key = 'a', mods = 'LEADER|CTRL',     action = wezterm.action.SendString '\x02' },
         { key = 'f', mods = 'CMD|CTRL', action = wezterm.action.ToggleFullScreen },
 
 
         -- **Screen management**
+        { key = 'c', mods = 'LEADER', action = wezterm.action.SpawnTab 'CurrentPaneDomain' },
+        { key = 'p', mods = 'LEADER', action = wezterm.action.ActivateTabRelative(-1) },
+        { key = 'n', mods = 'LEADER', action = wezterm.action.ActivateTabRelative(1) },
+        { key = 'o', mods = 'LEADER', action = wezterm.action.ActivatePaneDirection 'Next' },
         { key = 'l', mods = 'LEADER', action = wezterm.action.SplitHorizontal {domain = 'CurrentPaneDomain'} },
         { key = 'j', mods = 'LEADER', action = wezterm.action.SplitVertical {domain = 'CurrentPaneDomain'} },
 
@@ -53,6 +101,9 @@ return {
                 end)
             }}
         },
+
+        -- Close current pane
+        {key = 'w', mods = 'CMD', action = wezterm.action.CloseCurrentPane { confirm = true } },
 
         -- **Editor/Shell navigations**
         { key = 'a', mods = 'SUPER', action = wezterm.action{SendString = '\x1ba'} },
