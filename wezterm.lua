@@ -1,4 +1,5 @@
 local wezterm = require 'wezterm'
+local act = wezterm.action
 
 -- -- The filled in variant of the < symbol
 -- local SOLID_LEFT_ARROW = utf8.char(0xe0b2)
@@ -40,6 +41,198 @@ local wezterm = require 'wezterm'
 --   end
 -- )
 
+local original_copy_mode = {
+    {
+      key = 'Tab',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveForwardWord',
+    },
+    {
+      key = 'Tab',
+      mods = 'SHIFT',
+      action = act.CopyMode 'MoveBackwardWord',
+    },
+    {
+      key = 'Enter',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToStartOfNextLine',
+    },
+    { key = 'Escape', mods = 'NONE', action = act.CopyMode 'Close' },
+    {
+      key = 'Space',
+      mods = 'NONE',
+      action = act.CopyMode { SetSelectionMode = 'Cell' },
+    },
+    {
+      key = '$',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToEndOfLineContent',
+    },
+    {
+      key = '$',
+      mods = 'SHIFT',
+      action = act.CopyMode 'MoveToEndOfLineContent',
+    },
+    {
+      key = '0',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToStartOfLine',
+    },
+    {
+      key = 'G',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToScrollbackBottom',
+    },
+    {
+      key = 'G',
+      mods = 'SHIFT',
+      action = act.CopyMode 'MoveToScrollbackBottom',
+    },
+    {
+      key = 'H',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToViewportTop',
+    },
+    {
+      key = 'H',
+      mods = 'SHIFT',
+      action = act.CopyMode 'MoveToViewportTop',
+    },
+    {
+      key = 'L',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToViewportBottom',
+    },
+    {
+      key = 'L',
+      mods = 'SHIFT',
+      action = act.CopyMode 'MoveToViewportBottom',
+    },
+    {
+      key = 'M',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToViewportMiddle',
+    },
+    {
+      key = 'M',
+      mods = 'SHIFT',
+      action = act.CopyMode 'MoveToViewportMiddle',
+    },
+    {
+      key = 'O',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToSelectionOtherEndHoriz',
+    },
+    {
+      key = 'O',
+      mods = 'SHIFT',
+      action = act.CopyMode 'MoveToSelectionOtherEndHoriz',
+    },
+    {
+      key = 'V',
+      mods = 'NONE',
+      action = act.CopyMode { SetSelectionMode = 'Line' },
+    },
+    {
+      key = 'V',
+      mods = 'SHIFT',
+      action = act.CopyMode { SetSelectionMode = 'Line' },
+    },
+    {
+      key = '^',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToStartOfLineContent',
+    },
+    {
+      key = '^',
+      mods = 'SHIFT',
+      action = act.CopyMode 'MoveToStartOfLineContent',
+    },
+    { key = 'b', mods = 'NONE', action = act.CopyMode 'MoveBackwardWord' },
+    { key = 'b', mods = 'ALT', action = act.CopyMode 'MoveBackwardWord' },
+    { key = 'b', mods = 'CTRL', action = act.CopyMode 'PageUp' },
+    { key = 'c', mods = 'CTRL', action = act.CopyMode 'Close' },
+    { key = 'f', mods = 'ALT', action = act.CopyMode 'MoveForwardWord' },
+    { key = 'f', mods = 'CTRL', action = act.CopyMode 'PageDown' },
+    {
+      key = 'g',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToScrollbackTop',
+    },
+    { key = 'g', mods = 'CTRL', action = act.CopyMode 'Close' },
+    { key = 'h', mods = 'NONE', action = act.CopyMode 'MoveLeft' },
+    { key = 'j', mods = 'NONE', action = act.CopyMode 'MoveDown' },
+    { key = 'k', mods = 'NONE', action = act.CopyMode 'MoveUp' },
+    { key = 'l', mods = 'NONE', action = act.CopyMode 'MoveRight' },
+    {
+      key = 'm',
+      mods = 'ALT',
+      action = act.CopyMode 'MoveToStartOfLineContent',
+    },
+    {
+      key = 'o',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveToSelectionOtherEnd',
+    },
+    { key = 'q', mods = 'NONE', action = act.CopyMode 'Close' },
+    {
+      key = 'v',
+      mods = 'NONE',
+      action = act.CopyMode { SetSelectionMode = 'Cell' },
+    },
+    {
+      key = 'v',
+      mods = 'CTRL',
+      action = act.CopyMode { SetSelectionMode = 'Block' },
+    },
+    { key = 'w', mods = 'NONE', action = act.CopyMode 'MoveForwardWord' },
+    {
+      key = 'y',
+      mods = 'NONE',
+      action = act.Multiple {
+        { CopyTo = 'ClipboardAndPrimarySelection' },
+        { CopyMode = 'Close' },
+      },
+    },
+    { key = 'PageUp', mods = 'NONE', action = act.CopyMode 'PageUp' },
+    { key = 'PageDown', mods = 'NONE', action = act.CopyMode 'PageDown' },
+    { key = 'u', mods = 'CTRL', action = act.CopyMode 'PageUp' },
+    { key = 'd', mods = 'CTRL', action = act.CopyMode 'PageDown' },
+    { key = 'LeftArrow', mods = 'NONE', action = act.CopyMode 'MoveLeft' },
+    {
+      key = 'LeftArrow',
+      mods = 'ALT',
+      action = act.CopyMode 'MoveBackwardWord',
+    },
+    {
+      key = 'RightArrow',
+      mods = 'NONE',
+      action = act.CopyMode 'MoveRight',
+    },
+    {
+      key = 'RightArrow',
+      mods = 'ALT',
+      action = act.CopyMode 'MoveForwardWord',
+    },
+    { key = 'UpArrow', mods = 'NONE', action = act.CopyMode 'MoveUp' },
+    { key = 'DownArrow', mods = 'NONE', action = act.CopyMode 'MoveDown' },
+}
+
+-- My customization
+custom_copy_mode = original_copy_mode
+table.insert(
+    custom_copy_mode,
+    { key = 'u', mods = 'CTRL', action = act.CopyMode 'PageUp' }
+)
+table.insert(
+    custom_copy_mode,
+    { key = 'd', mods = 'CTRL', action = act.CopyMode 'PageDown' }
+)
+table.insert(
+    custom_copy_mode,
+    { key = 'y', mods = 'NONE', action = act.Copy }
+)
+
 return {
     -- Font configs
     font = wezterm.font {
@@ -62,6 +255,8 @@ return {
         bottom = 0,
     },
 
+    scrollback_lines = 9001,
+
     -- Tab bar style
     tab_bar_at_bottom = true,
     hide_tab_bar_if_only_one_tab = true,
@@ -72,25 +267,51 @@ return {
         mods = 'CTRL',
         timeout_milliseconds = 1000,
     },
+
+    key_tables = {
+        -- We cannot override the original copy_mode table
+        -- so copy paste from default setting and then add our own
+        copy_mode = custom_copy_mode,
+    },
+
     keys = {
         -- Send 'CTRL-b' to the terminal when pressing CTRL-b, CTRL-b
-        -- { key = 'b', mods = 'LEADER|CTRL',     action = wezterm.action.SendString '\x02' },
-        { key = 'a', mods = 'LEADER|CTRL',     action = wezterm.action.SendString '\x02' },
-        { key = 'f', mods = 'CMD|CTRL', action = wezterm.action.ToggleFullScreen },
+        -- { key = 'b', mods = 'LEADER|CTRL',     action = act.SendString '\x02' },
+        { key = 'a', mods = 'LEADER|CTRL',     action = act.SendString '\x01' },
+        { key = 'f', mods = 'CMD|CTRL', action = act.ToggleFullScreen },
+
+        {
+            key="e", mods="CTRL|SHIFT",
+            action=act{QuickSelectArgs={
+                patterns={
+                   "https?://\\S+"
+                },
+                action = wezterm.action_callback(
+                    function(window, pane)
+                       local url = window:get_selection_text_for_pane(pane)
+                       wezterm.log_info("opening: " .. url)
+                       wezterm.open_with(url)
+                    end
+                )
+            }}
+        },
+
+        -- **Copy Mode**
+        { key = '[', mods = 'LEADER', action = act.ActivateCopyMode },
 
 
         -- **Screen management**
-        { key = 'c', mods = 'LEADER', action = wezterm.action.SpawnTab 'CurrentPaneDomain' },
-        { key = 'p', mods = 'LEADER', action = wezterm.action.ActivateTabRelative(-1) },
-        { key = 'n', mods = 'LEADER', action = wezterm.action.ActivateTabRelative(1) },
-        { key = 'o', mods = 'LEADER', action = wezterm.action.ActivatePaneDirection 'Next' },
-        { key = 'l', mods = 'LEADER', action = wezterm.action.SplitHorizontal {domain = 'CurrentPaneDomain'} },
-        { key = 'j', mods = 'LEADER', action = wezterm.action.SplitVertical {domain = 'CurrentPaneDomain'} },
+        { key = 'c', mods = 'LEADER', action = act.SpawnTab 'CurrentPaneDomain' },
+        { key = 'p', mods = 'LEADER', action = act.ActivateTabRelative(-1) },
+        { key = 'n', mods = 'LEADER', action = act.ActivateTabRelative(1) },
+        { key = 'o', mods = 'LEADER', action = act.ActivatePaneDirection 'Next' },
+        { key = 'l', mods = 'LEADER', action = act.SplitHorizontal {domain = 'CurrentPaneDomain'} },
+        { key = 'j', mods = 'LEADER', action = act.SplitVertical {domain = 'CurrentPaneDomain'} },
 
         -- Quick open http links using Ctrl + Shift + E
         {
             key="e", mods="CTRL|SHIFT",
-            action=wezterm.action{QuickSelectArgs={
+            action=act{QuickSelectArgs={
                 patterns={
                    "https?://\\S+"
                 },
@@ -103,38 +324,38 @@ return {
         },
 
         -- Close current pane
-        {key = 'w', mods = 'CMD', action = wezterm.action.CloseCurrentPane { confirm = true } },
+        {key = 'w', mods = 'CMD', action = act.CloseCurrentPane { confirm = true } },
 
         -- **Editor/Shell navigations**
-        { key = 'a', mods = 'SUPER', action = wezterm.action{SendString = '\x1ba'} },
-        { key = 'b', mods = 'SUPER', action = wezterm.action{SendString = '\x1bb'} },
+        { key = 'a', mods = 'SUPER', action = act{SendString = '\x1ba'} },
+        { key = 'b', mods = 'SUPER', action = act{SendString = '\x1bb'} },
         -- leave CMD + C for copy
-        -- { key = 'c', mods = 'SUPER', action = wezterm.action{SendString = '\x1bc'} },
-        { key = 'd', mods = 'SUPER', action = wezterm.action{SendString = '\x1bd'} },
-        { key = 'e', mods = 'SUPER', action = wezterm.action{SendString = '\x1be'} },
-        { key = 'f', mods = 'SUPER', action = wezterm.action{SendString = '\x1bf'} },
-        { key = 'g', mods = 'SUPER', action = wezterm.action{SendString = '\x1bg'} },
-        { key = 'h', mods = 'SUPER', action = wezterm.action{SendString = '\x1bh'} },
-        { key = 'i', mods = 'SUPER', action = wezterm.action{SendString = '\x1bi'} },
-        { key = 'j', mods = 'SUPER', action = wezterm.action{SendString = '\x1bj'} },
-        { key = 'k', mods = 'SUPER', action = wezterm.action{SendString = '\x1bk'} },
-        { key = 'l', mods = 'SUPER', action = wezterm.action{SendString = '\x1bl'} },
-        { key = 'm', mods = 'SUPER', action = wezterm.action{SendString = '\x1bm'} },
-        { key = 'n', mods = 'SUPER', action = wezterm.action{SendString = '\x1bn'} },
-        { key = 'o', mods = 'SUPER', action = wezterm.action{SendString = '\x1bo'} },
-        { key = 'p', mods = 'SUPER', action = wezterm.action{SendString = '\x1bp'} },
+        -- { key = 'c', mods = 'SUPER', action = act{SendString = '\x1bc'} },
+        { key = 'd', mods = 'SUPER', action = act{SendString = '\x1bd'} },
+        { key = 'e', mods = 'SUPER', action = act{SendString = '\x1be'} },
+        -- { key = 'f', mods = 'SUPER', action = act{SendString = '\x1bf'} },
+        { key = 'g', mods = 'SUPER', action = act{SendString = '\x1bg'} },
+        { key = 'h', mods = 'SUPER', action = act{SendString = '\x1bh'} },
+        { key = 'i', mods = 'SUPER', action = act{SendString = '\x1bi'} },
+        { key = 'j', mods = 'SUPER', action = act{SendString = '\x1bj'} },
+        { key = 'k', mods = 'SUPER', action = act{SendString = '\x1bk'} },
+        { key = 'l', mods = 'SUPER', action = act{SendString = '\x1bl'} },
+        { key = 'm', mods = 'SUPER', action = act{SendString = '\x1bm'} },
+        { key = 'n', mods = 'SUPER', action = act{SendString = '\x1bn'} },
+        { key = 'o', mods = 'SUPER', action = act{SendString = '\x1bo'} },
+        { key = 'p', mods = 'SUPER', action = act{SendString = '\x1bp'} },
         -- leave CMD + Q for close app
-        -- { key = 'q', mods = 'SUPER', action = wezterm.action{SendString = '\x1bq'} },
-        { key = 'r', mods = 'SUPER', action = wezterm.action{SendString = '\x1br'} },
-        { key = 's', mods = 'SUPER', action = wezterm.action{SendString = '\x1bs'} },
-        { key = 't', mods = 'SUPER', action = wezterm.action{SendString = '\x1bt'} },
-        { key = 'u', mods = 'SUPER', action = wezterm.action{SendString = '\x1bu'} },
+        -- { key = 'q', mods = 'SUPER', action = act{SendString = '\x1bq'} },
+        { key = 'r', mods = 'SUPER', action = act{SendString = '\x1br'} },
+        { key = 's', mods = 'SUPER', action = act{SendString = '\x1bs'} },
+        { key = 't', mods = 'SUPER', action = act{SendString = '\x1bt'} },
+        { key = 'u', mods = 'SUPER', action = act{SendString = '\x1bu'} },
         -- leave CMD + V for paste
-        -- { key = 'v', mods = 'SUPER', action = wezterm.action{SendString = '\x1bv'} },
+        -- { key = 'v', mods = 'SUPER', action = act{SendString = '\x1bv'} },
         -- leave CMD + W for close tab
-        -- { key = 'w', mods = 'SUPER', action = wezterm.action{SendString = '\x1bw'} },
-        { key = 'x', mods = 'SUPER', action = wezterm.action{SendString = '\x1bx'} },
-        { key = 'y', mods = 'SUPER', action = wezterm.action{SendString = '\x1by'} },
-        { key = 'z', mods = 'SUPER', action = wezterm.action{SendString = '\x1bz'} },
+        -- { key = 'w', mods = 'SUPER', action = act{SendString = '\x1bw'} },
+        { key = 'x', mods = 'SUPER', action = act{SendString = '\x1bx'} },
+        { key = 'y', mods = 'SUPER', action = act{SendString = '\x1by'} },
+        { key = 'z', mods = 'SUPER', action = act{SendString = '\x1bz'} },
     },
 }
