@@ -148,6 +148,10 @@ map Q <Nop>
 let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 colorscheme onedark
 
+" Work around for onedark theme does not have
+" color group dedicated for CocNvim
+hi link CocMenuSel Search
+
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> NERDTree >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/scrooloose/nerdtree
 
@@ -191,11 +195,11 @@ autocmd CursorHold * silent call CocActionAsync('highlight')
 let g:coc_snippet_next = '<tab>'
 
 "" Use C-j and C-k to navigate completion suggestions
-inoremap <expr> <C-j> pumvisible() ? "\<C-n>" : "\<C-j>"
-inoremap <expr> <C-k> pumvisible() ? "\<C-p>" : "\<C-k>"
+inoremap <expr> <C-j> coc#pum#visible() ? coc#pum#next(1) : "\<C-j>"
+inoremap <expr> <C-k> coc#pum#visible() ? coc#pum#prev(1) : "\<C-k>"
 
 "" Use Enter to confirm first conpletion
-inoremap <silent><expr> <cr> pumvisible() ? coc#_select_confirm() : "\<C-g>u\<CR>"
+inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
 
 "" Use <c-space>for trigger completion
 inoremap <silent><expr> <c-space> coc#refresh()
