@@ -228,10 +228,6 @@ table.insert(
     custom_copy_mode,
     { key = 'd', mods = 'CTRL', action = act.CopyMode 'PageDown' }
 )
-table.insert(
-    custom_copy_mode,
-    { key = 'y', mods = 'NONE', action = act.Copy }
-)
 
 return {
     -- Font configs
@@ -303,7 +299,7 @@ return {
         -- **Screen management**
         { key = 'c', mods = 'LEADER', action = act.SpawnTab 'CurrentPaneDomain' },
         { key = 'p', mods = 'LEADER', action = act.ActivateTabRelative(-1) },
-        { key = 'n', mods = 'LEADER', action = act.ActivateTabRelative(1) },
+        { key = 'n', mods = 'LEADER', action = act.ActivateTabRelative(2) },
         { key = 'o', mods = 'LEADER', action = act.ActivatePaneDirection 'Next' },
         { key = 'l', mods = 'LEADER', action = act.SplitHorizontal {domain = 'CurrentPaneDomain'} },
         { key = 'j', mods = 'LEADER', action = act.SplitVertical {domain = 'CurrentPaneDomain'} },
