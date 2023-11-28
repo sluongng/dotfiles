@@ -9,6 +9,20 @@ ZSH_THEME="sunaku"
 ZSH_TMUX_AUTOSTART=false
 ZSH_TMUX_AUTOQUIT=false
 
+SHOW_AWS_PROMPT=false
+
+# M1 Mac
+# Brew switched to /opt/homebrew
+if [[ `uname -m` == 'arm64' && `uname` == 'Darwin' ]]; then
+  export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
+  export LIB=/opt/homebrew/lib:$LIB
+  export INCLUDE=/opt/homebrew/include:$INCLUDE
+
+  # Need to compile git
+  export C_INCLUDE_PATH=$INCLUDE
+  export LIBRARY_PATH=$LIB
+fi
+
 plugins=(
   # Shell QoL
   sudo
@@ -18,6 +32,7 @@ plugins=(
   # Git
   git
   gitfast
+  gh
 
   # Containers
   docker
@@ -40,9 +55,20 @@ plugins=(
   fzf
   ripgrep
 
+  # Cloud
+  aws
+
   # Editor / IDE
   vscode
 )
+
+if type brew &>/dev/null
+then
+  FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+
+  autoload -Uz compinit
+  compinit
+fi
 
 # Check if Linux or MacOS
 if [ "$(uname 2> /dev/null)" != "Linux" ]; then
@@ -139,7 +165,7 @@ export EDITOR="${VISUAL}"
 export PATH=$PATH:/snap/bin
 
 # JAVA
-# export JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"
+export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
 
 # Python
 export PATH=$PATH:~/.local/bin
@@ -163,18 +189,6 @@ fi
 # Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
 export PATH="$PATH:$HOME/.rvm/bin"
 
-# M1 Mac
-# Brew switched to /opt/homebrew
-if [[ `uname -m` == 'arm64' && `uname` == 'Darwin' ]]; then
-  export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
-  export LIB=/opt/homebrew/lib:$LIB
-  export INCLUDE=/opt/homebrew/include:$INCLUDE
-
-  # Need to compile git
-  export C_INCLUDE_PATH=$INCLUDE
-  export LIBRARY_PATH=$LIB
-fi
-
 # File that keeps secrets
 if [[ -f ~/secret.sh ]]; then
   source ~/secret.sh
@@ -184,8 +198,8 @@ fi
 alias cat=bat
 alias gotop=gotop-cjbassi
 # alias ls=lsd
-alias ls=exa # exa is not actively mantained
-alias bazel=bazelisk
+alias ls=eza # eza is not actively mantained
+# alias bazel=bazelisk
 
 # Containers
 alias kb=kubectl
@@ -196,8 +210,17 @@ source <(kubectl completion zsh)
 alias path="echo ${PATH} | sed 's/:/\n/g'"
 
 # Use bat for man pager
-export MANPAGER="nvim +Man!"
-export MANROFFOPT="-c"
+export PAGER='less -FX'
+export MANPAGER='nvim +Man!'
+export MANROFFOPT='-c'
 
 # Bazel / Gazelle
 export GO_REPOSITORY_USE_HOST_CACHE=1
+
+# Terraform
+alias tf=terraform
+export KUBE_CONFIG_PATH=~/.kube/config
+
+# tabtab source for packages
+# uninstall by removing these lines
+[[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
