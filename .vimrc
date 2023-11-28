@@ -40,10 +40,6 @@ Plug 'google/vim-codefmt'
 Plug 'google/vim-glaive'
 Plug 'bazelbuild/vim-bazel'
 
-"" Ruby
-Plug 'vim-ruby/vim-ruby'
-Plug 'rodjek/vim-puppet'
-
 "" Python
 Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
 
