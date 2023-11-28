@@ -15,15 +15,32 @@ Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
 
+
+Plug 'github/copilot.vim'
+
 "" Indentation
-Plug 'lukas-reineke/indent-blankline.nvim'
+Plug 'lukas-reineke/indent-blankline.nvim', { 'main': 'ibl', 'opts': {} }
+" "" Indent-blankline.nvim
+" lua <<EOF
+" vim.opt.list = true
+" vim.opt.listchars:append("space:???")
+" 
+" require("indent_blankline").setup {
+"     show_end_of_line = true, 
+"     space_char_blankline = " ",
+"     show_current_context = true,
+"     show_current_context_start = true,
+" }
+" EOF
+
 
 "" Status bar
 Plug 'vim-airline/vim-airline'
-Plug 'airblade/vim-gitgutter'
+Plug 'airblade/vim-gitgutter', {'branch': 'main'}
 
 "" TreeSitter
 Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
+Plug 'nvim-treesitter/playground'
 
 "" LSP Client
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
@@ -111,18 +128,9 @@ set autoindent
 "" Increase/decrease indentation automatically
 set smartindent
 
-"" Indent-blankline.nvim
-lua <<EOF
-vim.opt.list = true
-vim.opt.listchars:append("space:⋅")
-
-require("indent_blankline").setup {
-    show_end_of_line = true, 
-    space_char_blankline = " ",
-    show_current_context = true,
-    show_current_context_start = true,
-}
-EOF
+" Search default
+set ignorecase
+set smartcase
 
 " Shortcuts
 let mapleader = ";"
@@ -158,13 +166,12 @@ let g:coc_global_extensions = [
   \"coc-java",
   \"coc-xml",
   \"coc-snippets",
-  \"coc-tabnine",
   \"coc-rust-analyzer",
 \]
 
 " Improve default update time wait from 4000(4 seconds)
 " :help CursorHold
-set updatetime=200
+set updatetime=100
 " Highlight text on idle
 autocmd CursorHold * silent call CocActionAsync('highlight')
 
@@ -265,8 +272,6 @@ nnoremap <leader>r :Rg<CR>
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/vim-airline/vim-airline
 
-"" Enable Extensions
-let g:airline#extensions#coc#enabled = 1
 
 "" Enable Tab on top
 let g:airline#extensions#tabline#enabled = 1
@@ -284,6 +289,8 @@ nmap <leader>- <Plug>AirlineSelectPrevTab
 nmap <leader>+ <Plug>AirlineSelectNextTab
 
 "" Extention: CocNvim
+let g:airline#extensions#coc#enabled = 1
+let airline#extensions#coc#show_coc_status = 0
 let airline#extensions#coc#stl_format_err = '%E{[%e(#%fe)]}'
 let airline#extensions#coc#stl_format_warn = '%W{[%w(#%fw)]}'
 
@@ -291,14 +298,43 @@ let airline#extensions#coc#stl_format_warn = '%W{[%w(#%fw)]}'
 lua <<EOF
 require'nvim-treesitter.configs'.setup {
   ensure_installed = "all",
-  -- List of parsers to ignore installing
-  ignore_install = { "php", "phpdoc", },
   -- Install parsers synchronously (only applied to `ensure_installed`)
   sync_install = false,
   highlight = {
     enable = true, -- false will disable the whole extension
-    disable = {},  -- list of language that will be disabled
   },
+  incremental_selection = {
+    enable = true,
+    keymaps = {
+      init_selection = "<A-L>", -- set to `false` to disable one of the mappings
+      scope_incremental = false,
+      node_incremental = "<A-L>",
+      node_decremental = "<A-H>",
+    },
+  },
+  playground = {
+    enable = true,
+    disable = {},
+    updatetime = 25, -- Debounced time for highlighting nodes in the playground from source code
+    persist_queries = false, -- Whether the query persists across vim sessions
+    keybindings = {
+      toggle_query_editor = 'o',
+      toggle_hl_groups = 'i',
+      toggle_injected_languages = 't',
+      toggle_anonymous_nodes = 'a',
+      toggle_language_display = 'I',
+      focus_language = 'f',
+      unfocus_language = 'F',
+      update = 'R',
+      goto_node = '<cr>',
+      show_help = '?',
+    },
+  },
+  query_linter = {
+    enable = true,
+    use_virtual_text = true,
+    lint_events = {"BufWrite", "CursorHold"},
+  }
 }
 EOF
 
@@ -317,6 +353,7 @@ au FileType go set noexpandtab
 au FileType go set shiftwidth=2
 au FileType go set softtabstop=2
 au FileType go set tabstop=2
+au FileType go let g:editorconfig = v:false
 "" Syntax Highlight
 let g:go_highlight_functions = 1
 let g:go_highlight_function_parameters = 1
@@ -338,13 +375,13 @@ let g:go_highlight_build_constraints = 1
 let g:go_highlight_array_whitespace_error = 1
 let g:go_highlight_chan_whitespace_error = 1
 "" Highlight variable with same name
-let g:go_auto_sameids = 1
+let g:go_auto_sameids=0
 "" Disbale vim-go :GoDef to use gopls + coc.nvim 
 let g:go_def_mapping_enabled = 0
 "" Format with gopls
 let g:go_fmt_command="gopls"
 let g:go_gopls_enabled=0
-let g:go_gopls_gofumpt=1
+let g:go_gopls_gofumpt=0
 
 " Markdown
 augroup Markdown
@@ -354,22 +391,13 @@ augroup END
 
 " Java
 "" Indentation
-au FileType java set noexpandtab
-au FileType java set shiftwidth=4
-au FileType java set softtabstop=4
-au FileType java set tabstop=4
+au FileType java set expandtab
+au FileType java set shiftwidth=2
+au FileType java set softtabstop=2
+au FileType java set tabstop=2
 
 " Rust
 let g:rustfmt_options = '--edition 2021'
-
-" Kotlin
-" TODO: WIP
-
-" JavaScript
-" TODO: WIP
-
-" TypeScript
-" TODO: WIP
 
 " sourcegraph
 function! GetCodeSearchURL(config) abort
@@ -390,42 +418,44 @@ function! GetCodeSearchURL(config) abort
         return url
     endif
 
-    if a:config['remote'] =~ '^git@\(github\|gitlab\).com'
-        let repository = substitute(matchstr(a:config['remote'], '\(github\|gitlab\)\.com.*'), ':', '/', '')
+    " Use GitHub default browsing
+    if a:config['remote'] =~ '^\(https://\|git@\)github.com'
+        let repository = substitute(matchstr(a:config['remote'], 'github\.com.*'), ':', '/', '')
         let repository = substitute(repository, '.git', '', '')
         let commit = a:config['commit']
         let path = a:config['path']
-        let url = printf("https://sourcegraph.com/%s@%s/-/blob/%s",
+        let githubUrl = printf("https://%s/blob/%s/%s",
             \ repository,
             \ commit,
             \ path)
         let fromLine = a:config['line1']
         let toLine = a:config['line2']
         if fromLine > 0 && fromLine == toLine
-            let url .= '#L' . fromLine
+            let githubUrl .= '#L' . fromLine
         elseif toLine > 0
-            let url .= '#L' . fromLine . '-' . toLine
+            let githubUrl .= '#L' . fromLine . '-' . 'L' . toLine
         endif
-        return url
+        return githubUrl
     endif
 
-    if a:config['remote'] =~ '^https://\(github\|gitlab\).com'
+    " Mostly use for Gitlab stuffs
+    if a:config['remote'] =~ '^\(https://\|git@\)\(github\|gitlab\).com'
         let repository = substitute(matchstr(a:config['remote'], '\(github\|gitlab\)\.com.*'), ':', '/', '')
         let repository = substitute(repository, '.git', '', '')
         let commit = a:config['commit']
         let path = a:config['path']
-        let url = printf("https://sourcegraph.com/%s@%s/-/blob/%s",
+        let sourcegraphUrl = printf("https://sourcegraph.com/%s@%s/-/blob/%s",
             \ repository,
             \ commit,
             \ path)
         let fromLine = a:config['line1']
         let toLine = a:config['line2']
         if fromLine > 0 && fromLine == toLine
-            let url .= '#L' . fromLine
+            let sourcegraphUrl .= '#L' . fromLine
         elseif toLine > 0
-            let url .= '#L' . fromLine . '-' . toLine
+            let sourcegraphUrl .= '#L' . fromLine . '-' . toLine
         endif
-        return url
+        return sourcegraphUrl
     endif
 
     return ''
@@ -439,7 +469,8 @@ endif
 
 augroup autoformat_settings
   autocmd FileType bzl AutoFormatBuffer buildifier
-  autocmd FileType c,cpp,proto,javascript,arduino AutoFormatBuffer clang-format
+  autocmd FileType c,cpp,proto,arduino AutoFormatBuffer clang-format
+  autocmd FileType javascript,vue AutoFormatBuffer prettier
   autocmd FileType dart AutoFormatBuffer dartfmt
   autocmd FileType go AutoFormatBuffer gofmt
   autocmd FileType gn AutoFormatBuffer gn
@@ -447,5 +478,4 @@ augroup autoformat_settings
   " autocmd FileType java AutoFormatBuffer google-java-format
   autocmd FileType python AutoFormatBuffer yapf
   autocmd FileType rust AutoFormatBuffer rustfmt
-  autocmd FileType vue AutoFormatBuffer prettier
 augroup END
