@@ -4,4 +4,4 @@
 
 --style="plain"
 
---pager="none"
+--pager="less -RF"
