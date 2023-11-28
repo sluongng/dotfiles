@@ -4,10 +4,8 @@
 call plug#begin('~/.local/share/nvim/plugged')
 
 "" Utilities
-Plug 'preservim/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'preservim/nerdcommenter'
-Plug 'Xuyuanp/nerdtree-git-plugin'
-Plug 'unkiwii/vim-nerdtree-sync'
+Plug 'lewis6991/fileline.nvim'
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
 Plug 'junegunn/fzf.vim'
@@ -151,23 +149,6 @@ colorscheme onedark
 " Work around for onedark theme does not have
 " color group dedicated for CocNvim
 hi link CocMenuSel Search
-
-">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> NERDTree >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-" Doc: https://github.com/scrooloose/nerdtree
-
-map <C-n> :NERDTreeToggle<CR>
-
-"" Open NERDTree when no file was specified
-autocmd StdinReadPre * let s:std_in=1
-autocmd VimEnter * if argc() == 1 && isdirectory(argv()[0]) && !exists("s:std_in") | exe 'NERDTree' argv()[0] | wincmd p | ene | exe 'cd '.argv()[0] | endif
-
-"" Close when NERDTree is the only window left
-autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-
-let NERDTreeShowHidden=1
-
-" let g:nerdtree_sync_cursorline=1
-let g:NERDTreeHighlightCursorline=1
 
 let g:semshi#filetypes = ["python", "bzl"]
 
