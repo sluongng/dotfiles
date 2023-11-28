@@ -137,8 +137,8 @@ echo 'Linked bat config from dotfiles'
 # TODO: Detects MacOS
 (
   # TODO: Check and skip if 'brew' exists
-  echo 'Installing Homebrew (requires sudo)'
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  # echo 'Installing Homebrew (requires sudo)'
+  # /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
   # TODO: Check if Brewfile exists
   echo 'Installing all MacOS brew packages using Brewfile'
