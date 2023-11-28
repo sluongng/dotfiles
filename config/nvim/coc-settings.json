@@ -1,42 +1,67 @@
 {
-  "suggest.autoTrigger": "always",
-  "suggest.floatEnable": true,
-  "snippets.ultisnips.directories": [
-    "UltiSnips",
-    "gosnippets/UltiSnips"
-  ],
-  "python.formatting.provider": "black",
-  "json.format.enable": true,
-  "go.goplsPath": "/Users/sngoc/work/golang/bin/gopls",
-  "go.goplsOptions": {
-    "directoryFilters": [
-      "-bazel-bin",
-      "-bazel-out",
-      "-bazel-testlogs"
-    ]
-  },
-  "languageserver": {
-    "dockerfile": {
-      "command": "docker-langserver",
-      "filetypes": [
-        "dockerfile"
-      ],
-      "args": [
-        "--stdio"
-      ]
-    },
-    "terraform": {
-      "command": "terraform-ls",
-      "args": [
-        "serve"
-      ],
-      "filetypes": [
-        "terraform",
-        "tf"
-      ],
-      "initializationOptions": {},
-      "settings": {}
-    }
-  },
-  "java.enabled": false
+	"suggest.autoTrigger": "always",
+	"snippets.ultisnips.directories": [
+		"UltiSnips",
+		"gosnippets/UltiSnips"
+	],
+	"json.format.enable": true,
+	"go.goplsEnv": {
+		"GOOS": "linux"
+		// "GOOS": "darwin"
+		// "GOOS": "windows"
+	},
+	"go.goplsPath": "/Users/sluongng/work/golang/bin/gopls",
+	"go.goplsOptions": {
+		"directoryFilters": [
+			"-bazel-bin",
+			"-bazel-out",
+			"-bazel-testlogs"
+		]
+	},
+	"languageserver": {
+		"dockerfile": {
+			"command": "docker-langserver",
+			"args": [
+				"--stdio"
+			],
+			"filetypes": [
+				"dockerfile"
+			]
+		},
+		"starlark": {
+			// "command": "starlark",
+			"command": "buck2",
+			"args": [
+				"lsp"
+			],
+			"filetypes": [
+				"bzl"
+			]
+		},
+		"protobuf": {
+			"command": "bufls",
+			"args": [
+				"serve"
+			],
+			"filetypes": [
+				"proto",
+			],
+			"initializationOptions": {},
+			"settings": {}
+		},
+		"terraform": {
+			"command": "terraform-ls",
+			"args": [
+				"serve"
+			],
+			"filetypes": [
+				"terraform",
+				"tf"
+			],
+			"initializationOptions": {},
+			"settings": {}
+		}
+	},
+	"java.enabled": false,
+	"snippets.ultisnips.pythonPrompt": false
 }
