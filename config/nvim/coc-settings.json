@@ -5,10 +5,8 @@
 		"gosnippets/UltiSnips"
 	],
 	"json.format.enable": true,
-	"go.goplsEnv": {
-		"GOOS": "linux"
-		// "GOOS": "darwin"
-		// "GOOS": "windows"
+	"go.tags": {
+		"tags": "linux"
 	},
 	"go.goplsPath": "/Users/sluongng/work/golang/bin/gopls",
 	"go.goplsOptions": {
@@ -29,11 +27,8 @@
 			]
 		},
 		"starlark": {
-			// "command": "starlark",
-			"command": "buck2",
-			"args": [
-				"lsp"
-			],
+			"command": "starpls",
+			"args": [],
 			"filetypes": [
 				"bzl"
 			]
