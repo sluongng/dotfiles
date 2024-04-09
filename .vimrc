@@ -469,7 +469,7 @@ endif
 
 augroup autoformat_settings
   autocmd FileType bzl AutoFormatBuffer buildifier
-  autocmd FileType c,cpp,proto,arduino AutoFormatBuffer clang-format
+  autocmd FileType c,cpp,arduino AutoFormatBuffer clang-format
   autocmd FileType javascript,vue AutoFormatBuffer prettier
   autocmd FileType dart AutoFormatBuffer dartfmt
   autocmd FileType go AutoFormatBuffer gofmt
