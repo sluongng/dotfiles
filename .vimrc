@@ -20,18 +20,6 @@ Plug 'github/copilot.vim'
 
 "" Indentation
 Plug 'lukas-reineke/indent-blankline.nvim', { 'main': 'ibl', 'opts': {} }
-" "" Indent-blankline.nvim
-" lua <<EOF
-" vim.opt.list = true
-" vim.opt.listchars:append("space:???")
-" 
-" require("indent_blankline").setup {
-"     show_end_of_line = true, 
-"     space_char_blankline = " ",
-"     show_current_context = true,
-"     show_current_context_start = true,
-" }
-" EOF
 
 
 "" Status bar
@@ -340,6 +328,10 @@ EOF
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
+au FileType bzl set noexpandtab
+au FileType bzl set shiftwidth=4
+au FileType bzl set softtabstop=4
+au FileType bzl set tabstop=4
 
 " File Type handling
 " Doc: ':h filetype'
