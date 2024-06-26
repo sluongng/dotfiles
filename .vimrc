@@ -333,7 +333,7 @@ EOF
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-au FileType bzl set noexpandtab
+au FileType bzl set expandtab
 au FileType bzl set shiftwidth=4
 au FileType bzl set softtabstop=4
 au FileType bzl set tabstop=4
@@ -467,7 +467,7 @@ endif
 augroup autoformat_settings
   autocmd FileType bzl AutoFormatBuffer buildifier
   autocmd FileType c,cpp,arduino AutoFormatBuffer clang-format
-  autocmd FileType javascript,vue AutoFormatBuffer prettier
+  autocmd FileType javascript,vue,typescriptreact AutoFormatBuffer prettier
   autocmd FileType dart AutoFormatBuffer dartfmt
   autocmd FileType go AutoFormatBuffer gofmt
   autocmd FileType gn AutoFormatBuffer gn
