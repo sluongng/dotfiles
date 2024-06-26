@@ -196,6 +196,7 @@ if [[ -f ~/secret.sh ]]; then
 fi
 
 # Toolings
+alias icat='kitten icat --align=left'
 alias cat=bat
 alias gotop=gotop-cjbassi
 # alias ls=lsd
