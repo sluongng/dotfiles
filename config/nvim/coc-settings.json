@@ -8,10 +8,10 @@
 	"go.goplsPath": "/Users/sluongng/work/golang/bin/gopls",
 	"go.goplsOptions": {
 		"usePlaceholders": true,
-		"env": {
-			"GOOS": "linux"
-		},
-		"local": "github.com/buildbuddy-io/buildbuddy",
+		"buildFlags": [
+			"-tags=linux"
+		],
+		// "local": "github.com/buildbuddy-io/buildbuddy",
 		"staticcheck": true,
 		"vulncheck": "Imports",
 		"hints": {
@@ -19,7 +19,7 @@
 			"compositeLiteralFields": true,
 			"compositeLiteralTypes": true,
 			"constantValues": true,
-			"parameterNames": true,
+			// "parameterNames": true,
 			"rangeVariableTypes": true
 		},
 		"directoryFilters": [
