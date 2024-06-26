@@ -824,7 +824,7 @@ keybind = super+equal=increase_font_size:1
 keybind = super+physical:three=goto_tab:3
 keybind = super+end=scroll_to_bottom
 keybind = super+right_bracket=goto_split:next
-keybind = super+d=new_split:right
+keybind = super+l=new_split:right
 keybind = super+shift+j=write_scrollback_file
 keybind = super+q=quit
 keybind = super+plus=increase_font_size:1
@@ -832,7 +832,7 @@ keybind = super+zero=reset_font_size
 keybind = super+physical:five=goto_tab:5
 keybind = super+home=scroll_to_top
 keybind = super+physical:seven=goto_tab:7
-keybind = super+shift+d=new_split:down
+keybind = super+j=new_split:down
 keybind = super+ctrl+down=resize_split:down,10
 keybind = super+ctrl+left=resize_split:left,10
 keybind = super+k=clear_screen
@@ -840,6 +840,11 @@ keybind = super+ctrl+up=resize_split:up,10
 keybind = super+physical:two=goto_tab:2
 keybind = super+physical:six=goto_tab:6
 keybind = super+v=paste_from_clipboard
+
+# cmd+b as alt+b
+keybind = super+b=text:\x1bb
+# cmd+d as alt+d
+keybind = super+d=text:\x1bd
 
 # Window padding. This applies padding between the terminal cells and the
 # window border. The `x` option applies to the left and right padding and the
