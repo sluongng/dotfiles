@@ -691,7 +691,7 @@ fullscreen = false
 # The title Ghostty will use for the window. This will force the title of the
 # window to be this title at all times and Ghostty will ignore any set title
 # escape sequences programs (such as Neovim) may send.
-title = 
+title =
 
 # The setting that will change the application class value.
 # 
@@ -859,7 +859,7 @@ keybind = super+d=text:\x1bd
 # Changing these values will only apply after restart.
 window-padding-x = 2
 
-window-padding-y = 2
+window-padding-y = 8
 # The viewport dimensions are usually not perfectly divisible by the cell
 # size. In this case, some extra padding on the end of a column and the bottom
 # of the final row may exist. If this is `true`, then this extra padding
@@ -988,7 +988,7 @@ window-width = 0
 # The default value is `default`.
 # 
 # This is currently only supported on macOS. This has no effect on Linux.
-window-save-state = default
+window-save-state = always
 
 # Resize the window in discrete increments of the focused surface's cell size.
 # If this is disabled, surfaces are resized in pixel increments. Currently
@@ -1212,7 +1212,7 @@ custom-shader-animation = true
 #   * `true` - Use non-native macOS fullscreen, hide the menu bar
 #   * `false` - Use native macOS fullscreeen
 # 
-macos-non-native-fullscreen = true
+macos-non-native-fullscreen = visible-menu
 
 # The style of the macOS titlebar. Available values are: "native",
 # "transparent", and "tabs".
