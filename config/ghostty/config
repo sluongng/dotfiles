@@ -18,7 +18,7 @@
 # 
 # Changing this configuration at runtime will only affect new terminals, i.e.
 # new windows, tabs, etc.
-font-family = FuraMono
+font-family = 
 
 font-family-bold = 
 font-family-italic = 
