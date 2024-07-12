@@ -14,7 +14,7 @@ SHOW_AWS_PROMPT=false
 # M1 Mac
 # Brew switched to /opt/homebrew
 if [[ `uname -m` == 'arm64' && `uname` == 'Darwin' ]]; then
-  export PATH=/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
+  export PATH=/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
   export LIB=/opt/homebrew/lib:$LIB
   export INCLUDE=/opt/homebrew/include:$INCLUDE
 
