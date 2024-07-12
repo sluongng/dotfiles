@@ -1,74 +1,78 @@
 {
-	"suggest.autoTrigger": "always",
-	"snippets.ultisnips.directories": [
-		"UltiSnips",
-		"gosnippets/UltiSnips"
-	],
-	"json.format.enable": true,
-	"go.goplsPath": "/Users/sluongng/work/golang/bin/gopls",
-	"go.goplsOptions": {
-		"usePlaceholders": true,
-		"buildFlags": [
-			"-tags=linux"
-		],
-		// "local": "github.com/buildbuddy-io/buildbuddy",
-		"staticcheck": true,
-		"vulncheck": "Imports",
-		"hints": {
-			"assignVariableTypes": true,
-			"compositeLiteralFields": true,
-			"compositeLiteralTypes": true,
-			"constantValues": true,
-			// "parameterNames": true,
-			"rangeVariableTypes": true
-		},
-		"directoryFilters": [
-			"-bazel-bin",
-			"-bazel-out",
-			"-bazel-testlog"
-		]
-	},
-	"languageserver": {
-		"dockerfile": {
-			"command": "docker-langserver",
-			"args": [
-				"--stdio"
-			],
-			"filetypes": [
-				"dockerfile"
-			]
-		},
-		"starlark": {
-			"command": "starpls",
-			"args": [],
-			"filetypes": [
-				"bzl"
-			]
-		},
-		"protobuf": {
-			"command": "bufls",
-			"args": [
-				"serve"
-			],
-			"filetypes": [
-				"proto",
-			],
-			"initializationOptions": {},
-			"settings": {}
-		},
-		"terraform": {
-			"command": "terraform-ls",
-			"args": [
-				"serve"
-			],
-			"filetypes": [
-				"terraform",
-				"tf"
-			],
-			"initializationOptions": {},
-			"settings": {}
-		}
-	},
-	"java.enabled": false,
-	"snippets.ultisnips.pythonPrompt": false
+  "suggest.autoTrigger": "always",
+  "snippets.ultisnips.directories": [
+    "UltiSnips",
+    "gosnippets/UltiSnips"
+  ],
+  "rust-analyzer.cargo.features": [
+    "all"
+  ],
+  "coc.preferences.formatOnSave": true,
+  "json.format.enable": true,
+  "go.goplsPath": "/Users/sluongng/work/golang/bin/gopls",
+  "go.goplsOptions": {
+    "usePlaceholders": true,
+    "buildFlags": [
+      "-tags=linux"
+    ],
+    // "local": "github.com/buildbuddy-io/buildbuddy",
+    "staticcheck": true,
+    "vulncheck": "Imports",
+    "hints": {
+      "assignVariableTypes": true,
+      "compositeLiteralFields": true,
+      "compositeLiteralTypes": true,
+      "constantValues": true,
+      // "parameterNames": true,
+      "rangeVariableTypes": true
+    },
+    "directoryFilters": [
+      "-bazel-bin",
+      "-bazel-out",
+      "-bazel-testlog"
+    ]
+  },
+  "languageserver": {
+    "dockerfile": {
+      "command": "docker-langserver",
+      "args": [
+        "--stdio"
+      ],
+      "filetypes": [
+        "dockerfile"
+      ]
+    },
+    "starlark": {
+      "command": "starpls",
+      "args": [],
+      "filetypes": [
+        "bzl"
+      ]
+    },
+    "protobuf": {
+      "command": "bufls",
+      "args": [
+        "serve"
+      ],
+      "filetypes": [
+        "proto",
+      ],
+      "initializationOptions": {},
+      "settings": {}
+    },
+    "terraform": {
+      "command": "terraform-ls",
+      "args": [
+        "serve"
+      ],
+      "filetypes": [
+        "terraform",
+        "tf"
+      ],
+      "initializationOptions": {},
+      "settings": {}
+    }
+  },
+  "java.enabled": false,
+  "snippets.ultisnips.pythonPrompt": false
 }
