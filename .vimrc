@@ -20,12 +20,8 @@ Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-repeat'
 
-
-Plug 'github/copilot.vim'
-
 "" Indentation
 Plug 'lukas-reineke/indent-blankline.nvim', { 'main': 'ibl', 'opts': {} }
-
 
 "" Status bar
 Plug 'vim-airline/vim-airline'
@@ -36,10 +32,16 @@ Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'nvim-treesitter/playground'
 
 "" LSP Client
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'neovim/nvim-lspconfig'
+Plug 'VonHeikemen/lsp-zero.nvim'
+Plug 'hrsh7th/cmp-nvim-lsp'
+Plug 'hrsh7th/nvim-cmp'
 
 "" Golang
 Plug 'fatih/vim-go'
+
+"" Rust
+Plug 'mrcjkb/rustaceanvim'
 
 "" Bazel
 "
@@ -140,84 +142,137 @@ set splitright
 map Q <Nop>
 
 " Color
+if (has("autocmd"))
+  augroup colorextend
+    autocmd!
+    let s:off_white = { "gui": "#ABB2BF", "cterm": "145", "cterm16" : "7" }
+    autocmd ColorScheme * call onedark#set_highlight("LspInlayHint", { "fg": s:off_white })
+  augroup END
+endif
 let $NVIM_TUI_ENABLE_TRUE_COLOR=1
 colorscheme onedark
 
-" Work around for onedark theme does not have
-" color group dedicated for CocNvim
-hi link CocMenuSel Search
-
 let g:semshi#filetypes = ["python", "bzl"]
 
-">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Coc.Nvim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-" Doc: https://github.com/neoclide/coc.nvim
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LSP Config >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+if has('nvim')
+lua <<EOF
+  -- remove the default keymaps from https://github.com/neovim/neovim/pull/28650
+  vim.keymap.del("n", "grn")
+  vim.keymap.del("n", "grr")
+  vim.keymap.del({ "v", "n" }, "gra")
 
-"" Extensions
-let g:coc_global_extensions = [
-  \"coc-vimlsp",
-  \"coc-json",
-  \"coc-java",
-  \"coc-xml",
-  \"coc-snippets",
-  \"coc-rust-analyzer",
-\]
+  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 
-" Improve default update time wait from 4000(4 seconds)
-" :help CursorHold
-set updatetime=100
-" Highlight text on idle
-autocmd CursorHold * silent call CocActionAsync('highlight')
+  local lsp_zero = require('lsp-zero')
+  lsp_zero.on_attach(function(client, bufnr)
+    lsp_zero.default_keymaps({buffer = bufnr})
+  end)
 
-"" Use Tab instead of C-j to move during snippet
-let g:coc_snippet_next = '<tab>'
+  local lspconfig = require'lspconfig'
+  -- lspconfig.rust_analyzer.setup{
+  --   settings = {
+  --     ['rust-analyzer'] = {
+  --       inlayHints = { locationLinks = false },
+  --       checkOnSave = {
+  --         command = "clippy",
+  --       },
+  --       completion = {
+  --         autoimport = {
+  --           enable = true,
+  --         },
+  --       },
+  --     },
+  --   },
+  -- }
+  lspconfig.gopls.setup{
+    settings = {
+      gopls = {
+        usePlaceholders = true,
+        buildFlags = { "-tags=linux" },
+        -- ["local"] = "github.com/buildbuddy-io/buildbuddy",
+        staticcheck = true,
+        analyses = {
+          unusedparams = true,
+        },
+        directoryFilters = {
+          "-bazel-bin",
+          "-bazel-out",
+          "-bazel-buildbuddy",
+          "-bazel-testlog",
+        },
+        vulncheck = "Imports",
+        completeUnimported = true,
+        experimentalPostfixCompletions = true,
+        hints = {
+          -- parameterNames = true,
+          assignVariableTypes = true,
+          constantValues = true,
+          rangeVariableTypes = true,
+          compositeLiteralTypes = true,
+          compositeLiteralFields = true,
+          functionTypeParameters = true,
+        },
+      },
+    },
+  }
+  lspconfig.starpls.setup{}
 
-"" Use C-j and C-k to navigate completion suggestions
-inoremap <expr> <C-j> coc#pum#visible() ? coc#pum#next(1) : "\<C-j>"
-inoremap <expr> <C-k> coc#pum#visible() ? coc#pum#prev(1) : "\<C-k>"
+  local cmp = require('cmp')
+  local cmp_action = lsp_zero.cmp_action()
+  cmp.setup({
+    -- if you don't know what is a "source" in nvim-cmp read this:
+    -- https://github.com/VonHeikemen/lsp-zero.nvim/blob/v3.x/doc/md/autocomplete.md#adding-a-source
+    sources = {
+      {name = 'path'},
+      {name = 'nvim_lsp'},
+      {name = 'buffer', keyword_length = 2},
+    },
+    mapping = cmp.mapping.preset.insert({
+      -- confirm completion item
+      ['<Enter>'] = cmp.mapping.confirm({ select = true }),
+      -- trigger completion menu
+      ['<C-Space>'] = cmp.mapping.complete(),
 
-"" Use Enter to confirm first conpletion
-inoremap <expr> <cr> coc#pum#visible() ? coc#_select_confirm() : "\<CR>"
+      -- scroll up and down the documentation window
+      ['<C-u>'] = cmp.mapping.scroll_docs(-4),
+      ['<C-d>'] = cmp.mapping.scroll_docs(4),
 
-"" Use <c-space>for trigger completion
-inoremap <silent><expr> <c-space> coc#refresh()
+      -- Custom mapping for Ctrl-J to select next item
+      ['<C-j>'] = cmp.mapping(function(fallback)
+        if cmp.visible() then
+          cmp.select_next_item()
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
 
-"" Goto mapping
-nmap <silent> gd <Plug>(coc-definition)
-nmap <silent> gi <Plug>(coc-implementation)
-nmap <silent> gr <Plug>(coc-references)
-nmap <silent> gy <Plug>(coc-type-definition)
-nmap <silent> ge <Plug>(coc-diagnostic-next)
+      -- Optionally map Ctrl-K to select previous item
+      ['<C-k>'] = cmp.mapping(function(fallback)
+        if cmp.visible() then
+          cmp.select_prev_item()
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
+      }),
+    -- note: if you are going to use lsp-kind (another plugin)
+    -- replace the line below with the function from lsp-kind
+    formatting = lsp_zero.cmp_format(),
+  })
 
-"" Show documentation in preview window
-nnoremap <silent> gk :call <SID>show_documentation()<CR>
-function! s:show_documentation()
-  if (index(['vim', 'help'], &filetype) >= 0)
-    execute 'h '.expand('<cword>')
-  else
-    call CocAction('doHover')
-  endif
-endfunction
-
-"" Auto clode the preview window when completion is done
-autocmd! CompleteDone * if pumvisible() == 0 | pclose | endif
-
-"" Refactoring
-nmap <leader>rn <Plug>(coc-rename)
-nmap <leader>qf <Plug>(coc-fix-current)
-
-"" Use `:Format` to format current buffer
-command! -nargs=0 Format :call CocAction('format')
-
-"" Use `:Fold` to fold current buffer
-command! -nargs=? Fold :call     CocAction('fold', <f-args>)
-
-"" Use `:OR` for organize import of current buffer
-command! -nargs=0 OR   :call     CocAction('runCommand', 'editor.action.organizeImport') 
-
+  local on_references = vim.lsp.handlers["textDocument/references"]
+  vim.lsp.handlers["textDocument/references"] = vim.lsp.with(
+    on_references, {
+      -- Use location list instead of quickfix list
+      loclist = true,
+    }
+  )
+EOF
+endif
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fzf.vim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/junegunn/fzf.vim
-
 " Make fzf use neovim floating window
 if has('nvim')
   function! FloatingFZF(width, height, border_highlight)
@@ -264,8 +319,6 @@ nnoremap <leader>r :Rg<CR>
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/vim-airline/vim-airline
-
-
 "" Enable Tab on top
 let g:airline#extensions#tabline#enabled = 1
 let g:airline#extensions#tabline#buffer_idx_mode = 1
@@ -282,10 +335,7 @@ nmap <leader>- <Plug>AirlineSelectPrevTab
 nmap <leader>+ <Plug>AirlineSelectNextTab
 
 "" Extention: CocNvim
-let g:airline#extensions#coc#enabled = 1
-let airline#extensions#coc#show_coc_status = 0
-let airline#extensions#coc#stl_format_err = '%E{[%e(#%fe)]}'
-let airline#extensions#coc#stl_format_warn = '%W{[%w(#%fw)]}'
+let g:airline#extensions#nvimlsp#enabled = 1
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 lua <<EOF
@@ -469,10 +519,9 @@ augroup autoformat_settings
   autocmd FileType c,cpp,arduino AutoFormatBuffer clang-format
   autocmd FileType javascript,vue,typescriptreact AutoFormatBuffer prettier
   autocmd FileType dart AutoFormatBuffer dartfmt
-  autocmd FileType go AutoFormatBuffer gofmt
+  " autocmd FileType go AutoFormatBuffer gofmt
   autocmd FileType gn AutoFormatBuffer gn
   autocmd FileType html,css,sass,scss,less,json AutoFormatBuffer js-beautify
   " autocmd FileType java AutoFormatBuffer google-java-format
   autocmd FileType python AutoFormatBuffer black
-  autocmd FileType rust AutoFormatBuffer rustfmt
 augroup END
