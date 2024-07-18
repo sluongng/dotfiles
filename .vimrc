@@ -34,6 +34,7 @@ Plug 'nvim-treesitter/playground'
 "" LSP Client
 Plug 'neovim/nvim-lspconfig'
 Plug 'VonHeikemen/lsp-zero.nvim'
+Plug 'hrsh7th/cmp-buffer'
 Plug 'hrsh7th/cmp-nvim-lsp'
 Plug 'hrsh7th/nvim-cmp'
 
@@ -170,21 +171,6 @@ lua <<EOF
   end)
 
   local lspconfig = require'lspconfig'
-  -- lspconfig.rust_analyzer.setup{
-  --   settings = {
-  --     ['rust-analyzer'] = {
-  --       inlayHints = { locationLinks = false },
-  --       checkOnSave = {
-  --         command = "clippy",
-  --       },
-  --       completion = {
-  --         autoimport = {
-  --           enable = true,
-  --         },
-  --       },
-  --     },
-  --   },
-  -- }
   lspconfig.gopls.setup{
     settings = {
       gopls = {
@@ -217,6 +203,9 @@ lua <<EOF
     },
   }
   lspconfig.starpls.setup{}
+  lspconfig["bazelrc-lsp"].setup{}
+  lspconfig.pbls.setup{}
+  lspconfig.tsserver.setup{}
 
   local cmp = require('cmp')
   local cmp_action = lsp_zero.cmp_action()
