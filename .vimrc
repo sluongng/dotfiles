@@ -32,11 +32,12 @@ Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
 Plug 'nvim-treesitter/playground'
 
 "" LSP Client
-Plug 'neovim/nvim-lspconfig'
 Plug 'VonHeikemen/lsp-zero.nvim'
+Plug 'delphinus/cmp-ctags'
 Plug 'hrsh7th/cmp-buffer'
 Plug 'hrsh7th/cmp-nvim-lsp'
 Plug 'hrsh7th/nvim-cmp'
+Plug 'neovim/nvim-lspconfig'
 
 "" Golang
 Plug 'fatih/vim-go'
@@ -45,13 +46,7 @@ Plug 'fatih/vim-go'
 Plug 'mrcjkb/rustaceanvim'
 
 "" Bazel
-"
-" Add maktaba and bazel to the runtimepath.
-" (The latter must be installed before it can be used.)
-Plug 'google/vim-maktaba'
-Plug 'google/vim-codefmt'
-Plug 'google/vim-glaive'
-Plug 'bazelbuild/vim-bazel'
+Plug 'ludovicchabant/vim-gutentags'
 
 "" Python
 Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
@@ -60,8 +55,6 @@ Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
 Plug 'joshdick/onedark.vim', { 'branch': 'main'}
 
 call plug#end()
-
-call glaive#Install()
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -216,6 +209,7 @@ lua <<EOF
       {name = 'path'},
       {name = 'nvim_lsp'},
       {name = 'buffer', keyword_length = 2},
+      {name = 'ctags'},
     },
     mapping = cmp.mapping.preset.insert({
       -- confirm completion item
@@ -259,6 +253,29 @@ lua <<EOF
   )
 EOF
 endif
+
+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Ctags >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+" Use Gutentags(ctags) for projects that are not friendly to LSP
+let g:gutentags_cache_dir = expand('~/.cache/vim/ctags/')
+let g:gutentags_enabled_dirs = ['/Users/sluongng/work/bazelbuild/bazel']
+let g:gutentags_init_user_func = 'CheckEnabledDirs'
+function! CheckEnabledDirs(file) abort
+    let file_path = fnamemodify(a:file, ':p:h')
+    try
+        let gutentags_root = gutentags#get_project_root(file_path)
+        if filereadable(gutentags_root . '/_withtags')
+            return 1
+        endif
+    catch
+    endtry
+    for enabled_dir in g:gutentags_enabled_dirs
+        let enabled_path = fnamemodify(enabled_dir, ':p:h')
+        if match(file_path, enabled_path) == 0
+            return 1
+        endif
+    endfor
+    return 0
+endfunction
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fzf.vim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/junegunn/fzf.vim
@@ -502,15 +519,3 @@ endif
 if index(g:fugitive_browse_handlers, function('GetCodeSearchURL')) < 0
     call insert(g:fugitive_browse_handlers, function('GetCodeSearchURL'))
 endif
-
-augroup autoformat_settings
-  autocmd FileType bzl AutoFormatBuffer buildifier
-  autocmd FileType c,cpp,arduino AutoFormatBuffer clang-format
-  autocmd FileType javascript,vue,typescriptreact AutoFormatBuffer prettier
-  autocmd FileType dart AutoFormatBuffer dartfmt
-  " autocmd FileType go AutoFormatBuffer gofmt
-  autocmd FileType gn AutoFormatBuffer gn
-  autocmd FileType html,css,sass,scss,less,json AutoFormatBuffer js-beautify
-  " autocmd FileType java AutoFormatBuffer google-java-format
-  autocmd FileType python AutoFormatBuffer black
-augroup END
