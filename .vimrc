@@ -9,7 +9,6 @@ let g:loaded_ruby_provider = 0
 call plug#begin('~/.local/share/nvim/plugged')
 
 "" Utilities
-Plug 'preservim/nerdcommenter'
 Plug 'lewis6991/fileline.nvim'
 
 Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
@@ -47,9 +46,7 @@ Plug 'mrcjkb/rustaceanvim'
 
 "" Bazel
 Plug 'ludovicchabant/vim-gutentags'
-
-"" Python
-Plug 'numirias/semshi', {'do': ':UpdateRemotePlugins'}
+Plug 'dhananjaylatkar/cscope_maps.nvim'
 
 "" Coloring
 Plug 'joshdick/onedark.vim', { 'branch': 'main'}
@@ -143,10 +140,6 @@ if (has("autocmd"))
     autocmd ColorScheme * call onedark#set_highlight("LspInlayHint", { "fg": s:off_white })
   augroup END
 endif
-let $NVIM_TUI_ENABLE_TRUE_COLOR=1
-colorscheme onedark
-
-let g:semshi#filetypes = ["python", "bzl"]
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LSP Config >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 if has('nvim')
@@ -256,18 +249,20 @@ endif
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Ctags >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Use Gutentags(ctags) for projects that are not friendly to LSP
+lua <<EOF
+  require("cscope_maps").setup()
+EOF
 let g:gutentags_cache_dir = expand('~/.cache/vim/ctags/')
+let g:gutentags_modules = ['ctags', 'cscope_maps']
+let g:gutentags_file_list_command = 'fd "(bazelrc|WORKSPACE|BUILD|\.(java|cc|c|h|am|sh|bash|star|bazel|bzl|proto|py)$)"'
+let g:gutentags_cscope_build_inverted_index_maps = 1
+let g:gutentags_ctag_tagfile = '.git/ctags'
+let g:gutentags_ctags_exclude = ['*/bazel-out/*', '*/bazel-bin/*']
+" let g:gutentags_trace = 1
 let g:gutentags_enabled_dirs = ['/Users/sluongng/work/bazelbuild/bazel']
 let g:gutentags_init_user_func = 'CheckEnabledDirs'
 function! CheckEnabledDirs(file) abort
     let file_path = fnamemodify(a:file, ':p:h')
-    try
-        let gutentags_root = gutentags#get_project_root(file_path)
-        if filereadable(gutentags_root . '/_withtags')
-            return 1
-        endif
-    catch
-    endtry
     for enabled_dir in g:gutentags_enabled_dirs
         let enabled_path = fnamemodify(enabled_dir, ':p:h')
         if match(file_path, enabled_path) == 0
@@ -320,8 +315,8 @@ endif
 nnoremap <leader>a :Commands<CR>
 nnoremap <leader>b :Buffers<CR>
 nnoremap <leader>f :FZF<CR>
-nnoremap <leader>r :Rg<CR>
-
+nnoremap <silent> <leader>r :Rg <C-R><C-W><CR>
+nnoremap <silent> <leader>t :Tags <C-R><C-W><CR>
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/vim-airline/vim-airline
@@ -340,8 +335,9 @@ nmap <leader>9 <Plug>AirlineSelectTab9
 nmap <leader>- <Plug>AirlineSelectPrevTab
 nmap <leader>+ <Plug>AirlineSelectNextTab
 
-"" Extention: CocNvim
+"" Extention: LSP
 let g:airline#extensions#nvimlsp#enabled = 1
+let g:airline#extensions#gutentags#enabled = 1
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 lua <<EOF
