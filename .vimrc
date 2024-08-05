@@ -38,6 +38,12 @@ Plug 'hrsh7th/cmp-nvim-lsp'
 Plug 'hrsh7th/nvim-cmp'
 Plug 'neovim/nvim-lspconfig'
 
+"" Sneak
+Plug 'justinmk/vim-sneak'
+
+"" Copilot
+Plug 'github/copilot.vim'
+
 "" Golang
 Plug 'fatih/vim-go'
 
@@ -53,92 +59,101 @@ Plug 'joshdick/onedark.vim', { 'branch': 'main'}
 
 call plug#end()
 
+
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-set nocompatible
+if has('nvim')
+lua <<EOF
+  -- Set options
+  vim.opt.compatible = false
+  vim.opt.ruler = true
+  vim.opt.hidden = true
+  vim.opt.cmdheight = 2
+  vim.opt.history = 9000
+  vim.opt.signcolumn = "auto"
+  vim.opt.number = true
+  vim.opt.relativenumber = true
+  vim.opt.clipboard:append("unnamedplus")
+  vim.opt.scrolloff = 5
 
-set ruler
-set hidden
-set cmdheight=2
-set history=9000
-set signcolumn=auto
-set number relativenumber
-set clipboard+=unnamedplus
-set scrolloff=5
+  -- Set clipboard control for Unix
+  if vim.fn.has('macunix') == 0 and vim.fn.has('unix') == 1 then
+    vim.g.clipboard = {
+      name = 'xsel',
+      copy = {
+        ['+'] = 'xsel -ib',
+        ['*'] = 'xsel -ip',
+      },
+      paste = {
+        ['+'] = 'xsel -ob',
+        ['*'] = 'xsel -op',
+      },
+      cache_enabled = 1,
+    }
+  end
 
-if has('macunix')
-  " No need to set this on MacOS
-elseif has('unix')
-  " Set clipboard control to xsel on Ubuntu
-  let g:clipboard = {
-    \  'name': 'xsel',
-    \  'copy': {
-    \    '+': 'xsel -ib',
-    \    '*': 'xsel -ip'
-    \  },
-    \  'paste': {
-    \    '+': 'xsel -ob',
-    \    '*': 'xsel -op'
-    \  },
-    \  'cache_enabled': 1
-    \}
-endif
+  -- Mouse support
+  vim.opt.mouse = "a"
 
-" Mouse support
-set mouse=a
+  -- Show invisible characters
+  vim.opt.list = true
+  vim.opt.listchars = { tab = '»·', nbsp = '+', trail = '·', extends = '→', precedes = '←' }
 
-" show invisible characters
-set list
-" but only show tabs and trailing whitespace
-set listchars=tab:»·,nbsp:+,trail:·,extends:→,precedes:←
+  -- Enable syntax highlighting
+  vim.cmd("syntax enable")
 
-" Enable syntax highlighting
-set syntax=enable
+  -- Highlight search results and map shortcuts to clear search highlighting
+  vim.opt.hlsearch = true
+  vim.api.nvim_set_keymap('n', '<Esc><Esc>', ':nohlsearch<CR>', { noremap = true, silent = true })
+  vim.api.nvim_set_keymap('n', '<C-l>', ':nohl<CR><C-l>', { noremap = true, silent = true })
 
-" Highlight search results
-" Use Ctrl-L to clear search highlighting
-set hlsearch
-nnoremap <silent> <Esc><Esc> :nohlsearch<CR>
-nnoremap <silent> <C-l> :nohl<CR><C-l>
+  -- Tab as spaces
+  vim.opt.expandtab = true
+  vim.opt.shiftwidth = 2
+  vim.opt.tabstop = 2
 
-" Tab as spaces
-set expandtab shiftwidth=2 tabstop=2
+  -- No bell on error, don't use swapfile
+  vim.opt.errorbells = false
+  vim.opt.visualbell = false
+  vim.opt.backup = false
+  vim.opt.writebackup = false
+  vim.opt.swapfile = false
 
-" No bell on error, dont use swapfile
-set noerrorbells novisualbell
-set nobackup nowritebackup noswapfile
+  -- Indentation
+  vim.opt.autoindent = true
+  vim.opt.smartindent = true
 
-" Indentation
-"" Retain indentation on next line
-set autoindent
-"" Increase/decrease indentation automatically
-set smartindent
+  -- Search default
+  vim.opt.ignorecase = true
+  vim.opt.smartcase = true
 
-" Search default
-set ignorecase
-set smartcase
+  -- Shortcuts
+  -- vim.g.mapleader = ";"
 
-" Shortcuts
-let mapleader = ";"
+  -- Fast way to escape
+  vim.api.nvim_set_keymap('i', 'jj', '<Esc>', { noremap = true, silent = true })
 
-" Fast way to escape
-imap jj <Esc>
+  -- Split window behavior
+  vim.opt.splitbelow = true
+  vim.opt.splitright = true
 
-" Put the new window below
-set splitbelow
-" Put the new window right
-set splitright
+  -- Don't use Ex mode
+  vim.api.nvim_set_keymap('n', 'Q', '<Nop>', { noremap = true, silent = true })
 
-" Don't use Ex mode
-map Q <Nop>
+  -- Color and autocmd for color scheme
+  if vim.fn.has("autocmd") == 1 then
+    vim.cmd([[
+      augroup colorextend
+        autocmd!
+        let s:off_white = { "gui": "#ABB2BF", "cterm": "145", "cterm16" : "7" }
+        autocmd ColorScheme * call onedark#set_highlight("LspInlayHint", { "fg": s:off_white })
+      augroup END
+    ]])
+  end
 
-" Color
-if (has("autocmd"))
-  augroup colorextend
-    autocmd!
-    let s:off_white = { "gui": "#ABB2BF", "cterm": "145", "cterm16" : "7" }
-    autocmd ColorScheme * call onedark#set_highlight("LspInlayHint", { "fg": s:off_white })
-  augroup END
+  vim.env.NVIM_TUI_ENABLE_TRUE_COLOR = 1
+  vim.cmd("colorscheme onedark")
+EOF
 endif
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LSP Config >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -351,10 +366,10 @@ require'nvim-treesitter.configs'.setup {
   incremental_selection = {
     enable = true,
     keymaps = {
-      init_selection = "<A-L>", -- set to `false` to disable one of the mappings
+      init_selection = "<A-J>", -- set to `false` to disable one of the mappings
       scope_incremental = false,
-      node_incremental = "<A-L>",
-      node_decremental = "<A-H>",
+      node_incremental = "<A-J>",
+      node_decremental = "<A-K>",
     },
   },
   playground = {
@@ -433,10 +448,7 @@ let g:go_gopls_enabled=0
 let g:go_gopls_gofumpt=0
 
 " Markdown
-augroup Markdown
-  autocmd!
-  autocmd FileType markdown set wrap
-augroup END
+autocmd FileType markdown set wrap
 
 " Java
 "" Indentation
