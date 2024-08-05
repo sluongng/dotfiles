@@ -902,6 +902,8 @@ keybind = super+v=paste_from_clipboard
 keybind = super+b=text:\x1bb
 # cmd+d as alt+d
 keybind = super+d=text:\x1bd
+# cmd+f as alt+f
+keybind = super+f=text:\x1bf
 
 # Window padding. This applies padding between the terminal cells and the
 # window border. The `x` option applies to the left and right padding and the
