@@ -44,7 +44,7 @@ Plug 'fatih/vim-go'
 "" Rust
 Plug 'mrcjkb/rustaceanvim'
 
-"" Bazel
+"" Bazel / Ctags
 Plug 'ludovicchabant/vim-gutentags'
 Plug 'dhananjaylatkar/cscope_maps.nvim'
 
