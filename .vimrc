@@ -292,6 +292,16 @@ endfunction
 " Make fzf use neovim floating window
 lua <<EOF
 require("fzf-lua").setup({ "fzf-vim" })
+
+local opts = { noremap = true, silent = false }
+local silent_opts = { noremap = true, silent = true }
+
+-- Some QoL shortcuts
+vim.api.nvim_set_keymap('n', '<leader>a', ':Commands<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>b', ':Buffers<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>f', ':FzfLua files<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>r', ':FzfLua grep search=<C-R><C-W><CR>', silent_opts)
+vim.api.nvim_set_keymap('n', '<leader>t', ':Tags <C-R><C-W><CR>', silent_opts)
 EOF
 
 " Some QoL shortcuts
