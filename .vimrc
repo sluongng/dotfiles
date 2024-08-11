@@ -376,64 +376,79 @@ require'nvim-treesitter.configs'.setup {
 }
 EOF
 
-">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+lua <<EOF
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-au FileType bzl set expandtab
-au FileType bzl set shiftwidth=4
-au FileType bzl set softtabstop=4
-au FileType bzl set tabstop=4
+-- Bazel (bzl) settings
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'bzl',
+  callback = function()
+    vim.opt_local.expandtab = true
+    vim.opt_local.shiftwidth = 4
+    vim.opt_local.softtabstop = 4
+    vim.opt_local.tabstop = 4
+  end
+})
 
-" File Type handling
-" Doc: ':h filetype'
-filetype plugin on
+-- Enable filetype plugins
+vim.cmd('filetype plugin on')
 
-" Golang
-"   Doc: https://github.com/fatih/vim-go/blob/master/doc/vim-go.txt 
-"        or ':h go-syntax'
-"" Indentation
-au FileType go set noexpandtab
-au FileType go set shiftwidth=2
-au FileType go set softtabstop=2
-au FileType go set tabstop=2
-au FileType go let g:editorconfig = v:false
-"" Syntax Highlight
-let g:go_highlight_functions = 1
-let g:go_highlight_function_parameters = 1
-let g:go_highlight_function_calls = 1
-"" Syntax Highlight
-let g:go_highlight_types = 1
-let g:go_highlight_extra_types = 1
-"" Syntax Highlight
-let g:go_highlight_fields = 1
-let g:go_highlight_methods = 1
-let g:go_highlight_operators = 1
-let g:go_highlight_structs = 1
-let g:go_highlight_generate_tags = 1
-let g:go_highlight_format_strings = 1
-let g:go_highlight_variable_declarations = 1
-let g:go_highlight_variable_assignments = 1
-"" Syntax Highlight
-let g:go_highlight_build_constraints = 1
-let g:go_highlight_array_whitespace_error = 1
-let g:go_highlight_chan_whitespace_error = 1
-"" Highlight variable with same name
-let g:go_auto_sameids=0
-"" Disbale vim-go :GoDef to use gopls + coc.nvim 
-let g:go_def_mapping_enabled = 0
-"" Format with gopls
-let g:go_fmt_command="gopls"
-let g:go_gopls_enabled=0
-let g:go_gopls_gofumpt=0
+-- Golang settings
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'go',
+  callback = function()
+    vim.opt_local.expandtab = false
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.softtabstop = 2
+    vim.opt_local.tabstop = 2
+    vim.g.editorconfig = false
+  end
+})
 
-" Markdown
-autocmd FileType markdown set wrap
+-- Golang syntax highlighting
+vim.g.go_highlight_functions = 1
+vim.g.go_highlight_function_parameters = 1
+vim.g.go_highlight_function_calls = 1
+vim.g.go_highlight_types = 1
+vim.g.go_highlight_extra_types = 1
+vim.g.go_highlight_fields = 1
+vim.g.go_highlight_methods = 1
+vim.g.go_highlight_operators = 1
+vim.g.go_highlight_structs = 1
+vim.g.go_highlight_generate_tags = 1
+vim.g.go_highlight_format_strings = 1
+vim.g.go_highlight_variable_declarations = 1
+vim.g.go_highlight_variable_assignments = 1
+vim.g.go_highlight_build_constraints = 1
+vim.g.go_highlight_array_whitespace_error = 1
+vim.g.go_highlight_chan_whitespace_error = 1
 
-" Java
-"" Indentation
-au FileType java set expandtab
-au FileType java set shiftwidth=2
-au FileType java set softtabstop=2
-au FileType java set tabstop=2
+-- Golang additional settings
+vim.g.go_auto_sameids = 0
+vim.g.go_def_mapping_enabled = 0
+vim.g.go_fmt_command = "gopls"
+vim.g.go_gopls_enabled = 0
+vim.g.go_gopls_gofumpt = 0
+
+-- Markdown settings
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'markdown',
+  callback = function()
+    vim.opt_local.wrap = true
+  end
+})
+
+-- Java settings
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'java',
+  callback = function()
+    vim.opt_local.expandtab = true
+    vim.opt_local.shiftwidth = 2
+    vim.opt_local.softtabstop = 2
+    vim.opt_local.tabstop = 2
+  end
+})
+EOF
 
 " sourcegraph
 function! GetCodeSearchURL(config) abort
