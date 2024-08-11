@@ -11,8 +11,8 @@ call plug#begin('~/.local/share/nvim/plugged')
 "" Utilities
 Plug 'lewis6991/fileline.nvim'
 
-Plug 'junegunn/fzf', { 'dir': '~/.fzf', 'do': './install --all' }
-Plug 'junegunn/fzf.vim'
+Plug 'ibhagwan/fzf-lua', {'branch': 'main'}
+Plug 'nvim-tree/nvim-web-devicons'
 Plug 'junegunn/vim-peekaboo'
 
 Plug 'tpope/vim-fugitive'
@@ -290,47 +290,15 @@ endfunction
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fzf.vim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 " Doc: https://github.com/junegunn/fzf.vim
 " Make fzf use neovim floating window
-if has('nvim')
-  function! FloatingFZF(width, height, border_highlight)
-    function! s:create_float(hl, opts)
-      let buf = nvim_create_buf(v:false, v:true)
-      let opts = extend({'relative': 'editor', 'style': 'minimal'}, a:opts)
-      let win = nvim_open_win(buf, v:true, opts)
-      call setwinvar(win, '&winhighlight', 'NormalFloat:'.a:hl)
-      call setwinvar(win, '&colorcolumn', '')
-      return buf
-    endfunction
-
-    " Size and position
-    let width = float2nr(&columns * a:width)
-    let height = float2nr(&lines * a:height)
-    let row = float2nr((&lines - height) / 2)
-    let col = float2nr((&columns - width) / 2)
-
-    " Border
-    let top = '╭' . repeat('─', width - 2) . '╮'
-    let mid = '│' . repeat(' ', width - 2) . '│'
-    let bot = '╰' . repeat('─', width - 2) . '╯'
-    let border = [top] + repeat([mid], height - 2) + [bot]
-
-    " Draw frame
-    let s:frame = s:create_float(a:border_highlight, {'row': row, 'col': col, 'width': width, 'height': height})
-    call nvim_buf_set_lines(s:frame, 0, -1, v:true, border)
-
-    " Draw viewport
-    call s:create_float('Normal', {'row': row + 1, 'col': col + 2, 'width': width - 4, 'height': height - 2})
-    autocmd BufWipeout <buffer> execute 'bwipeout' s:frame
-  endfunction
-
-  let $FZF_PREVIEW_COMMAND="bat --style=numbers --color=always {}"
-  let g:fzf_layout = { 'window': 'call FloatingFZF(0.9, 0.6, "Comment")' }
-endif
+lua <<EOF
+require("fzf-lua").setup({ "fzf-vim" })
+EOF
 
 " Some QoL shortcuts
 nnoremap <leader>a :Commands<CR>
 nnoremap <leader>b :Buffers<CR>
-nnoremap <leader>f :FZF<CR>
-nnoremap <silent> <leader>r :Rg <C-R><C-W><CR>
+nnoremap <leader>f :FzfLua files<CR>
+nnoremap <silent> <leader>r :FzfLua grep search=<C-R><C-W><CR>
 nnoremap <silent> <leader>t :Tags <C-R><C-W><CR>
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -456,9 +424,6 @@ au FileType java set expandtab
 au FileType java set shiftwidth=2
 au FileType java set softtabstop=2
 au FileType java set tabstop=2
-
-" Rust
-let g:rustfmt_options = '--edition 2021'
 
 " sourcegraph
 function! GetCodeSearchURL(config) abort
