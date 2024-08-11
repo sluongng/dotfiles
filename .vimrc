@@ -304,33 +304,33 @@ vim.api.nvim_set_keymap('n', '<leader>r', ':FzfLua grep search=<C-R><C-W><CR>', 
 vim.api.nvim_set_keymap('n', '<leader>t', ':Tags <C-R><C-W><CR>', silent_opts)
 EOF
 
-" Some QoL shortcuts
-nnoremap <leader>a :Commands<CR>
-nnoremap <leader>b :Buffers<CR>
-nnoremap <leader>f :FzfLua files<CR>
-nnoremap <silent> <leader>r :FzfLua grep search=<C-R><C-W><CR>
-nnoremap <silent> <leader>t :Tags <C-R><C-W><CR>
+lua <<EOF
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- Doc: https://github.com/vim-airline/vim-airline
 
-">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-" Doc: https://github.com/vim-airline/vim-airline
-"" Enable Tab on top
-let g:airline#extensions#tabline#enabled = 1
-let g:airline#extensions#tabline#buffer_idx_mode = 1
-nmap <leader>1 <Plug>AirlineSelectTab1
-nmap <leader>2 <Plug>AirlineSelectTab2
-nmap <leader>3 <Plug>AirlineSelectTab3
-nmap <leader>4 <Plug>AirlineSelectTab4
-nmap <leader>5 <Plug>AirlineSelectTab5
-nmap <leader>6 <Plug>AirlineSelectTab6
-nmap <leader>7 <Plug>AirlineSelectTab7
-nmap <leader>8 <Plug>AirlineSelectTab8
-nmap <leader>9 <Plug>AirlineSelectTab9
-nmap <leader>- <Plug>AirlineSelectPrevTab
-nmap <leader>+ <Plug>AirlineSelectNextTab
+-- Enable Tab on top
+vim.g['airline#extensions#tabline#enabled'] = 1
+vim.g['airline#extensions#tabline#buffer_idx_mode'] = 1
 
-"" Extention: LSP
-let g:airline#extensions#nvimlsp#enabled = 1
-let g:airline#extensions#gutentags#enabled = 1
+-- Key mappings for Airline Tab navigation
+local opts = { noremap = true, silent = false }
+
+vim.api.nvim_set_keymap('n', '<leader>1', '<Plug>AirlineSelectTab1', opts)
+vim.api.nvim_set_keymap('n', '<leader>2', '<Plug>AirlineSelectTab2', opts)
+vim.api.nvim_set_keymap('n', '<leader>3', '<Plug>AirlineSelectTab3', opts)
+vim.api.nvim_set_keymap('n', '<leader>4', '<Plug>AirlineSelectTab4', opts)
+vim.api.nvim_set_keymap('n', '<leader>5', '<Plug>AirlineSelectTab5', opts)
+vim.api.nvim_set_keymap('n', '<leader>6', '<Plug>AirlineSelectTab6', opts)
+vim.api.nvim_set_keymap('n', '<leader>7', '<Plug>AirlineSelectTab7', opts)
+vim.api.nvim_set_keymap('n', '<leader>8', '<Plug>AirlineSelectTab8', opts)
+vim.api.nvim_set_keymap('n', '<leader>9', '<Plug>AirlineSelectTab9', opts)
+vim.api.nvim_set_keymap('n', '<leader>-', '<Plug>AirlineSelectPrevTab', opts)
+vim.api.nvim_set_keymap('n', '<leader>+', '<Plug>AirlineSelectNextTab', opts)
+
+-- Extension: LSP and Gutentags
+vim.g['airline#extensions#nvimlsp#enabled'] = 1
+vim.g['airline#extensions#gutentags#enabled'] = 1
+EOF
 
 ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 lua <<EOF
