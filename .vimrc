@@ -450,70 +450,72 @@ vim.api.nvim_create_autocmd('FileType', {
 })
 EOF
 
-" sourcegraph
-function! GetCodeSearchURL(config) abort
-    " BazelBuild specific
-    if a:config['remote'] =~ '^\%(https\=://\|git://\|git@\)github\.com[/:]bazelbuild/bazel\zs.\{-\}\ze\%(\.git\)\=$'
-        let commit = a:config['commit']
-        let path = a:config['path']
-        let url = printf("https://cs.opensource.google/bazel/bazel/+/%s:%s",
-            \ commit,
-            \ path)
-        let fromLine = a:config['line1']
-        let toLine = a:config['line2']
-        if fromLine > 0 && fromLine == toLine
-            let url .= ';l=' . fromLine
-        elseif toLine > 0
-            let url .= ';l=' . fromLine . '-' . toLine
-        endif
+lua <<EOF
+-- Sourcegraph function in Lua
+local function GetCodeSearchURL(config)
+    -- BazelBuild specific
+    if string.match(config.remote, '^https://github.com/bazelbuild/bazel.-$') or
+       string.match(config.remote, '^git://github.com/bazelbuild/bazel.-$') or
+       string.match(config.remote, '^git@github.com:bazelbuild/bazel.-$') then
+        local commit = config.commit
+        local path = config.path
+        local url = string.format("https://cs.opensource.google/bazel/bazel/+/%s:%s", commit, path)
+        local fromLine = config.line1
+        local toLine = config.line2
+        if fromLine > 0 and fromLine == toLine then
+            url = url .. ';l=' .. fromLine
+        elseif toLine > 0 then
+            url = url .. ';l=' .. fromLine .. '-' .. toLine
+        end
         return url
-    endif
+    end
 
-    " Use GitHub default browsing
-    if a:config['remote'] =~ '^\(https://\|git@\)github.com'
-        let repository = substitute(matchstr(a:config['remote'], 'github\.com.*'), ':', '/', '')
-        let repository = substitute(repository, '.git', '', '')
-        let commit = a:config['commit']
-        let path = a:config['path']
-        let githubUrl = printf("https://%s/blob/%s/%s",
-            \ repository,
-            \ commit,
-            \ path)
-        let fromLine = a:config['line1']
-        let toLine = a:config['line2']
-        if fromLine > 0 && fromLine == toLine
-            let githubUrl .= '#L' . fromLine
-        elseif toLine > 0
-            let githubUrl .= '#L' . fromLine . '-' . 'L' . toLine
-        endif
+    -- Use GitHub default browsing
+    if string.match(config.remote, '^https://github.com') or string.match(config.remote, '^git@github.com') then
+        local repository = string.gsub(string.match(config.remote, 'github.com[:/].*'), ':', '/')
+        repository = string.gsub(repository, '.git$', '')
+        local commit = config.commit
+        local path = config.path
+        local githubUrl = string.format("https://%s/blob/%s/%s", repository, commit, path)
+        local fromLine = config.line1
+        local toLine = config.line2
+        if fromLine > 0 and fromLine == toLine then
+            githubUrl = githubUrl .. '#L' .. fromLine
+        elseif toLine > 0 then
+            githubUrl = githubUrl .. '#L' .. fromLine .. '-L' .. toLine
+        end
         return githubUrl
-    endif
+    end
 
-    " Mostly use for Gitlab stuffs
-    if a:config['remote'] =~ '^\(https://\|git@\)\(github\|gitlab\).com'
-        let repository = substitute(matchstr(a:config['remote'], '\(github\|gitlab\)\.com.*'), ':', '/', '')
-        let repository = substitute(repository, '.git', '', '')
-        let commit = a:config['commit']
-        let path = a:config['path']
-        let sourcegraphUrl = printf("https://sourcegraph.com/%s@%s/-/blob/%s",
-            \ repository,
-            \ commit,
-            \ path)
-        let fromLine = a:config['line1']
-        let toLine = a:config['line2']
-        if fromLine > 0 && fromLine == toLine
-            let sourcegraphUrl .= '#L' . fromLine
-        elseif toLine > 0
-            let sourcegraphUrl .= '#L' . fromLine . '-' . toLine
-        endif
+    -- Mostly use for Gitlab stuff
+    if string.match(config.remote, '^https://github.com') or
+       string.match(config.remote, '^git@github.com') or
+       string.match(config.remote, '^https://gitlab.com') or
+       string.match(config.remote, '^git@gitlab.com') then
+        local repository = string.gsub(string.match(config.remote, '[%w]+%.com[:/].*'), ':', '/')
+        repository = string.gsub(repository, '.git$', '')
+        local commit = config.commit
+        local path = config.path
+        local sourcegraphUrl = string.format("https://sourcegraph.com/%s@%s/-/blob/%s", repository, commit, path)
+        local fromLine = config.line1
+        local toLine = config.line2
+        if fromLine > 0 and fromLine == toLine then
+            sourcegraphUrl = sourcegraphUrl .. '#L' .. fromLine
+        elseif toLine > 0 then
+            sourcegraphUrl = sourcegraphUrl .. '#L' .. fromLine .. '-' .. toLine
+        end
         return sourcegraphUrl
-    endif
+    end
 
     return ''
-endfunction
-if !exists('g:fugitive_browse_handlers')
-    let g:fugitive_browse_handlers = []
-endif
-if index(g:fugitive_browse_handlers, function('GetCodeSearchURL')) < 0
-    call insert(g:fugitive_browse_handlers, function('GetCodeSearchURL'))
-endif
+end
+
+-- Integration with fugitive browse handlers
+if not vim.g.fugitive_browse_handlers then
+    vim.g.fugitive_browse_handlers = {}
+end
+
+if not vim.tbl_contains(vim.g.fugitive_browse_handlers, GetCodeSearchURL) then
+    table.insert(vim.g.fugitive_browse_handlers, GetCodeSearchURL)
+end
+EOF
