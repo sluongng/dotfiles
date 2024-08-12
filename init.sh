@@ -50,16 +50,10 @@ fi
 
 if [ -f "${DIR_CONFIG}/nvim/init.vim" ]; then
   cp ${DIR_CONFIG}/nvim/init.vim ${DIR_CONFIG}/nvim/init.vim.bak
+  cp ${DIR_CONFIG}/nvim/init.lua ${DIR_CONFIG}/nvim/init.lua.bak
   echo 'Done back up neovim config'
 else
   echo 'No init.vim(neovim config) found'
-fi
-
-if [ -f "${DIR_CONFIG}/nvim/coc-settings.json" ]; then
-  cp ${DIR_CONFIG}/nvim/coc-settings.json ${DIR_CONFIG}/nvim/coc-settings.json.bak
-  echo 'Done back up coc.nvim config'
-else
-  echo 'No coc-config.json(coc.nvim config) found'
 fi
 
 if [ -f "${DIR_CONFIG}/libinput-gestures.conf" ]; then
@@ -107,15 +101,12 @@ mkdir -p ${DIR_CONFIG}/bat/
 ln -sfn ${DIR_DOTFILE}/.zshrc ${DIR_HOME}/.zshrc
 echo 'Linked .zshrc from dotfiles'
 
-ln -sfn ${DIR_DOTFILE}/.vimrc ${DIR_HOME}/.vimrc
-ln -sfn ${DIR_DOTFILE}/.vimrc ${DIR_CONFIG}/nvim/init.vim
+# ln -sfn ${DIR_DOTFILE}/.vimrc ${DIR_HOME}/.vimrc
+ln -sfn ${DIR_DOTFILE}/nvim/init.lua ${DIR_CONFIG}/nvim/init.lua
 echo 'Linked .vimrc from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/.ideavimrc ${DIR_HOME}/.ideavimrc
 echo 'Linked .ideavimrc from dotfiles'
-
-ln -sfn ${DIR_DOTFILE}/config/nvim/coc-settings.json ${DIR_CONFIG}/nvim/coc-settings.json
-echo 'Linked coc-settings.json from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/.tmux.conf ${DIR_HOME}/.tmux.conf
 echo 'Linked .tmux.conf from dotfiles'
