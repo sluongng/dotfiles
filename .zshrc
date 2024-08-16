@@ -224,4 +224,5 @@ export KUBE_CONFIG_PATH=~/.kube/config
 # tabtab source for packages
 # uninstall by removing these lines
 [[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
-export PATH="/opt/homebrew/opt/binutils/bin:$PATH"
+
+export PATH="$PATH:/opt/homebrew/opt/binutils/bin"
