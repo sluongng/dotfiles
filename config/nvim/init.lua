@@ -52,7 +52,7 @@ Plug('github/copilot.vim')
 Plug('fatih/vim-go')
 
 -- Rust
-Plug('mrcjkb/rustaceanvim')
+-- Plug('mrcjkb/rustaceanvim')
 
 -- Bazel / Ctags
 Plug('ludovicchabant/vim-gutentags')
@@ -164,6 +164,9 @@ local lsp_zero = require('lsp-zero')
 lsp_zero.on_attach(function(client, bufnr)
   lsp_zero.default_keymaps({buffer = bufnr})
 end)
+lsp_zero.extend_lspconfig({
+  sign_text = true,
+})
 
 local lspconfig = require'lspconfig'
 lspconfig.gopls.setup{
@@ -197,6 +200,7 @@ lspconfig.gopls.setup{
     },
   },
 }
+lspconfig.rust_analyzer.setup{}
 lspconfig.starpls.setup{}
 lspconfig["bazelrc-lsp"].setup{}
 lspconfig.pbls.setup{}
