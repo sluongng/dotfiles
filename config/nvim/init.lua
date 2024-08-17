@@ -51,8 +51,11 @@ Plug('github/copilot.vim')
 -- Golang
 Plug('fatih/vim-go')
 
--- Rust
--- Plug('mrcjkb/rustaceanvim')
+-- Neotest
+Plug 'nvim-lua/plenary.nvim'
+Plug 'antoinemadec/FixCursorHold.nvim'
+Plug 'nvim-neotest/nvim-nio'
+Plug 'nvim-neotest/neotest'
 
 -- Bazel / Ctags
 Plug('ludovicchabant/vim-gutentags')
@@ -524,3 +527,91 @@ vim.cmd [[
       call insert(g:fugitive_browse_handlers, function('GetCodeSearchURL'))
   endif
 ]]
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Neotest-Bazel >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- A simple Bazel adapter for Neotest
+
+local neotest = require('neotest')
+
+local BazelAdapter = {}
+
+---Find the project root directory given a current directory to work from.
+---Should no root be found, the adapter can still be used in a non-project context if a test file matches.
+---@async
+---@param dir string @Directory to treat as cwd
+---@return string | nil @Absolute root dir of test suite
+function BazelAdapter.root(dir)
+  local root = vim.fn.systemlist('bazel info workspace')[1]
+  if root == '' then
+    return nil
+  end
+  return root
+end
+
+---Filter directories when searching for test files
+---Use bazel query --output=package to find if the directory is a package
+---@async
+---@param name string Name of directory
+---@param rel_path string Path to directory, relative to root
+---@param root string Root directory of project
+---@return boolean
+function BazelAdapter.filter_dir(name, rel_path, root)
+  local query = string.format('bazel query --output=package %s', rel_path)
+  local result = vim.fn.system(query)
+  return result ~= ''
+end
+
+---Check if a file is a test file using 2 bazel query
+---1. Find the target label of the file using --output=label
+---2. Check if the target is a test target using 'tests()' and 'deps()' in Bazel query
+---
+---For example,
+---  ```shell
+---  bazel query --output=package server/util/subdomain/subdomain_test.go
+---  bazel query --output=label server/util/subdomain/subdomain_test.go
+---
+---  bazel query --infer_universe_scope --order_output=no \
+---    'tests(rdeps(server/util/subdomain:all, //server/util/subdomain:subdomain_test.go, 1)'
+---  ```
+---@async
+---@param file_path string
+---@return boolean
+function BazelAdapter.is_test_file(file_path)
+  local package_query = string.format('bazel query --output=package %s', file_path)
+  local package = vim.fn.system(package_query)
+  if package == '' then
+    return false
+  end
+
+  local label_query = string.format('bazel query --output=label %s', file_path)
+  local label = vim.fn.system(label_query)
+  if label == '' then
+    return false
+  end
+
+  local test_query = string.format(
+    "bazel query --infer_universe_scope --order_output=no 'tests(rdeps(%s:all, %s, 1))'",
+    package,
+    label
+  )
+  local test = vim.fn.system(test_query)
+  return test ~= ''
+end
+
+---Given a file path, parse all the tests within it.
+---@async
+---@param file_path string Absolute file path
+---@return neotest.Tree | nil
+function BazelAdapter.discover_positions(file_path)
+end
+
+---@param args neotest.RunArgs
+---@return nil | neotest.RunSpec | neotest.RunSpec[]
+function BazelAdapter.build_spec(args) end
+
+---@async
+---@param spec neotest.RunSpec
+---@param result neotest.StrategyResult
+---@param tree neotest.Tree
+---@return table<string, neotest.Result>
+function BazelAdapter.results(spec, result, tree) end
