@@ -216,6 +216,7 @@ export MANROFFOPT='-c'
 
 # Bazel / Gazelle
 export GO_REPOSITORY_USE_HOST_CACHE=1
+export DOCKER_REPO_CACHE="${HOME}/.bazel/docker_repo_cache"
 
 # Terraform
 alias tf=terraform
