@@ -15,7 +15,7 @@ vim.call('plug#begin')
 -- Utilities
 Plug('lewis6991/fileline.nvim')
 
-Plug('ibhagwan/fzf-lua', {['branch'] = 'main'})
+Plug('ibhagwan/fzf-lua', { ['branch'] = 'main' })
 Plug('nvim-tree/nvim-web-devicons')
 Plug('junegunn/vim-peekaboo')
 
@@ -28,10 +28,10 @@ Plug('lukas-reineke/indent-blankline.nvim', { ['main'] = 'ibl', ['opts'] = {} })
 
 -- Status bar
 Plug('vim-airline/vim-airline')
-Plug('airblade/vim-gitgutter', {['branch'] = 'main'})
+Plug('airblade/vim-gitgutter', { ['branch'] = 'main' })
 
 -- TreeSitter
-Plug('nvim-treesitter/nvim-treesitter', {['do'] = ':TSUpdate'})
+Plug('nvim-treesitter/nvim-treesitter', { ['do'] = ':TSUpdate' })
 Plug('nvim-treesitter/playground')
 
 -- LSP Client
@@ -62,7 +62,7 @@ Plug('ludovicchabant/vim-gutentags')
 Plug('dhananjaylatkar/cscope_maps.nvim')
 
 -- Coloring
-Plug('joshdick/onedark.vim', { ['branch'] = 'main'})
+Plug('joshdick/onedark.vim', { ['branch'] = 'main' })
 
 vim.call('plug#end')
 
@@ -164,15 +164,15 @@ vim.keymap.del({ "v", "n" }, "gra")
 vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 
 local lsp_zero = require('lsp-zero')
-lsp_zero.on_attach(function(client, bufnr)
-  lsp_zero.default_keymaps({buffer = bufnr})
+lsp_zero.on_attach(function(_client, bufnr)
+  lsp_zero.default_keymaps({ buffer = bufnr })
 end)
 lsp_zero.extend_lspconfig({
   sign_text = true,
 })
 
-local lspconfig = require'lspconfig'
-lspconfig.gopls.setup{
+local lspconfig = require 'lspconfig'
+lspconfig.gopls.setup {
   settings = {
     gopls = {
       usePlaceholders = true,
@@ -203,22 +203,23 @@ lspconfig.gopls.setup{
     },
   },
 }
-lspconfig.rust_analyzer.setup{}
-lspconfig.starpls.setup{}
-lspconfig["bazelrc-lsp"].setup{}
-lspconfig.pbls.setup{}
-lspconfig.tsserver.setup{}
+lspconfig.rust_analyzer.setup {}
+lspconfig.starpls.setup {}
+lspconfig["bazelrc-lsp"].setup {}
+lspconfig.pbls.setup {}
+lspconfig.tsserver.setup {}
+local lua_opts = lsp_zero.nvim_lua_ls()
+lspconfig.lua_ls.setup(lua_opts)
 
 local cmp = require('cmp')
-local cmp_action = lsp_zero.cmp_action()
 cmp.setup({
   -- if you don't know what is a "source" in nvim-cmp read this:
   -- https://github.com/VonHeikemen/lsp-zero.nvim/blob/v3.x/doc/md/autocomplete.md#adding-a-source
   sources = {
-    {name = 'path'},
-    {name = 'nvim_lsp'},
-    {name = 'buffer', keyword_length = 2},
-    {name = 'ctags'},
+    { name = 'path' },
+    { name = 'nvim_lsp' },
+    { name = 'buffer',  keyword_length = 2 },
+    { name = 'ctags' },
   },
   mapping = cmp.mapping.preset.insert({
     -- confirm completion item
@@ -247,7 +248,7 @@ cmp.setup({
         fallback()
       end
     end, { "i", "s" }),
-    }),
+  }),
   -- note: if you are going to use lsp-kind (another plugin)
   -- replace the line below with the function from lsp-kind
   formatting = lsp_zero.cmp_format(),
@@ -265,7 +266,7 @@ vim.lsp.handlers["textDocument/references"] = vim.lsp.with(
 --  Use Gutentags(ctags) for projects that are not friendly to LSP
 require("cscope_maps").setup()
 
-  -- Set gutentags cache directory
+-- Set gutentags cache directory
 vim.g.gutentags_cache_dir = vim.fn.expand('~/.cache/vim/ctags/')
 
 -- Set gutentags modules
@@ -344,7 +345,7 @@ vim.g['airline#extensions#gutentags#enabled'] = 1
 
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-require'nvim-treesitter.configs'.setup {
+require 'nvim-treesitter.configs'.setup {
   ensure_installed = "all",
   -- Install parsers synchronously (only applied to `ensure_installed`)
   sync_install = false,
@@ -363,7 +364,7 @@ require'nvim-treesitter.configs'.setup {
   playground = {
     enable = true,
     disable = {},
-    updatetime = 25, -- Debounced time for highlighting nodes in the playground from source code
+    updatetime = 25,         -- Debounced time for highlighting nodes in the playground from source code
     persist_queries = false, -- Whether the query persists across vim sessions
     keybindings = {
       toggle_query_editor = 'o',
@@ -381,7 +382,7 @@ require'nvim-treesitter.configs'.setup {
   query_linter = {
     enable = true,
     use_virtual_text = true,
-    lint_events = {"BufWrite", "CursorHold"},
+    lint_events = { "BufWrite", "CursorHold" },
   }
 }
 
@@ -531,17 +532,20 @@ vim.cmd [[
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Neotest-Bazel >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 -- A simple Bazel adapter for Neotest
 
-local neotest = require('neotest')
-
 local BazelAdapter = {}
 
 ---Find the project root directory given a current directory to work from.
 ---Should no root be found, the adapter can still be used in a non-project context if a test file matches.
 ---@async
----@param dir string @Directory to treat as cwd
+---@param _dir string @Directory to treat as cwd
 ---@return string | nil @Absolute root dir of test suite
-function BazelAdapter.root(dir)
-  local root = vim.fn.systemlist('bazel info workspace')[1]
+function BazelAdapter.root(_dir)
+  local root = vim.system({ 'bazel', 'info', 'workspace' }, { text = true }):wait().stdout
+  if root == nil then
+    return nil
+  end
+  root = vim.trim(root)
+  vim.print("Root: " .. root)
   if root == '' then
     return nil
   end
@@ -553,12 +557,12 @@ end
 ---@async
 ---@param name string Name of directory
 ---@param rel_path string Path to directory, relative to root
----@param root string Root directory of project
+---@param _root string Root directory of project
 ---@return boolean
-function BazelAdapter.filter_dir(name, rel_path, root)
-  local query = string.format('bazel query --output=package %s', rel_path)
-  local result = vim.fn.system(query)
-  return result ~= ''
+function BazelAdapter.filter_dir(name, rel_path, _root)
+  vim.print("Filtering directory: " .. name, vim.log.levels.INFO)
+  local result = vim.system({ 'bazel', 'query', '--output=package', rel_path }, { text = true }):wait()
+  return result.code == 0
 end
 
 ---Check if a file is a test file using 2 bazel query
@@ -577,41 +581,231 @@ end
 ---@param file_path string
 ---@return boolean
 function BazelAdapter.is_test_file(file_path)
-  local package_query = string.format('bazel query --output=package %s', file_path)
-  local package = vim.fn.system(package_query)
-  if package == '' then
+  local path = require("plenary.path")
+  local relative_path = path.new(file_path):make_relative(vim.fn.getcwd())
+
+  -- vim.print("Checking test file: " .. file_path .. " " .. relative_path)
+  local result = vim.system({ 'bazel', 'query', '--output=package', relative_path }, { text = true }):wait()
+  local bazel_package = vim.trim(result.stdout)
+  if bazel_package == '' then
     return false
   end
+  -- vim.print("Bazel package: " .. bazel_package)
 
-  local label_query = string.format('bazel query --output=label %s', file_path)
-  local label = vim.fn.system(label_query)
+  result = vim.system({ 'bazel', 'query', '--output=label', relative_path }, { text = true }):wait()
+  local label = vim.trim(result.stdout)
   if label == '' then
     return false
   end
+  -- vim.print("Bazel label: " .. label)
 
-  local test_query = string.format(
-    "bazel query --infer_universe_scope --order_output=no 'tests(rdeps(%s:all, %s, 1))'",
-    package,
-    label
-  )
-  local test = vim.fn.system(test_query)
-  return test ~= ''
+  local test_query = 'tests(rdeps(' .. bazel_package .. ':all, ' .. label .. ', 1))'
+  -- vim.print("Test query: " .. test_query)
+  result = vim.system({ 'bazel', 'query', '--infer_universe_scope', '--order_output=no', test_query }, { text = true })
+      :wait()
+  local test = vim.trim(result.stdout)
+  local final_result = test ~= ''
+  -- vim.print(string.format("Test query result: %s -- %s", result.stdout, tostring(final_result)))
+  return final_result
 end
 
----Given a file path, parse all the tests within it.
+---Given a file path, parse all the tests within it by using different tree-sitter persist_queries
+---for different languages based on file extension.
+---Currently support: Go, Java
 ---@async
 ---@param file_path string Absolute file path
 ---@return neotest.Tree | nil
 function BazelAdapter.discover_positions(file_path)
+  local lib = require("neotest.lib")
+  local ext = vim.filetype.match({ filename = file_path })
+  vim.print("Discovering positions for: " .. file_path .. " " .. ext)
+  if ext == "go" then
+    local query = [[
+;; query for test function
+((function_declaration
+  name: (identifier) @test.name) (#match? @test.name "^(Test|Example)"))
+  @test.definition
+
+;; query for subtest, like t.Run()
+(call_expression
+  function: (selector_expression
+    field: (field_identifier) @test.method) (#match? @test.method "^Run$")
+  arguments: (argument_list . (interpreted_string_literal) @test.name))
+  @test.definition
+
+;; query for list table tests
+(block
+  (short_var_declaration
+    left: (expression_list
+      (identifier) @test.cases)
+    right: (expression_list
+      (composite_literal
+        (literal_value
+          (literal_element
+            (literal_value
+              (keyed_element
+                (literal_element
+                  (identifier) @test.field.name)
+                (literal_element
+                  (interpreted_string_literal) @test.name)))) @test.definition))))
+  (for_statement
+    (range_clause
+      left: (expression_list
+        (identifier) @test.case)
+      right: (identifier) @test.cases1
+        (#eq? @test.cases @test.cases1))
+    body: (block
+     (expression_statement
+      (call_expression
+        function: (selector_expression
+          field: (field_identifier) @test.method)
+          (#match? @test.method "^Run$")
+        arguments: (argument_list
+          (selector_expression
+            operand: (identifier) @test.case1
+            (#eq? @test.case @test.case1)
+            field: (field_identifier) @test.field.name1
+            (#eq? @test.field.name @test.field.name1))))))))
+
+;; query for list table tests (wrapped in loop)
+(for_statement
+  (range_clause
+      left: (expression_list
+        (identifier)
+        (identifier) @test.case )
+      right: (composite_literal
+        type: (slice_type
+          element: (struct_type
+            (field_declaration_list
+              (field_declaration
+                name: (field_identifier)
+                type: (type_identifier)))))
+        body: (literal_value
+          (literal_element
+            (literal_value
+              (keyed_element
+                (literal_element
+                  (identifier))  @test.field.name
+                (literal_element
+                  (interpreted_string_literal) @test.name ))
+              ) @test.definition)
+          )))
+    body: (block
+      (expression_statement
+        (call_expression
+          function: (selector_expression
+            operand: (identifier)
+            field: (field_identifier))
+          arguments: (argument_list
+            (selector_expression
+              operand: (identifier)
+              field: (field_identifier) @test.field.name1) (#eq? @test.field.name @test.field.name1))))))
+
+;; Query for table tests with inline structs (not keyed)
+(for_statement
+  (range_clause
+    right: (composite_literal
+      type: (slice_type
+        element: (struct_type
+          (field_declaration_list
+            (field_declaration
+              name: (field_identifier) ;; the key of the struct's test name
+              type: (type_identifier) @field.type (#eq? @field.type "string")))))
+      body: (literal_value
+        (literal_element
+          (literal_value
+            (literal_element
+              (interpreted_string_literal) @test.name) @test.definition)))))
+  body: (block
+    (expression_statement
+      (call_expression
+        function: (selector_expression
+          operand: (identifier)
+          field: (field_identifier) @test.method (#match? @test.method "^Run$")) 
+        arguments: (argument_list
+          (selector_expression
+            operand: (identifier)
+            field: (field_identifier)))))))
+
+;; query for map table tests
+(block
+    (short_var_declaration
+      left: (expression_list
+        (identifier) @test.cases)
+      right: (expression_list
+        (composite_literal
+          (literal_value
+            (keyed_element
+            (literal_element
+                (interpreted_string_literal)  @test.name)
+              (literal_element
+                (literal_value)  @test.definition))))))
+  (for_statement
+     (range_clause
+        left: (expression_list
+          ((identifier) @test.key.name)
+          ((identifier) @test.case))
+        right: (identifier) @test.cases1
+          (#eq? @test.cases @test.cases1))
+      body: (block
+         (expression_statement
+          (call_expression
+            function: (selector_expression
+              field: (field_identifier) @test.method)
+              (#match? @test.method "^Run$")
+              arguments: (argument_list
+              ((identifier) @test.key.name1
+              (#eq? @test.key.name @test.key.name1))))))))
+]]
+
+    local positions = lib.treesitter.parse_positions(file_path, query, { nested_tests = true })
+    return positions
+  elseif ext == "java" then
+    local query = [[
+;; Test class
+(class_declaration
+  name: (identifier) @namespace.name
+) @namespace.definition
+
+;; @Test and @ParameterizedTest functions
+(method_declaration
+  (modifiers
+    (marker_annotation
+      name: (identifier) @annotation
+        (#any-of? @annotation "Test" "ParameterizedTest" "CartesianTest")
+      )
+  )
+  name: (identifier) @test.name
+) @test.definition
+]]
+
+    return lib.treesitter.parse_positions(file_path, query)
+  end
 end
 
 ---@param args neotest.RunArgs
 ---@return nil | neotest.RunSpec | neotest.RunSpec[]
-function BazelAdapter.build_spec(args) end
+function BazelAdapter.build_spec(args)
+  vim.system({'bazel', 'test', '', '--test_filter='}, { text = true }):wait()
+  return nil
+end
 
 ---@async
 ---@param spec neotest.RunSpec
 ---@param result neotest.StrategyResult
 ---@param tree neotest.Tree
 ---@return table<string, neotest.Result>
-function BazelAdapter.results(spec, result, tree) end
+function BazelAdapter.results(spec, result, tree)
+  return {}
+end
+
+require("neotest").setup({
+  adapters = {
+    BazelAdapter
+  },
+  discovery = {
+    concurrent = 1,
+    enabled = false,
+  },
+  log_level = vim.log.levels.DEBUG,
+})
