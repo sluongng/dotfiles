@@ -546,7 +546,6 @@ function BazelAdapter.root(_dir)
     return nil
   end
   root = vim.trim(root)
-  logger.debug("Root: " .. root)
   if root == '' then
     return nil
   end
@@ -561,7 +560,6 @@ end
 ---@param _root string Root directory of project
 ---@return boolean
 function BazelAdapter.filter_dir(name, rel_path, _root)
-  logger.debug("Filtering directory: " .. name, vim.log.levels.INFO)
   local result = vim.system({ 'bazel', 'query', '--output=package', rel_path }, { text = true }):wait()
   return result.code == 0
 end
@@ -581,7 +579,6 @@ local get_file_info = function(file_path)
 
   local file_info = {}
 
-  logger.debug("Checking test file: " .. file_path .. " " .. relative_path)
   local result = vim.system({
     'bazel', 'query',
     '--bes_results_url=', '--bes_backend=',
@@ -592,7 +589,6 @@ local get_file_info = function(file_path)
   if bazel_package == '' then
     return file_info
   end
-  logger.debug("Bazel package: " .. bazel_package)
   file_info.package = bazel_package
 
   result = vim.system({
@@ -605,11 +601,9 @@ local get_file_info = function(file_path)
   if label == '' then
     return file_info
   end
-  logger.debug("Bazel label: " .. label)
   file_info.label = label
 
   local test_query = 'tests(rdeps(' .. bazel_package .. ':all, ' .. label .. ', 1))'
-  logger.debug("Test query: " .. test_query)
   result = vim.system({
     'bazel', 'query',
     '--bes_results_url=', '--bes_backend=',
@@ -645,6 +639,35 @@ function BazelAdapter.is_test_file(file_path)
   return file_info.test_target ~= nil and file_info.test_target ~= ''
 end
 
+local function get_match_type(captured_nodes)
+  if captured_nodes["test.name"] then
+    return "test"
+  end
+  if captured_nodes["namespace.name"] then
+    return "namespace"
+  end
+end
+
+--- Build the tree position from the captured nodes manually
+--- so that we could scrub the quotes from the name.
+--- This is taken from neotest..
+local function build_position(file_path, source, captured_nodes)
+  local match_type = get_match_type(captured_nodes)
+  if match_type then
+    ---@type string
+    local name = vim.treesitter.get_node_text(captured_nodes[match_type .. ".name"], source)
+    name = name:gsub('"', "") -- Remove quotes
+    local definition = captured_nodes[match_type .. ".definition"]
+
+    return {
+      type = match_type,
+      path = file_path,
+      name = name,
+      range = { definition:range() },
+    }
+  end
+end
+
 ---Given a file path, parse all the tests within it by using different tree-sitter persist_queries
 ---for different languages based on file extension.
 ---Currently support: Go, Java
@@ -654,7 +677,6 @@ end
 function BazelAdapter.discover_positions(file_path)
   local lib = require("neotest.lib")
   local ext = vim.filetype.match({ filename = file_path })
-  logger.debug("Discovering positions for: " .. file_path .. " " .. ext)
   if ext == "go" then
     local test_func_query = [[
 ((function_declaration
@@ -797,7 +819,9 @@ function BazelAdapter.discover_positions(file_path)
     local query = test_func_query ..
         subtest_query ..
         test_table_query .. list_test_table_wrapped_query .. test_table_inline_struct_query .. map_test_table_query
-    return lib.treesitter.parse_positions(file_path, query, { nested_tests = true })
+    local tree = lib.treesitter.parse_positions(file_path, query,
+      { nested_tests = true, build_position = build_position })
+    return tree
   elseif ext == "java" then
     local query = [[
 ;; Test class
@@ -902,7 +926,7 @@ function BazelAdapter.results(spec, _result, tree)
 
   ---@type string
   local test_log_dir = vim.trim(bazel_testlogs) ..
-  '/' .. spec.context.file_info.package .. '/' .. spec.context.file_info.target_name
+      '/' .. spec.context.file_info.package .. '/' .. spec.context.file_info.target_name
 
   local junit_xml = test_log_dir .. '/test.xml'
   local junit_data = xml.parse(file.read(junit_xml))
@@ -913,15 +937,16 @@ function BazelAdapter.results(spec, _result, tree)
 
   for _, testsuite in pairs(junit_data.testsuites) do
     for _, testcase in pairs(testsuite.testcase) do
-      logger.debug('test case: ' .. vim.inspect(testcase))
-      logger.debug('pos.id: ' .. pos.id)
-      local test_name = testcase._attr.name
+      logger.debug("Testcase: " .. vim.inspect(testcase))
+      local test_name = ''
+      if testcase._attr then
+        test_name = testcase._attr.name
+      else
+        test_name = testcase.name
+      end
       test_name = test_name:gsub("/", "::")
       local file_name = vim.split(pos.id, '::')[1]
       test_name = file_name .. '::' .. test_name
-
-      logger.debug('pos.id: ' .. pos.id)
-      logger.debug('Test name: ' .. test_name)
 
       if testcase.failure then
         neotest_results[test_name] = {
@@ -944,7 +969,6 @@ function BazelAdapter.results(spec, _result, tree)
     end
   end
 
-  logger.debug('Neotest results: ' .. vim.inspect(neotest_results))
   return neotest_results
 end
 
