@@ -531,6 +531,7 @@ vim.cmd [[
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Neotest-Bazel >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 -- A simple Bazel adapter for Neotest
+local logger = require("neotest.logging")
 
 local BazelAdapter = {}
 
@@ -545,7 +546,7 @@ function BazelAdapter.root(_dir)
     return nil
   end
   root = vim.trim(root)
-  vim.print("Root: " .. root)
+  logger.debug("Root: " .. root)
   if root == '' then
     return nil
   end
@@ -560,9 +561,68 @@ end
 ---@param _root string Root directory of project
 ---@return boolean
 function BazelAdapter.filter_dir(name, rel_path, _root)
-  vim.print("Filtering directory: " .. name, vim.log.levels.INFO)
+  logger.debug("Filtering directory: " .. name, vim.log.levels.INFO)
   local result = vim.system({ 'bazel', 'query', '--output=package', rel_path }, { text = true }):wait()
   return result.code == 0
+end
+
+---@class Bazel.file_info
+---@field package string
+---@field file_target string
+---@field test_target string | nil
+---@field target_name string | nil
+
+---@async
+---@param file_path string
+---@return Bazel.file_info
+local get_file_info = function(file_path)
+  local path = require("plenary.path")
+  local relative_path = path.new(file_path):make_relative(vim.fn.getcwd())
+
+  local file_info = {}
+
+  logger.debug("Checking test file: " .. file_path .. " " .. relative_path)
+  local result = vim.system({
+    'bazel', 'query',
+    '--bes_results_url=', '--bes_backend=',
+    '--output=package',
+    relative_path
+  }, { text = true }):wait()
+  local bazel_package = vim.trim(result.stdout)
+  if bazel_package == '' then
+    return file_info
+  end
+  logger.debug("Bazel package: " .. bazel_package)
+  file_info.package = bazel_package
+
+  result = vim.system({
+    'bazel', 'query',
+    '--bes_results_url=', '--bes_backend=',
+    '--output=label',
+    relative_path
+  }, { text = true }):wait()
+  local label = vim.trim(result.stdout)
+  if label == '' then
+    return file_info
+  end
+  logger.debug("Bazel label: " .. label)
+  file_info.label = label
+
+  local test_query = 'tests(rdeps(' .. bazel_package .. ':all, ' .. label .. ', 1))'
+  logger.debug("Test query: " .. test_query)
+  result = vim.system({
+    'bazel', 'query',
+    '--bes_results_url=', '--bes_backend=',
+    '--infer_universe_scope', '--order_output=no',
+    test_query
+  }, { text = true }):wait()
+  local test_target = vim.trim(result.stdout)
+  file_info.test_target = test_target
+
+  -- Turn '//foo/bar:baz' into 'baz'
+  file_info.target_name = test_target:match(":(.*)$")
+
+  return file_info
 end
 
 ---Check if a file is a test file using 2 bazel query
@@ -581,32 +641,8 @@ end
 ---@param file_path string
 ---@return boolean
 function BazelAdapter.is_test_file(file_path)
-  local path = require("plenary.path")
-  local relative_path = path.new(file_path):make_relative(vim.fn.getcwd())
-
-  -- vim.print("Checking test file: " .. file_path .. " " .. relative_path)
-  local result = vim.system({ 'bazel', 'query', '--output=package', relative_path }, { text = true }):wait()
-  local bazel_package = vim.trim(result.stdout)
-  if bazel_package == '' then
-    return false
-  end
-  -- vim.print("Bazel package: " .. bazel_package)
-
-  result = vim.system({ 'bazel', 'query', '--output=label', relative_path }, { text = true }):wait()
-  local label = vim.trim(result.stdout)
-  if label == '' then
-    return false
-  end
-  -- vim.print("Bazel label: " .. label)
-
-  local test_query = 'tests(rdeps(' .. bazel_package .. ':all, ' .. label .. ', 1))'
-  -- vim.print("Test query: " .. test_query)
-  result = vim.system({ 'bazel', 'query', '--infer_universe_scope', '--order_output=no', test_query }, { text = true })
-      :wait()
-  local test = vim.trim(result.stdout)
-  local final_result = test ~= ''
-  -- vim.print(string.format("Test query result: %s -- %s", result.stdout, tostring(final_result)))
-  return final_result
+  local file_info = get_file_info(file_path)
+  return file_info.test_target ~= nil and file_info.test_target ~= ''
 end
 
 ---Given a file path, parse all the tests within it by using different tree-sitter persist_queries
@@ -618,22 +654,21 @@ end
 function BazelAdapter.discover_positions(file_path)
   local lib = require("neotest.lib")
   local ext = vim.filetype.match({ filename = file_path })
-  vim.print("Discovering positions for: " .. file_path .. " " .. ext)
+  logger.debug("Discovering positions for: " .. file_path .. " " .. ext)
   if ext == "go" then
-    local query = [[
-;; query for test function
+    local test_func_query = [[
 ((function_declaration
   name: (identifier) @test.name) (#match? @test.name "^(Test|Example)"))
   @test.definition
-
-;; query for subtest, like t.Run()
+]]
+    local subtest_query = [[
 (call_expression
   function: (selector_expression
     field: (field_identifier) @test.method) (#match? @test.method "^Run$")
   arguments: (argument_list . (interpreted_string_literal) @test.name))
   @test.definition
-
-;; query for list table tests
+]]
+    local test_table_query = [[
 (block
   (short_var_declaration
     left: (expression_list
@@ -666,8 +701,8 @@ function BazelAdapter.discover_positions(file_path)
             (#eq? @test.case @test.case1)
             field: (field_identifier) @test.field.name1
             (#eq? @test.field.name @test.field.name1))))))))
-
-;; query for list table tests (wrapped in loop)
+]]
+    local list_test_table_wrapped_query = [[
 (for_statement
   (range_clause
       left: (expression_list
@@ -700,7 +735,8 @@ function BazelAdapter.discover_positions(file_path)
             (selector_expression
               operand: (identifier)
               field: (field_identifier) @test.field.name1) (#eq? @test.field.name @test.field.name1))))))
-
+]]
+    local test_table_inline_struct_query = [[
 ;; Query for table tests with inline structs (not keyed)
 (for_statement
   (range_clause
@@ -721,13 +757,13 @@ function BazelAdapter.discover_positions(file_path)
       (call_expression
         function: (selector_expression
           operand: (identifier)
-          field: (field_identifier) @test.method (#match? @test.method "^Run$")) 
+          field: (field_identifier) @test.method (#match? @test.method "^Run$"))
         arguments: (argument_list
           (selector_expression
             operand: (identifier)
             field: (field_identifier)))))))
-
-;; query for map table tests
+]]
+    local map_test_table_query = [[
 (block
     (short_var_declaration
       left: (expression_list
@@ -758,8 +794,10 @@ function BazelAdapter.discover_positions(file_path)
               (#eq? @test.key.name @test.key.name1))))))))
 ]]
 
-    local positions = lib.treesitter.parse_positions(file_path, query, { nested_tests = true })
-    return positions
+    local query = test_func_query ..
+        subtest_query ..
+        test_table_query .. list_test_table_wrapped_query .. test_table_inline_struct_query .. map_test_table_query
+    return lib.treesitter.parse_positions(file_path, query, { nested_tests = true })
   elseif ext == "java" then
     local query = [[
 ;; Test class
@@ -783,20 +821,131 @@ function BazelAdapter.discover_positions(file_path)
   end
 end
 
+-- Converts the AST-detected Neotest node test name into the 'go test' command
+-- test name format.
+---@param pos_id string
+---@return string
+local id_to_gotest_name = function(pos_id)
+  -- construct the test name
+  local test_name = pos_id
+  -- Remove the path before ::
+  test_name = test_name:match("::(.*)$")
+  -- Replace :: with /
+  test_name = test_name:gsub("::", "/")
+  -- Remove double quotes (single quotes are supported)
+  test_name = test_name:gsub('"', "")
+  -- Replace any spaces with _
+  test_name = test_name:gsub(" ", "_")
+
+  return test_name
+end
+
+---@class RunspecContext
+---@field language string
+---@field file_info Bazel.file_info
+---@field test_filter string | nil
+
 ---@param args neotest.RunArgs
 ---@return nil | neotest.RunSpec | neotest.RunSpec[]
 function BazelAdapter.build_spec(args)
-  vim.system({'bazel', 'test', '', '--test_filter='}, { text = true }):wait()
+  local tree = args.tree
+  local pos = tree:data()
+  local ext = vim.filetype.match({ filename = pos.path })
+
+  if pos.type == "test" then
+    if ext == "go" then
+      local test_name = id_to_gotest_name(pos.id)
+      local file_info = get_file_info(tree:data().path)
+
+      --- @type RunspecContext
+      local context = {
+        language = "go",
+        file_info = file_info,
+        test_filter = test_name,
+      }
+      return {
+        command = { "bazel", "test", file_info.test_target, "--test_filter=" .. test_name },
+        context = context,
+      }
+    end
+  elseif pos.type == "file" then
+    if ext == "go" then
+      local file_info = get_file_info(tree:data().path)
+
+      --- @type RunspecContext
+      local context = {
+        language = "go",
+        file_info = file_info,
+      }
+      return {
+        command = { "bazel", "test", file_info.test_target, },
+        context = context,
+      }
+    end
+  end
+
   return nil
 end
 
 ---@async
 ---@param spec neotest.RunSpec
----@param result neotest.StrategyResult
+---@param _result neotest.StrategyResult
 ---@param tree neotest.Tree
 ---@return table<string, neotest.Result>
-function BazelAdapter.results(spec, result, tree)
-  return {}
+function BazelAdapter.results(spec, _result, tree)
+  local xml = require('neotest.lib.xml')
+  local file = require('neotest.lib.file')
+  local bazel_testlogs = vim.system({ 'bazel', 'info', 'bazel-testlogs' }, { text = true }):wait().stdout
+  if bazel_testlogs == nil then
+    return {}
+  end
+
+  ---@type string
+  local test_log_dir = vim.trim(bazel_testlogs) ..
+  '/' .. spec.context.file_info.package .. '/' .. spec.context.file_info.target_name
+
+  local junit_xml = test_log_dir .. '/test.xml'
+  local junit_data = xml.parse(file.read(junit_xml))
+
+  local pos = tree:data()
+  ---@type table<string, neotest.Result>
+  local neotest_results = {}
+
+  for _, testsuite in pairs(junit_data.testsuites) do
+    for _, testcase in pairs(testsuite.testcase) do
+      logger.debug('test case: ' .. vim.inspect(testcase))
+      logger.debug('pos.id: ' .. pos.id)
+      local test_name = testcase._attr.name
+      test_name = test_name:gsub("/", "::")
+      local file_name = vim.split(pos.id, '::')[1]
+      test_name = file_name .. '::' .. test_name
+
+      logger.debug('pos.id: ' .. pos.id)
+      logger.debug('Test name: ' .. test_name)
+
+      if testcase.failure then
+        neotest_results[test_name] = {
+          status = 'failed',
+          output = test_log_dir .. '/' .. 'test.log',
+          short = testcase.failure._attr.message,
+          errors = {
+            {
+              message = testcase.failure._attr.message,
+              line = pos.range[1],
+            },
+          },
+        }
+      else
+        neotest_results[test_name] = {
+          status = 'passed',
+          output = test_log_dir .. '/' .. 'test.log',
+        }
+      end
+    end
+  end
+
+  logger.debug('Neotest results: ' .. vim.inspect(neotest_results))
+  return neotest_results
 end
 
 require("neotest").setup({
