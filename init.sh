@@ -49,7 +49,7 @@ else
 fi
 
 if [ -f "${DIR_CONFIG}/nvim/init.vim" ]; then
-  cp ${DIR_CONFIG}/nvim/init.vim ${DIR_CONFIG}/nvim/init.vim.bak
+  cp ${DIR_CONFIG}/nvim/.luarc.json ${DIR_CONFIG}/nvim/.luarc.json.bak
   cp ${DIR_CONFIG}/nvim/init.lua ${DIR_CONFIG}/nvim/init.lua.bak
   echo 'Done back up neovim config'
 else
@@ -103,7 +103,8 @@ echo 'Linked .zshrc from dotfiles'
 
 # ln -sfn ${DIR_DOTFILE}/.vimrc ${DIR_HOME}/.vimrc
 ln -sfn ${DIR_DOTFILE}/nvim/init.lua ${DIR_CONFIG}/nvim/init.lua
-echo 'Linked .vimrc from dotfiles'
+ln -sfn ${DIR_DOTFILE}/nvim/.luarc.json ${DIR_CONFIG}/nvim/.luarc.json
+echo 'Linked nvim/init.lua from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/.ideavimrc ${DIR_HOME}/.ideavimrc
 echo 'Linked .ideavimrc from dotfiles'
