@@ -9,7 +9,11 @@
       "$VIMRUNTIME",
       "${3rd}/busted/library",
       "${3rd}/luv/library",
-      "/Users/sluongng/.local/share/nvim/plugged/neotest/lua"
+      "/Users/sluongng/.local/share/nvim/plugged/neotest/lua",
+      "/Users/sluongng/.local/share/nvim/plugged/plenary.nvim/lua",
+      "/Users/sluongng/.local/share/nvim/plugged/lsp-zero.nvim/lua",
+      "/Users/sluongng/.local/share/nvim/plugged/nvim-lspconfig/lua",
+      "/Users/sluongng/.local/share/nvim/plugged/nvim-cmp/lua"
     ],
     "checkThirdParty": false
   },

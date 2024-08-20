@@ -555,12 +555,17 @@ end
 ---Filter directories when searching for test files
 ---Use bazel query --output=package to find if the directory is a package
 ---@async
----@param name string Name of directory
+---@param _name string Name of directory
 ---@param rel_path string Path to directory, relative to root
 ---@param _root string Root directory of project
 ---@return boolean
-function BazelAdapter.filter_dir(name, rel_path, _root)
-  local result = vim.system({ 'bazel', 'query', '--output=package', rel_path }, { text = true }):wait()
+function BazelAdapter.filter_dir(_name, rel_path, _root)
+  local result = vim.system({
+    'bazel', 'query',
+    '--bes_results_url=', '--bes_backend=',
+    '--output=package',
+    rel_path
+  }, { text = true }):wait()
   return result.code == 0
 end
 
@@ -575,6 +580,7 @@ end
 ---@return Bazel.file_info
 local get_file_info = function(file_path)
   local path = require("plenary.path")
+  ---@type string
   local relative_path = path.new(file_path):make_relative(vim.fn.getcwd())
 
   local file_info = {}
@@ -639,6 +645,7 @@ function BazelAdapter.is_test_file(file_path)
   return file_info.test_target ~= nil and file_info.test_target ~= ''
 end
 
+--- This was taken from neotest
 local function get_match_type(captured_nodes)
   if captured_nodes["test.name"] then
     return "test"
@@ -650,7 +657,8 @@ end
 
 --- Build the tree position from the captured nodes manually
 --- so that we could scrub the quotes from the name.
---- This is taken from neotest..
+---
+--- This was taken from neotest with some modifications
 local function build_position(file_path, source, captured_nodes)
   local match_type = get_match_type(captured_nodes)
   if match_type then
@@ -679,11 +687,13 @@ function BazelAdapter.discover_positions(file_path)
   local ext = vim.filetype.match({ filename = file_path })
   if ext == "go" then
     local test_func_query = [[
+;; query
 ((function_declaration
   name: (identifier) @test.name) (#match? @test.name "^(Test|Example)"))
   @test.definition
 ]]
     local subtest_query = [[
+;; query
 (call_expression
   function: (selector_expression
     field: (field_identifier) @test.method) (#match? @test.method "^Run$")
@@ -691,6 +701,7 @@ function BazelAdapter.discover_positions(file_path)
   @test.definition
 ]]
     local test_table_query = [[
+;; query
 (block
   (short_var_declaration
     left: (expression_list
@@ -725,6 +736,7 @@ function BazelAdapter.discover_positions(file_path)
             (#eq? @test.field.name @test.field.name1))))))))
 ]]
     local list_test_table_wrapped_query = [[
+;; query
 (for_statement
   (range_clause
       left: (expression_list
@@ -759,7 +771,7 @@ function BazelAdapter.discover_positions(file_path)
               field: (field_identifier) @test.field.name1) (#eq? @test.field.name @test.field.name1))))))
 ]]
     local test_table_inline_struct_query = [[
-;; Query for table tests with inline structs (not keyed)
+;; query
 (for_statement
   (range_clause
     right: (composite_literal
@@ -786,6 +798,7 @@ function BazelAdapter.discover_positions(file_path)
             field: (field_identifier)))))))
 ]]
     local map_test_table_query = [[
+;; query
 (block
     (short_var_declaration
       left: (expression_list
@@ -818,18 +831,26 @@ function BazelAdapter.discover_positions(file_path)
 
     local query = test_func_query ..
         subtest_query ..
-        test_table_query .. list_test_table_wrapped_query .. test_table_inline_struct_query .. map_test_table_query
-    local tree = lib.treesitter.parse_positions(file_path, query,
-      { nested_tests = true, build_position = build_position })
+        test_table_query ..
+        list_test_table_wrapped_query ..
+        test_table_inline_struct_query ..
+        map_test_table_query
+    local tree = lib.treesitter.parse_positions(file_path, query, {
+      fast = true,
+      nested_tests = true,
+      build_position = build_position,
+    })
     return tree
   elseif ext == "java" then
-    local query = [[
-;; Test class
+    local test_class_query = [[
+;; query
 (class_declaration
   name: (identifier) @namespace.name
 ) @namespace.definition
+]]
 
-;; @Test and @ParameterizedTest functions
+    local parameterized_test_query = [[
+;; query
 (method_declaration
   (modifiers
     (marker_annotation
@@ -841,6 +862,7 @@ function BazelAdapter.discover_positions(file_path)
 ) @test.definition
 ]]
 
+    local query = test_class_query .. parameterized_test_query
     return lib.treesitter.parse_positions(file_path, query)
   end
 end
@@ -979,6 +1001,9 @@ require("neotest").setup({
   discovery = {
     concurrent = 1,
     enabled = false,
+  },
+  running = {
+    concurrent = false,
   },
   log_level = vim.log.levels.DEBUG,
 })
