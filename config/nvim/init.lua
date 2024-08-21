@@ -928,6 +928,9 @@ function BazelAdapter.build_spec(args)
         context = context,
       }
     end
+  elseif pos.type == "dir" or pos.type == "namespace" then
+    vim.print("Directory or namespace is not supported yet")
+    return nil
   end
 
   return nil
@@ -941,6 +944,7 @@ end
 function BazelAdapter.results(spec, _result, tree)
   local xml = require('neotest.lib.xml')
   local file = require('neotest.lib.file')
+
   local bazel_testlogs = vim.system({ 'bazel', 'info', 'bazel-testlogs' }, { text = true }):wait().stdout
   if bazel_testlogs == nil then
     return {}
@@ -953,9 +957,14 @@ function BazelAdapter.results(spec, _result, tree)
   local junit_xml = test_log_dir .. '/test.xml'
   local junit_data = xml.parse(file.read(junit_xml))
 
-  local pos = tree:data()
   ---@type table<string, neotest.Result>
   local neotest_results = {}
+
+  local pos = tree:data()
+  if pos.type == "dir" or pos.type == "namespace" then
+    vim.print("Directory or namespace is not supported yet")
+    return neotest_results
+  end
 
   for _, testsuite in pairs(junit_data.testsuites) do
     for _, testcase in pairs(testsuite.testcase) do
