@@ -2,6 +2,7 @@
 	co = checkout
 	ci = commit
 	st = status
+	br = branch --sort=-committerdate
 [core]
 	editor = nvim
 [user]
@@ -14,3 +15,25 @@
 [rebase]
 	autoStash = true
 	autoSquash = true
+	updateRefs = true
+[push]
+	autoSetupRemote = true
+[merge]
+	stat = false
+	tool = nvimdiff3
+	conflictstyle = diff3
+[advice]
+	skippedCherryPicks = false
+[diff]
+	wsErrorHighlight = all
+[fetch]
+	prune = true
+	pruneTags = true
+[filter "lfs"]
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
