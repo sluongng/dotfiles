@@ -206,7 +206,7 @@ lspconfig.gopls.setup {
 }
 lspconfig.rust_analyzer.setup {}
 lspconfig.starpls.setup {}
-lspconfig["bazelrc-lsp"].setup {}
+lspconfig.bazelrc_lsp.setup {}
 lspconfig.pbls.setup {}
 lspconfig.tsserver.setup {}
 lspconfig.lua_ls.setup({
@@ -382,6 +382,17 @@ vim.g['airline#extensions#gutentags#enabled'] = 1
 
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
+parser_config.bazelrc = {
+  install_info = {
+    url = "~/work/misc/tree-sitter-bazelrc",
+    files = { "src/parser.c" },
+    branch = "main",                        -- default branch in case of git repo if different from master
+    generate_requires_npm = false,          -- if stand-alone parser without npm dependencies
+    requires_generate_from_grammar = false, -- if folder contains pre-generated src/parser.c
+  },
+  filetype = "bazelrc",
+}
 require 'nvim-treesitter.configs'.setup {
   ensure_installed = "all",
   -- Install parsers synchronously (only applied to `ensure_installed`)
@@ -435,6 +446,15 @@ vim.api.nvim_create_autocmd('FileType', {
     vim.opt_local.softtabstop = 4
     vim.opt_local.tabstop = 4
   end
+})
+-- Bazelrc (bazelrc) settings
+vim.api.nvim_create_augroup('BazelRcFiletype', { clear = true })
+vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
+  group = 'BazelRcFiletype',
+  pattern = '*.bazelrc',
+  callback = function()
+    vim.bo.filetype = 'bazelrc'
+  end,
 })
 
 -- Enable filetype plugins
