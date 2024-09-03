@@ -52,11 +52,11 @@ Plug('github/copilot.vim')
 Plug('fatih/vim-go')
 
 -- Neotest
-Plug 'nvim-lua/plenary.nvim'
-Plug 'antoinemadec/FixCursorHold.nvim'
-Plug 'nvim-neotest/nvim-nio'
-Plug 'nvim-neotest/neotest'
-Plug 'sluongng/neotest-bazel'
+Plug('nvim-lua/plenary.nvim')
+Plug('antoinemadec/FixCursorHold.nvim')
+Plug('nvim-neotest/nvim-nio')
+Plug('nvim-neotest/neotest')
+Plug('sluongng/neotest-bazel', { ['dir'] = '~/work/misc/neotest-bazel' })
 
 -- Bazel / Ctags
 Plug('ludovicchabant/vim-gutentags')
@@ -567,7 +567,8 @@ vim.cmd [[
 ]]
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Neotest-Bazel >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-require("neotest").setup({
+local neotest = require("neotest")
+neotest.setup({
   adapters = {
     require("neotest-bazel")
   },
@@ -578,4 +579,10 @@ require("neotest").setup({
   running = {
     concurrent = false,
   },
+  log_level = vim.log.levels.DEBUG,
 })
+
+vim.keymap.set('n', '<leader>tr', function() neotest.run.run() end, {})
+vim.keymap.set('n', '<leader>tf', function() neotest.run.run(vim.fn.expand("%")) end, {})
+vim.keymap.set('n', '<leader>ts', function() neotest.summary.toggle() end, {})
+vim.keymap.set('n', '<leader>to', function() neotest.output_panel.toggle() end, {})
