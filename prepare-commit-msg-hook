@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Get the name of the file containing the commit message
+COMMIT_MSG_FILE="$1"
+
+# Read the commit message content only once
+COMMIT_MESSAGE_CONTENT=$(cat "$COMMIT_MSG_FILE")
+
+# Check if the commit message is empty (initial commit case) and skip the hook
+if [ -z "$COMMIT_MESSAGE_CONTENT" ]; then
+    exit 0
+fi
+
+# Check if we are in a rebase operation, if so skip processing and exit
+if git rev-parse --verify HEAD &>/dev/null; then
+    REBASE_HEAD=$(git rev-parse --git-dir)/rebase-apply/head
+    if [ -f "$REBASE_HEAD" ]; then
+        # echo "Rebase in progress, skipping commit message generation."
+        exit 0
+    fi
+
+    REBASE_MERGE=$(git rev-parse --git-dir)/rebase-merge/head
+    if [ -f "$REBASE_MERGE" ]; then
+        # echo "Rebase in progress, skipping commit message generation."
+        exit 0
+    fi
+fi
+
+# Check if there is a non-comment line in the commit message, if so, don't overwrite.
+# Simplified grep to check for non-comment, non-empty lines
+if sed '/^# ------------------------ >8 ------------------------$/,$d' <<<"$COMMIT_MESSAGE_CONTENT" |\
+     grep -vE '^\s*(#|$)' |\
+     grep . > /dev/null ; then
+  # echo "Existing commit message found, skipping message update."
+  exit 0
+fi
+
+# Craft the prompt for llm
+PROMPT="You are a commit message generator.
+Please create a concise and well-formatted commit message, following conventional commits format (e.g., feat: Added a new feature, fix: Resolved a bug, etc.).
+The message should be no longer than 50 characters for the first line.
+Follow up lines should be wrapped at 72 characters and provide commentary to help reviewer/reader better understand the change.
+Here's the existing verbose commit message:
+
+Verbose commit message:
+\`\`\`
+$COMMIT_MESSAGE_CONTENT
+\`\`\`
+
+Commit message:"
+
+# Use llm to generate the commit message.
+GENERATED_MESSAGE=$(llm -m gemini-2.0-flash-exp "$PROMPT")
+
+# Check if the generated message is empty or no generation happens and skip replacing
+if [ -z "$GENERATED_MESSAGE" ]; then
+  echo "No commit message generated from llm, skipping message update"
+  echo "$COMMIT_MESSAGE_CONTENT" >> "$COMMIT_MSG_FILE"
+  exit 0
+fi
+
+# Replace the content of the commit message file with the new message
+echo "$GENERATED_MESSAGE" > "$COMMIT_MSG_FILE"
+echo "$COMMIT_MESSAGE_CONTENT" >> "$COMMIT_MSG_FILE"
+
+exit 0
