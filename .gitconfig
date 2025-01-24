@@ -5,6 +5,7 @@
 	br = branch --sort=-committerdate
 [core]
 	editor = nvim
+	fsmonitor = true
 [user]
 	email = sluongng@gmail.com
 	name = Son Luong Ngoc
@@ -20,12 +21,13 @@
 	autoSetupRemote = true
 [merge]
 	stat = false
-	tool = nvimdiff3
+	tool = nvimdiff2
 	conflictstyle = diff3
 [advice]
 	skippedCherryPicks = false
 [diff]
 	wsErrorHighlight = all
+	tool = nvimdiff
 [fetch]
 	prune = true
 	pruneTags = true
@@ -37,3 +39,7 @@
 [credential]
 	helper = 
 	helper = /usr/local/share/gcm-core/git-credential-manager
+[mergetool]
+	keepBackup = false
+[maintenance]
+	repo = /Users/sluongng/work/buildbuddy/buildbuddy
