@@ -141,7 +141,7 @@ export FZF_DEFAULT_OPTS='--layout=reverse'
 
 ## Preview file with sharkdp/bat
 export FZF_CTRL_T_COMMAND="${FZF_DEFAULT_COMMAND}"
-export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {} 2> /dev/null | head -50'"
+export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {} 2> /dev/null | head -100'"
 
 ## Navigate to dir
 export FZF_ALT_C_COMMAND='fd --type directory'
