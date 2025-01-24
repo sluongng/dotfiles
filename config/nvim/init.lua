@@ -64,6 +64,7 @@ Plug('dhananjaylatkar/cscope_maps.nvim')
 
 -- Coloring
 Plug('joshdick/onedark.vim', { ['branch'] = 'main' })
+Plug('towolf/vim-helm')
 
 vim.call('plug#end')
 
@@ -164,9 +165,37 @@ vim.keymap.del({ "v", "n" }, "gra")
 
 vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
 
+local function on_list(options)
+    vim.fn.setqflist({}, ' ', options)
+    if #options.items > 1 then
+        vim.cmd("botright cwindow") -- always take full width
+    end
+    vim.cmd.cfirst()
+end
+
 local lsp_zero = require('lsp-zero')
 lsp_zero.on_attach(function(_client, bufnr)
-  lsp_zero.default_keymaps({ buffer = bufnr })
+  local opts = { buffer = bufnr, remap = false }
+  lsp_zero.default_keymaps({ buffer = bufnr, exclude = { '<F2>', '<F4>', 'gr', 'gd', 'gD' } })
+
+  vim.keymap.set("n", "<Leader>rn", function() vim.lsp.buf.rename() end, opts)
+  vim.keymap.set("n", "<Leader>ca", function() vim.lsp.buf.code_action() end, opts)
+  vim.keymap.set("n", "<Leader>cf", function() vim.lsp.buf.format() end, opts)
+  vim.keymap.set("n", "gr", function() vim.lsp.buf.references(nil, { on_list = on_list }) end)
+  vim.keymap.set("n", "gR", function()
+      vim.cmd.vsplit()
+      vim.lsp.buf.references(nil, { on_list = on_list })
+  end)
+  vim.keymap.set("n", "gd", function() vim.lsp.buf.definition({ on_list = on_list }) end)
+  vim.keymap.set("n", "gD", function()
+      vim.cmd.vsplit()
+      vim.lsp.buf.definition({ on_list = on_list })
+  end)
+  vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
+  vim.keymap.set('n', '<leader>E', vim.diagnostic.setloclist, opts)
+  vim.keymap.set('n', ']d', function()
+      vim.diagnostic.goto_next({ float = { border = 'rounded' } }) -- Go to next diagnostic, open float
+  end, opts)
 end)
 lsp_zero.extend_lspconfig({
   sign_text = true,
@@ -177,7 +206,7 @@ lspconfig.gopls.setup {
   settings = {
     gopls = {
       usePlaceholders = true,
-      buildFlags = { "-tags=linux" },
+      buildFlags = {"-tags=linux,amd64"},
       -- ["local"] = "github.com/buildbuddy-io/buildbuddy",
       staticcheck = true,
       analyses = {
@@ -204,11 +233,21 @@ lspconfig.gopls.setup {
     },
   },
 }
-lspconfig.rust_analyzer.setup {}
+lspconfig.rust_analyzer.setup {
+  settings = {
+    ["rust-analyzer"] = {
+      diagnostics = {
+        disabled = { "inactive-code" },  -- Disables the inactive code highlighting
+      },
+    },
+  },
+}
 lspconfig.starpls.setup {}
 lspconfig.bazelrc_lsp.setup {}
-lspconfig.pbls.setup {}
-lspconfig.tsserver.setup {}
+lspconfig.pbls.setup {
+  -- cmd = {"env", "RUST_LOG=trace", "pbls"},
+}
+lspconfig.ts_ls.setup {}
 lspconfig.lua_ls.setup({
   settings = {
     Lua = {
@@ -325,7 +364,6 @@ vim.g.gutentags_ctags_exclude = { '*/bazel-out/*', '*/bazel-bin/*' }
 vim.g.gutentags_enabled_dirs = { '/Users/sluongng/work/bazelbuild/bazel' }
 
 vim.cmd [[
-  let g:gutentags_init_user_func = 'CheckEnabledDirs'
   function! CheckEnabledDirs(file) abort
       let file_path = fnamemodify(a:file, ':p:h')
       for enabled_dir in g:gutentags_enabled_dirs
@@ -336,8 +374,12 @@ vim.cmd [[
       endfor
       return 0
   endfunction
+  let g:gutentags_init_user_func = 'CheckEnabledDirs'
 ]]
 
+-- For copilot 
+-- https://old.reddit.com/r/neovim/comments/wbx4r6/has_anyone_managed_to_use_github_copilot_in_nvchad/
+vim.g.copilot_assume_mapped = true
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fzf.vim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 --  Doc: https://github.com/junegunn/fzf.vim
