@@ -6,6 +6,7 @@
 [core]
 	editor = nvim
 	fsmonitor = true
+	untrackedCache = true
 [user]
 	email = sluongng@gmail.com
 	name = Son Luong Ngoc
@@ -18,28 +19,43 @@
 	autoSquash = true
 	updateRefs = true
 [push]
+	default = simple
 	autoSetupRemote = true
+[help]
+	autocorrect = prompt
+[rerere]
+	enabled = true
+	autoUpdate = true
 [merge]
 	stat = false
 	tool = nvimdiff2
-	conflictstyle = diff3
+	conflictstyle = zdiff3
 [advice]
 	skippedCherryPicks = false
 [diff]
+	algorithm = histogram
+	colorMoved = plain
 	wsErrorHighlight = all
 	tool = nvimdiff
 [fetch]
 	prune = true
 	pruneTags = true
-[filter "lfs"]
-	required = true
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
 [credential]
-	helper = 
 	helper = /usr/local/share/gcm-core/git-credential-manager
 [mergetool]
 	keepBackup = false
+[column]
+	ui = auto
+[branch]
+	sort = -committerdate
+[tag]
+	sort = version:refname
 [maintenance]
 	repo = /Users/sluongng/work/buildbuddy/buildbuddy
+	repo = /Users/sluongng/work/buildbuddy/buildbuddy-helm
+	repo = /Users/sluongng/work/buildbuddy/buildbuddy-internal
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true

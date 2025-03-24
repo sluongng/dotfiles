@@ -227,3 +227,7 @@ export KUBE_CONFIG_PATH=~/.kube/config
 [[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
 
 export PATH="$PATH:/opt/homebrew/opt/binutils/bin"
+
+# Enable core dumps to debug Bazel JVM issue
+# https://github.com/bazelbuild/bazel/issues/23497
+ulimit -c unlimited
