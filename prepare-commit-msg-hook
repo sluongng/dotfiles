@@ -37,20 +37,31 @@ fi
 
 # Craft the prompt for llm
 PROMPT="You are a commit message generator.
-Please create a concise and well-formatted commit message, following conventional commits format (e.g., feat: Added a new feature, fix: Resolved a bug, etc.).
+Create a concise and well-formatted commit message.
+Follows the existing convention from the historical commit messages.
+
 The message should be no longer than 50 characters for the first line.
 Follow up lines should be wrapped at 72 characters and provide commentary to help reviewer/reader better understand the change.
+
+Do NOT generate the statistic summary.
+Do NOT generate the GitHub PR/Issue reference.
+
+Here's historical commit messages:
+###
+$(git log --stat --author='sluongng' -5)
+###
+
 Here's the existing verbose commit message:
-
-Verbose commit message:
-\`\`\`
+###
 $COMMIT_MESSAGE_CONTENT
-\`\`\`
+###
 
-Commit message:"
+New commit message:
+###
+"
 
 # Use llm to generate the commit message.
-GENERATED_MESSAGE=$(llm -m gemini-2.0-flash-exp "$PROMPT")
+GENERATED_MESSAGE=$(llm -m gemini-f "$PROMPT")
 
 # Check if the generated message is empty or no generation happens and skip replacing
 if [ -z "$GENERATED_MESSAGE" ]; then
