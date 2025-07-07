@@ -18,3 +18,6 @@ window-save-state = always
 macos-option-as-alt = true
 
 macos-window-shadow = false
+
+clipboard-read = allow
+clipboard-write = allow

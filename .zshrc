@@ -231,3 +231,6 @@ export PATH="$PATH:/opt/homebrew/opt/binutils/bin"
 # Enable core dumps to debug Bazel JVM issue
 # https://github.com/bazelbuild/bazel/issues/23497
 ulimit -c unlimited
+ulimit -n 10240
+export PATH="/opt/homebrew/opt/curl/bin:$PATH"
+export PATH="/opt/homebrew/opt/bison/bin:$PATH"
