@@ -244,9 +244,7 @@ lspconfig.rust_analyzer.setup {
 }
 lspconfig.starpls.setup {}
 lspconfig.bazelrc_lsp.setup {}
-lspconfig.pbls.setup {
-  -- cmd = {"env", "RUST_LOG=trace", "pbls"},
-}
+lspconfig.protols.setup {}
 lspconfig.ts_ls.setup {}
 lspconfig.lua_ls.setup({
   settings = {
