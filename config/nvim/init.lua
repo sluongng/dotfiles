@@ -194,7 +194,7 @@ lsp_zero.on_attach(function(_client, bufnr)
   vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
   vim.keymap.set('n', '<leader>E', vim.diagnostic.setloclist, opts)
   vim.keymap.set('n', ']d', function()
-      vim.diagnostic.goto_next({ float = { border = 'rounded' } }) -- Go to next diagnostic, open float
+      vim.diagnostic.jump({ count = 1,  float = { border = 'rounded' } }) -- Go to next diagnostic, open float
   end, opts)
 end)
 lsp_zero.extend_lspconfig({
@@ -325,13 +325,13 @@ cmp.setup({
   }),
   -- note: if you are going to use lsp-kind (another plugin)
   -- replace the line below with the function from lsp-kind
-  formatting = lsp_zero.cmp_format(),
+  formatting = lsp_zero.cmp_format({}),
 })
 
 local on_references = vim.lsp.handlers["textDocument/references"]
-vim.lsp.handlers["textDocument/references"] = vim.lsp.with(
-  on_references, {
-    -- Use location list instead of quickfix list
+vim.lsp.handlers["textDocument/references"] = vim.lsp.buf.references(
+  nil, {
+    on_list = on_references,
     loclist = true,
   }
 )
