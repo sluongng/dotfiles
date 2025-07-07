@@ -158,17 +158,17 @@ vim.opt.splitright = true
 vim.api.nvim_set_keymap('n', 'Q', '<Nop>', { noremap = true, silent = true })
 
 -- Color and autocmd for color scheme
-if vim.fn.has("autocmd") == 1 then
-  vim.cmd([[
-    augroup colorextend
-      autocmd!
-      let s:off_white = { "gui": "#ABB2BF", "cterm": "145", "cterm16" : "7" }
-      autocmd ColorScheme * call onedark#set_highlight("LspInlayHint", { "fg": s:off_white })
-    augroup END
-  ]])
-end
+local colorextend_group = vim.api.nvim_create_augroup('colorextend', { clear = true })
+local off_white = { gui = "#ABB2BF", cterm = "145", cterm16 = "7" }
+vim.api.nvim_create_autocmd('ColorScheme', {
+  group = colorextend_group,
+  pattern = '*',
+  callback = function()
+    vim.fn['onedark#set_highlight']('LspInlayHint', { fg = off_white })
+  end,
+})
 
-vim.env.NVIM_TUI_ENABLE_TRUE_COLOR = 1
+vim.opt.termguicolors = true
 vim.cmd("colorscheme onedark")
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LSP Config >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -373,7 +373,7 @@ vim.g.gutentags_ctag_tagfile = '.git/ctags'
 vim.g.gutentags_ctags_exclude = { '*/bazel-out/*', '*/bazel-bin/*' }
 
 -- Enable gutentags for specific directories
-vim.g.gutentags_enabled_dirs = { '/Users/sluongng/work/bazelbuild/bazel' }
+vim.g.gutentags_enabled_dirs = { vim.fn.expand('~/work/bazelbuild/bazel') }
 
 vim.cmd [[
   function! CheckEnabledDirs(file) abort
@@ -525,28 +525,10 @@ vim.api.nvim_create_autocmd('FileType', {
   end
 })
 
--- Golang syntax highlighting
-vim.g.go_highlight_functions = 1
-vim.g.go_highlight_function_parameters = 1
-vim.g.go_highlight_function_calls = 1
-vim.g.go_highlight_types = 1
-vim.g.go_highlight_extra_types = 1
-vim.g.go_highlight_fields = 1
-vim.g.go_highlight_methods = 1
-vim.g.go_highlight_operators = 1
-vim.g.go_highlight_structs = 1
-vim.g.go_highlight_generate_tags = 1
-vim.g.go_highlight_format_strings = 1
-vim.g.go_highlight_variable_declarations = 1
-vim.g.go_highlight_variable_assignments = 1
-vim.g.go_highlight_build_constraints = 1
-vim.g.go_highlight_array_whitespace_error = 1
-vim.g.go_highlight_chan_whitespace_error = 1
-
 -- Golang additional settings
+-- Rely on nvim-treesitter for syntax highlighting and nvim-lspconfig for formatting.
 vim.g.go_auto_sameids = 0
 vim.g.go_def_mapping_enabled = 0
-vim.g.go_fmt_command = "gopls"
 vim.g.go_gopls_enabled = 0
 vim.g.go_gopls_gofumpt = 0
 
