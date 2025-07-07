@@ -6,67 +6,60 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_node_provider = 0
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
---  Doc: https://github.com/junegunn/vim-plug
+-- Using vim.pack to manage plugins
+vim.pack.add({
+  -- Utilities
+  'https://github.com/lewis6991/fileline.nvim',
+  'https://github.com/ibhagwan/fzf-lua',
+  'https://github.com/nvim-tree/nvim-web-devicons',
+  'https://github.com/junegunn/vim-peekaboo',
+  'https://github.com/tpope/vim-fugitive',
+  'https://github.com/tpope/vim-surround',
+  'https://github.com/tpope/vim-repeat',
 
-local Plug = vim.fn['plug#']
+  -- Indentation
+  'https://github.com/lukas-reineke/indent-blankline.nvim',
 
-vim.call('plug#begin')
+  -- Status bar
+  'https://github.com/vim-airline/vim-airline',
+  'https://github.com/airblade/vim-gitgutter',
 
--- Utilities
-Plug('lewis6991/fileline.nvim')
+  -- TreeSitter
+  'https://github.com/nvim-treesitter/nvim-treesitter',
+  'https://github.com/nvim-treesitter/playground',
 
-Plug('ibhagwan/fzf-lua', { ['branch'] = 'main' })
-Plug('nvim-tree/nvim-web-devicons')
-Plug('junegunn/vim-peekaboo')
+  -- LSP Client
+  'https://github.com/VonHeikemen/lsp-zero.nvim',
+  'https://github.com/delphinus/cmp-ctags',
+  'https://github.com/hrsh7th/cmp-buffer',
+  'https://github.com/hrsh7th/cmp-nvim-lsp',
+  'https://github.com/hrsh7th/nvim-cmp',
+  'https://github.com/neovim/nvim-lspconfig',
 
-Plug('tpope/vim-fugitive')
-Plug('tpope/vim-surround')
-Plug('tpope/vim-repeat')
+  -- Sneak
+  'https://github.com/justinmk/vim-sneak',
 
--- Indentation
-Plug('lukas-reineke/indent-blankline.nvim', { ['main'] = 'ibl', ['opts'] = {} })
+  -- Copilot
+  'https://github.com/github/copilot.vim',
 
--- Status bar
-Plug('vim-airline/vim-airline')
-Plug('airblade/vim-gitgutter', { ['branch'] = 'main' })
+  -- Golang
+  'https://github.com/fatih/vim-go',
 
--- TreeSitter
-Plug('nvim-treesitter/nvim-treesitter', { ['do'] = ':TSUpdate' })
-Plug('nvim-treesitter/playground')
+  -- Neotest
+  'https://github.com/nvim-lua/plenary.nvim',
+  'https://github.com/antoinemadec/FixCursorHold.nvim',
+  'https://github.com/nvim-neotest/nvim-nio',
+  'https://github.com/nvim-neotest/neotest',
+  '~/work/misc/neotest-bazel',
 
--- LSP Client
-Plug('VonHeikemen/lsp-zero.nvim')
-Plug('delphinus/cmp-ctags')
-Plug('hrsh7th/cmp-buffer')
-Plug('hrsh7th/cmp-nvim-lsp')
-Plug('hrsh7th/nvim-cmp')
-Plug('neovim/nvim-lspconfig')
+  -- Bazel / Ctags
+  'https://github.com/ludovicchabant/vim-gutentags',
+  'https://github.com/dhananjaylatkar/cscope_maps.nvim',
 
--- Sneak
-Plug('justinmk/vim-sneak')
-
--- Copilot
-Plug('github/copilot.vim')
-
--- Golang
-Plug('fatih/vim-go')
-
--- Neotest
-Plug('nvim-lua/plenary.nvim')
-Plug('antoinemadec/FixCursorHold.nvim')
-Plug('nvim-neotest/nvim-nio')
-Plug('nvim-neotest/neotest')
-Plug('sluongng/neotest-bazel', { ['dir'] = '~/work/misc/neotest-bazel' })
-
--- Bazel / Ctags
-Plug('ludovicchabant/vim-gutentags')
-Plug('dhananjaylatkar/cscope_maps.nvim')
-
--- Coloring
-Plug('joshdick/onedark.vim', { ['branch'] = 'main' })
-Plug('towolf/vim-helm')
-
-vim.call('plug#end')
+  -- Coloring
+  'https://github.com/joshdick/onedark.vim',
+  'https://github.com/towolf/vim-helm',
+})
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -135,6 +128,27 @@ vim.opt.smartcase = true
 
 -- Fast way to escape
 vim.api.nvim_set_keymap('i', 'jj', '<Esc>', { noremap = true, silent = true })
+
+vim.api.nvim_create_user_command('PackUpdate', function(opts)
+  local names = {}
+  if opts.fargs[1] then
+    names = opts.fargs
+  end
+  vim.pack.update(names, {force = false})
+end, {
+  nargs = '*',
+  desc = 'Update all installed packages'
+})
+vim.api.nvim_create_user_command('PackDelete', function(opts)
+  if not opts.fargs[1] then
+    print("Usage: PackDelete <plugin-name> ...")
+    return
+  end
+  vim.pack.del(opts.fargs)
+end, {
+  nargs = '*',
+  desc = 'Delete one or more packages'
+})
 
 -- Split window behavior
 vim.opt.splitbelow = true
@@ -398,27 +412,25 @@ vim.api.nvim_set_keymap('n', '<leader>t', ':Tags <C-R><C-W><CR>', silent_opts)
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 -- Doc: https://github.com/vim-airline/vim-airline
 
+-- Let Airline load its default extensions
+vim.g.airline_extensions = {'tabline', 'nvimlsp', 'gutentags'}
+
 -- Enable Tab on top
-vim.g['airline#extensions#tabline#enabled'] = 1
 vim.g['airline#extensions#tabline#buffer_idx_mode'] = 1
 
 -- Key mappings for Airline Tab navigation
 
-vim.api.nvim_set_keymap('n', '<leader>1', '<Plug>AirlineSelectTab1', opts)
-vim.api.nvim_set_keymap('n', '<leader>2', '<Plug>AirlineSelectTab2', opts)
-vim.api.nvim_set_keymap('n', '<leader>3', '<Plug>AirlineSelectTab3', opts)
-vim.api.nvim_set_keymap('n', '<leader>4', '<Plug>AirlineSelectTab4', opts)
-vim.api.nvim_set_keymap('n', '<leader>5', '<Plug>AirlineSelectTab5', opts)
-vim.api.nvim_set_keymap('n', '<leader>6', '<Plug>AirlineSelectTab6', opts)
-vim.api.nvim_set_keymap('n', '<leader>7', '<Plug>AirlineSelectTab7', opts)
-vim.api.nvim_set_keymap('n', '<leader>8', '<Plug>AirlineSelectTab8', opts)
-vim.api.nvim_set_keymap('n', '<leader>9', '<Plug>AirlineSelectTab9', opts)
-vim.api.nvim_set_keymap('n', '<leader>-', '<Plug>AirlineSelectPrevTab', opts)
-vim.api.nvim_set_keymap('n', '<leader>+', '<Plug>AirlineSelectNextTab', opts)
-
--- Extension: LSP and Gutentags
-vim.g['airline#extensions#nvimlsp#enabled'] = 1
-vim.g['airline#extensions#gutentags#enabled'] = 1
+vim.api.nvim_set_keymap('n', '<leader>1', ':AirlineSelectTab 1<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>2', ':AirlineSelectTab 2<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>3', ':AirlineSelectTab 3<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>4', ':AirlineSelectTab 4<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>5', ':AirlineSelectTab 5<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>6', ':AirlineSelectTab 6<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>7', ':AirlineSelectTab 7<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>8', ':AirlineSelectTab 8<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>9', ':AirlineSelectTab 9<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>-', ':AirlineSelectPrevTab<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>+', ':AirlineSelectNextTab<CR>', opts)
 
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -440,6 +452,7 @@ require 'nvim-treesitter.configs'.setup {
   highlight = {
     enable = true, -- false will disable the whole extension
   },
+  ignore_install = { "ipkg" },
   incremental_selection = {
     enable = true,
     keymaps = {
