@@ -144,14 +144,79 @@ vim.opt.smartcase = true
 vim.api.nvim_set_keymap('i', 'jj', '<Esc>', { noremap = true, silent = true })
 
 -- Pack management commands
-vim.api.nvim_create_user_command('PackUpdate', function()
-	vim.pack.update()
-end, {})
-vim.api.nvim_create_user_command('PackDel', function(args)
-	local name = args.args
-	vim.pack.del { name }
+
+--[[
+PackUpdate user command
+
+Implements convenient wrappers around vim.pack.update() as described in
+  :h vim.pack.update()
+
+  :PackUpdate                 Update all plugins (shows confirmation buffer)
+  :PackUpdate!                Update all plugins and apply changes immediately
+  :PackUpdate {name ...}      Update only the specified plugins (space-separated list)
+  :PackUpdate! {name ...}     Same as above but apply immediately (force)
+
+It also provides completion for plugin names managed by vim.pack.
+
+PackDel user command
+
+  :PackDel {name ...}      Remove the given plugins from disk
+
+Provides the same name-completion.
+]]
+
+local function pack_plugin_name_complete(arg_lead, cmd_line, _)
+  -- Return list of plugin names that start with arg_lead for shell-like completion.
+  local plugins = {}
+
+  for _, plugin in ipairs(vim.pack.get()) do
+    if plugin.spec then
+      local name = plugin.spec.name
+      if not name and plugin.spec.src then
+        name = plugin.spec.src:match("/?([^/]+)$")
+        if name then
+          name = name:gsub("%.git$", "")
+        end
+      end
+      if name and name:sub(1, #arg_lead) == arg_lead then
+        table.insert(plugins, name)
+      end
+    end
+  end
+  table.sort(plugins)
+  return plugins
+end
+vim.api.nvim_create_user_command('PackUpdate', function(opts)
+  local names
+  if opts.args ~= '' then
+    -- Split args by whitespace.
+    names = {}
+    for name in string.gmatch(opts.args, "%S+") do
+      table.insert(names, name)
+    end
+  end
+
+  vim.pack.update(names, { force = opts.bang })
 end, {
-  nargs = 1,
+  bang = true,
+  nargs = '*',
+  complete = pack_plugin_name_complete,
+})
+vim.api.nvim_create_user_command('PackDel', function(opts)
+  if opts.args == '' then
+    vim.notify('PackDel: at least one plugin name must be supplied', vim.log.levels.ERROR)
+    return
+  end
+
+  local names = {}
+  for name in string.gmatch(opts.args, '%S+') do
+    table.insert(names, name)
+  end
+
+  vim.pack.del(names)
+end, {
+  nargs = '+',
+  complete = pack_plugin_name_complete,
 })
 
 -- Split window behavior
