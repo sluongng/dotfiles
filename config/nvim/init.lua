@@ -5,8 +5,22 @@ vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_node_provider = 0
 
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+-- Doc: https://github.com/vim-airline/vim-airline
+-- Need to set before loading the plugin
+
 -- Using vim.pack to manage plugins
+vim.g.airline_extensions = {'tabline', 'nvimlsp', 'gutentags'}
+
+-- Enable Tab on top
+vim.g.airline_extensions_tabline_enabled = 1
+vim.g.airline_extensions_tabline_buffer_idx_mode = 1
+
+-- LSP
+vim.g.airline_extensions_nvimlsp_enabled = 1
+vim.g.airline_extensions_gutentags_enabled = 1
+
+-- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 vim.pack.add({
   -- Utilities
   'https://github.com/lewis6991/fileline.nvim',
@@ -129,25 +143,15 @@ vim.opt.smartcase = true
 -- Fast way to escape
 vim.api.nvim_set_keymap('i', 'jj', '<Esc>', { noremap = true, silent = true })
 
-vim.api.nvim_create_user_command('PackUpdate', function(opts)
-  local names = {}
-  if opts.fargs[1] then
-    names = opts.fargs
-  end
-  vim.pack.update(names, {force = false})
+-- Pack management commands
+vim.api.nvim_create_user_command('PackUpdate', function()
+	vim.pack.update()
+end, {})
+vim.api.nvim_create_user_command('PackDel', function(args)
+	local name = args.args
+	vim.pack.del { name }
 end, {
-  nargs = '*',
-  desc = 'Update all installed packages'
-})
-vim.api.nvim_create_user_command('PackDelete', function(opts)
-  if not opts.fargs[1] then
-    print("Usage: PackDelete <plugin-name> ...")
-    return
-  end
-  vim.pack.del(opts.fargs)
-end, {
-  nargs = '*',
-  desc = 'Delete one or more packages'
+  nargs = 1,
 })
 
 -- Split window behavior
@@ -408,18 +412,7 @@ vim.api.nvim_set_keymap('n', '<leader>f', ':FzfLua files<CR>', opts)
 vim.api.nvim_set_keymap('n', '<leader>r', ':FzfLua grep search=<C-R><C-W><CR>', silent_opts)
 vim.api.nvim_set_keymap('n', '<leader>t', ':Tags <C-R><C-W><CR>', silent_opts)
 
-
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- Doc: https://github.com/vim-airline/vim-airline
-
--- Let Airline load its default extensions
-vim.g.airline_extensions = {'tabline', 'nvimlsp', 'gutentags'}
-
--- Enable Tab on top
-vim.g['airline#extensions#tabline#buffer_idx_mode'] = 1
-
 -- Key mappings for Airline Tab navigation
-
 vim.api.nvim_set_keymap('n', '<leader>1', ':AirlineSelectTab 1<CR>', opts)
 vim.api.nvim_set_keymap('n', '<leader>2', ':AirlineSelectTab 2<CR>', opts)
 vim.api.nvim_set_keymap('n', '<leader>3', ':AirlineSelectTab 3<CR>', opts)
@@ -431,7 +424,6 @@ vim.api.nvim_set_keymap('n', '<leader>8', ':AirlineSelectTab 8<CR>', opts)
 vim.api.nvim_set_keymap('n', '<leader>9', ':AirlineSelectTab 9<CR>', opts)
 vim.api.nvim_set_keymap('n', '<leader>-', ':AirlineSelectPrevTab<CR>', opts)
 vim.api.nvim_set_keymap('n', '<leader>+', ':AirlineSelectNextTab<CR>', opts)
-
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
