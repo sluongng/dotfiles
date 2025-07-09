@@ -93,6 +93,8 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.clipboard:append("unnamedplus")
 vim.opt.scrolloff = 5
+-- Faster CursorHold events etc.
+vim.opt.updatetime = 300
 
 -- Set clipboard control for Unix
 if vim.fn.has('macunix') == 0 and vim.fn.has('unix') == 1 then
@@ -299,12 +301,33 @@ vim.api.nvim_create_autocmd('LspAttach', {
       vim.keymap.set("n", "<Leader>ca", function() vim.lsp.buf.code_action() end, opts)
     end
     if client:supports_method('textDocument/formatting') then
-      vim.keymap.set("n", "<Leader>cf", function() vim.lsp.buf.format({ async = true }) end, opts) -- Added async=true for non-blocking format
+      -- Non-blocking manual trigger
+      vim.keymap.set(
+        "n",
+        "<Leader>cf",
+        function() vim.lsp.buf.format({ async = true }) end,
+        opts
+      )
+
+      -- Format-on-save ------------------------------
+      -- NOTE: Clearing the same augroup on every LspAttach was causing the
+      -- autocmd to be registered only for the last attached buffer.  Instead
+      -- we create a _single_ augroup once, and just append buffer-local
+      -- autocmds to it.  This guarantees each buffer keeps its own listener
+      -- without interfering with others.
+      local fmt_group = vim.api.nvim_create_augroup('my_lsp_format', { clear = false })
+
+      -- Ensure we don't create duplicate autocmds for the same buffer.
+      vim.api.nvim_clear_autocmds({ group = fmt_group, buffer = bufnr })
+
       vim.api.nvim_create_autocmd('BufWritePre', {
-        group = vim.api.nvim_create_augroup('my.lsp.format', { clear = true }),
+        group = fmt_group,
         buffer = bufnr,
         callback = function()
-          vim.lsp.buf.format({ bufnr = bufnr, async = false }) -- Use async=false for synchronous formatting before save
+          if not client.server_capabilities.documentFormattingProvider then
+            return
+          end
+          vim.lsp.buf.format({ bufnr = bufnr })
         end,
       })
     end
@@ -347,26 +370,24 @@ vim.api.nvim_create_autocmd('LspAttach', {
       vim.keymap.set("i", "<C-s>", vim.lsp.buf.signature_help, opts) -- For signature help in insert mode
     end
     if client:supports_method('textDocument/documentHighlight') then
-      vim.notify("LSP client " .. client.name .. " supports documentHighlight. Setting autocommands.",
-        vim.log.levels.INFO)
+      local hl_group = vim.api.nvim_create_augroup('my_lsp_highlight', { clear = false })
+
+      -- Using once-per-buffer autocmds avoids recreating them on every
+      -- CursorHold for the same buffer while still providing highlight & clear
+      -- Remove previous highlight autocmds for this buffer (if any) before
+      -- adding new ones.
+      vim.api.nvim_clear_autocmds({ group = hl_group, buffer = bufnr })
+
       vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-        group = vim.api.nvim_create_augroup('my.lsp.highlight', { clear = true }),
+        group = hl_group,
         buffer = bufnr,
-        callback = function()
-          vim.notify("CursorHold/I triggered for bufnr: " .. bufnr, vim.log.levels.INFO)
-          vim.lsp.buf.document_highlight()
-        end,
+        callback = vim.lsp.buf.document_highlight,
       })
       vim.api.nvim_create_autocmd('CursorMoved', {
-        group = vim.api.nvim_create_augroup('my.lsp.highlight', { clear = true }),
+        group = hl_group,
         buffer = bufnr,
-        callback = function()
-          vim.notify("CursorMoved triggered for bufnr: " .. bufnr, vim.log.levels.INFO)
-          vim.lsp.buf.clear_references()
-        end,
+        callback = vim.lsp.buf.clear_references,
       })
-    else
-      vim.notify("LSP client " .. client.name .. " DOES NOT support documentHighlight.", vim.log.levels.WARN)
     end
   end,
 })
@@ -495,13 +516,21 @@ cmp.setup({
   }),
 })
 
-local on_references = vim.lsp.handlers["textDocument/references"]
-vim.lsp.handlers["textDocument/references"] = vim.lsp.buf.references(
-  nil, {
-    on_list = on_references,
-    loclist = true,
-  }
-)
+-- Use the default handler but prefer the location list instead of the quickfix
+-- window.  The built-in helper `vim.lsp.util.locations_to_items` does not care
+-- whether the list is a location- or quickfix-list, the choice is made by the
+-- caller via `setloclist` / `setqflist`.
+
+do
+  local default_handler = vim.lsp.handlers["textDocument/references"]
+
+  ---@diagnostic disable-next-line: duplicate-set-field
+  vim.lsp.handlers["textDocument/references"] = function(err, result, ctx, config)
+    config = config or {}
+    config.loclist = true
+    return default_handler(err, result, ctx, config)
+  end
+end
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Ctags >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 --  Use Gutentags(ctags) for projects that are not friendly to LSP
