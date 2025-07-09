@@ -382,6 +382,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
         callback = vim.lsp.buf.clear_references,
       })
     end
+    -- if client:supports_method('textDocument/completion') then
+    --   vim.lsp.completion.enable(true, client.id, bufnr, { autotrigger = true })
+    -- end
   end,
 })
 
@@ -457,12 +460,11 @@ lspconfig.lua_ls.setup({
       workspace = {
         checkThirdParty = false,
         library = {
-          "/usr/local/share/nvim/runtime",
-          "${3rd}/luv/library",
-          "/Users/sluongng/.local/share/nvim/plugged/neotest/lua",
-          "/Users/sluongng/.local/share/nvim/plugged/plenary.nvim/lua",
-          "/Users/sluongng/.local/share/nvim/plugged/nvim-lspconfig/lua",
-          "/Users/sluongng/.local/share/nvim/plugged/nvim-cmp/lua",
+          vim.env.VIMRUNTIME,
+          vim.fn.expand("~/.local/share/nvim/site/pack/core/opt/neotest/lua/"),
+          vim.fn.expand("~/.local/share/nvim/site/pack/core/opt/plenary.nvim/lua"),
+          vim.fn.expand("~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lua"),
+          vim.fn.expand("~/.local/share/nvim/site/pack/core/opt/nvim-cmp/lua"),
         }
       },
     }
