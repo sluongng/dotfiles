@@ -5,12 +5,19 @@ vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_node_provider = 0
 
+-- Golang additional settings
+-- Rely on nvim-treesitter for syntax highlighting and nvim-lspconfig for formatting.
+vim.g.go_auto_sameids = 0
+vim.g.go_def_mapping_enabled = 0
+vim.g.go_gopls_enabled = 0
+vim.g.go_gopls_gofumpt = 0
+
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 -- Doc: https://github.com/vim-airline/vim-airline
 -- Need to set before loading the plugin
 
 -- Using vim.pack to manage plugins
-vim.g.airline_extensions = {'tabline', 'nvimlsp', 'gutentags'}
+vim.g.airline_extensions = { 'tabline', 'nvimlsp', 'gutentags' }
 
 -- Enable Tab on top
 vim.g.airline_extensions_tabline_enabled = 1
@@ -43,7 +50,6 @@ vim.pack.add({
   'https://github.com/nvim-treesitter/playground',
 
   -- LSP Client
-  'https://github.com/VonHeikemen/lsp-zero.nvim',
   'https://github.com/delphinus/cmp-ctags',
   'https://github.com/hrsh7th/cmp-buffer',
   'https://github.com/hrsh7th/cmp-nvim-lsp',
@@ -61,7 +67,6 @@ vim.pack.add({
 
   -- Neotest
   'https://github.com/nvim-lua/plenary.nvim',
-  'https://github.com/antoinemadec/FixCursorHold.nvim',
   'https://github.com/nvim-neotest/nvim-nio',
   'https://github.com/nvim-neotest/neotest',
   '~/work/misc/neotest-bazel',
@@ -165,7 +170,7 @@ PackDel user command
 Provides the same name-completion.
 ]]
 
-local function pack_plugin_name_complete(arg_lead, cmd_line, _)
+local function pack_plugin_name_complete(arg_lead, _cmd_line, _)
   -- Return list of plugin names that start with arg_lead for shell-like completion.
   local plugins = {}
 
@@ -246,50 +251,133 @@ vim.keymap.del("n", "grn")
 vim.keymap.del("n", "grr")
 vim.keymap.del({ "v", "n" }, "gra")
 
-vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+vim.lsp.inlay_hint.enable(true)
 
 local function on_list(options)
-    vim.fn.setqflist({}, ' ', options)
-    if #options.items > 1 then
-        vim.cmd("botright cwindow") -- always take full width
-    end
-    vim.cmd.cfirst()
+  vim.fn.setqflist({}, ' ', options)
+  if #options.items > 1 then
+    vim.cmd("botright cwindow") -- always take full width
+  end
+  vim.cmd.cfirst()
 end
 
-local lsp_zero = require('lsp-zero')
-lsp_zero.on_attach(function(_client, bufnr)
-  local opts = { buffer = bufnr, remap = false }
-  lsp_zero.default_keymaps({ buffer = bufnr, exclude = { '<F2>', '<F4>', 'gr', 'gd', 'gD' } })
 
-  vim.keymap.set("n", "<Leader>rn", function() vim.lsp.buf.rename() end, opts)
-  vim.keymap.set("n", "<Leader>ca", function() vim.lsp.buf.code_action() end, opts)
-  vim.keymap.set("n", "<Leader>cf", function() vim.lsp.buf.format() end, opts)
-  vim.keymap.set("n", "gr", function() vim.lsp.buf.references(nil, { on_list = on_list }) end)
-  vim.keymap.set("n", "gR", function()
-      vim.cmd.vsplit()
-      vim.lsp.buf.references(nil, { on_list = on_list })
-  end)
-  vim.keymap.set("n", "gd", function() vim.lsp.buf.definition({ on_list = on_list }) end)
-  vim.keymap.set("n", "gD", function()
-      vim.cmd.vsplit()
-      vim.lsp.buf.definition({ on_list = on_list })
-  end)
-  vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
-  vim.keymap.set('n', '<leader>E', vim.diagnostic.setloclist, opts)
-  vim.keymap.set('n', ']d', function()
-      vim.diagnostic.jump({ count = 1,  float = { border = 'rounded' } }) -- Go to next diagnostic, open float
-  end, opts)
-end)
-lsp_zero.extend_lspconfig({
-  sign_text = true,
+
+-- Configure diagnostics globally
+vim.diagnostic.config({
+  virtual_text = true,
+  signs = true,
+  update_in_insert = false,
+  float = {
+    border = 'rounded',
+    source = 'if_many',
+    header = '',
+    prefix = '',
+  },
 })
+
+-- Autocmd for LSP client attachment
+vim.api.nvim_create_autocmd('LspAttach', {
+  group = vim.api.nvim_create_augroup('my.lsp.attach', { clear = true }), -- Clear previous autocmds for this group
+  callback = function(args)
+    local bufnr = args.buf
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    local opts = { buffer = bufnr, remap = false }
+
+    vim.notify("LspAttach triggered for client: " .. client.name .. " (bufnr: " .. bufnr .. ")", vim.log.levels.INFO)
+
+    -- Set buffer-local options
+    vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
+    vim.bo[bufnr].tagfunc = 'v:lua.vim.lsp.tagfunc'
+    vim.bo[bufnr].formatexpr = 'v:lua.vim.lsp.formatexpr()'
+
+    -- Keymaps (combining existing and common lsp-zero defaults)
+    if client:supports_method('textDocument/rename') then
+      vim.keymap.set("n", "<Leader>rn", function() vim.lsp.buf.rename() end, opts)
+    end
+    if client:supports_method('textDocument/codeAction') then
+      vim.keymap.set("n", "<Leader>ca", function() vim.lsp.buf.code_action() end, opts)
+    end
+    if client:supports_method('textDocument/formatting') then
+      vim.keymap.set("n", "<Leader>cf", function() vim.lsp.buf.format({ async = true }) end, opts) -- Added async=true for non-blocking format
+      vim.api.nvim_create_autocmd('BufWritePre', {
+        group = vim.api.nvim_create_augroup('my.lsp.format', { clear = true }),
+        buffer = bufnr,
+        callback = function()
+          vim.lsp.buf.format({ bufnr = bufnr, async = false }) -- Use async=false for synchronous formatting before save
+        end,
+      })
+    end
+    if client:supports_method('textDocument/references') then
+      vim.keymap.set("n", "gr", function() vim.lsp.buf.references(nil, { on_list = on_list }) end, opts)
+      vim.keymap.set("n", "gR", function()
+        vim.cmd.vsplit()
+        vim.lsp.buf.references(nil, { on_list = on_list })
+      end, opts)
+    end
+    if client:supports_method('textDocument/definition') then
+      vim.keymap.set("n", "gd", function() vim.lsp.buf.definition({ on_list = on_list }) end, opts)
+      vim.keymap.set("n", "gD", function()
+        vim.cmd.vsplit()
+        vim.lsp.buf.definition({ on_list = on_list })
+      end, opts)
+    end
+    vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
+    vim.keymap.set('n', '<leader>E', vim.diagnostic.setloclist, opts)
+    vim.keymap.set('n', ']d', function()
+      vim.diagnostic.jump({ count = 1, float = { border = 'rounded' } })
+    end, opts)
+    vim.keymap.set('n', '[d', function() -- Add jump to previous diagnostic
+      vim.diagnostic.jump({ count = -1, float = { border = 'rounded' } })
+    end, opts)
+
+    if client:supports_method('textDocument/hover') then
+      vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+    end
+    if client:supports_method('textDocument/implementation') then
+      vim.keymap.set("n", "gi", vim.lsp.buf.implementation, opts)
+    end
+    if client:supports_method('textDocument/typeDefinition') then
+      vim.keymap.set("n", "<leader>D", vim.lsp.buf.type_definition, opts)
+    end
+    if client:supports_method('textDocument/declaration') then
+      vim.keymap.set("n", "<leader>vd", vim.lsp.buf.declaration, opts)
+    end
+    if client:supports_method('textDocument/signatureHelp') then
+      vim.keymap.set("i", "<C-s>", vim.lsp.buf.signature_help, opts) -- For signature help in insert mode
+    end
+    if client:supports_method('textDocument/documentHighlight') then
+      vim.notify("LSP client " .. client.name .. " supports documentHighlight. Setting autocommands.",
+        vim.log.levels.INFO)
+      vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
+        group = vim.api.nvim_create_augroup('my.lsp.highlight', { clear = true }),
+        buffer = bufnr,
+        callback = function()
+          vim.notify("CursorHold/I triggered for bufnr: " .. bufnr, vim.log.levels.INFO)
+          vim.lsp.buf.document_highlight()
+        end,
+      })
+      vim.api.nvim_create_autocmd('CursorMoved', {
+        group = vim.api.nvim_create_augroup('my.lsp.highlight', { clear = true }),
+        buffer = bufnr,
+        callback = function()
+          vim.notify("CursorMoved triggered for bufnr: " .. bufnr, vim.log.levels.INFO)
+          vim.lsp.buf.clear_references()
+        end,
+      })
+    else
+      vim.notify("LSP client " .. client.name .. " DOES NOT support documentHighlight.", vim.log.levels.WARN)
+    end
+  end,
+})
+
 
 local lspconfig = require 'lspconfig'
 lspconfig.gopls.setup {
   settings = {
     gopls = {
       usePlaceholders = true,
-      buildFlags = {"-tags=linux,amd64"},
+      buildFlags = { "-tags=linux,amd64" },
       -- ["local"] = "github.com/buildbuddy-io/buildbuddy",
       staticcheck = true,
       analyses = {
@@ -320,7 +408,7 @@ lspconfig.rust_analyzer.setup {
   settings = {
     ["rust-analyzer"] = {
       diagnostics = {
-        disabled = { "inactive-code" },  -- Disables the inactive code highlighting
+        disabled = { "inactive-code" }, -- Disables the inactive code highlighting
       },
     },
   },
@@ -359,7 +447,6 @@ lspconfig.lua_ls.setup({
           "${3rd}/luv/library",
           "/Users/sluongng/.local/share/nvim/plugged/neotest/lua",
           "/Users/sluongng/.local/share/nvim/plugged/plenary.nvim/lua",
-          "/Users/sluongng/.local/share/nvim/plugged/lsp-zero.nvim/lua",
           "/Users/sluongng/.local/share/nvim/plugged/nvim-lspconfig/lua",
           "/Users/sluongng/.local/share/nvim/plugged/nvim-cmp/lua",
         }
@@ -406,9 +493,6 @@ cmp.setup({
       end
     end, { "i", "s" }),
   }),
-  -- note: if you are going to use lsp-kind (another plugin)
-  -- replace the line below with the function from lsp-kind
-  formatting = lsp_zero.cmp_format({}),
 })
 
 local on_references = vim.lsp.handlers["textDocument/references"]
@@ -458,7 +542,7 @@ vim.cmd [[
   let g:gutentags_init_user_func = 'CheckEnabledDirs'
 ]]
 
--- For copilot 
+-- For copilot
 -- https://old.reddit.com/r/neovim/comments/wbx4r6/has_anyone_managed_to_use_github_copilot_in_nvchad/
 vim.g.copilot_assume_mapped = true
 
@@ -478,17 +562,17 @@ vim.api.nvim_set_keymap('n', '<leader>r', ':FzfLua grep search=<C-R><C-W><CR>', 
 vim.api.nvim_set_keymap('n', '<leader>t', ':Tags <C-R><C-W><CR>', silent_opts)
 
 -- Key mappings for Airline Tab navigation
-vim.api.nvim_set_keymap('n', '<leader>1', ':AirlineSelectTab 1<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>2', ':AirlineSelectTab 2<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>3', ':AirlineSelectTab 3<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>4', ':AirlineSelectTab 4<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>5', ':AirlineSelectTab 5<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>6', ':AirlineSelectTab 6<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>7', ':AirlineSelectTab 7<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>8', ':AirlineSelectTab 8<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>9', ':AirlineSelectTab 9<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>-', ':AirlineSelectPrevTab<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>+', ':AirlineSelectNextTab<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>1', '<Plug>AirlineSelectTab1<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>2', '<Plug>AirlineSelectTab2<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>3', '<Plug>AirlineSelectTab3<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>4', '<Plug>AirlineSelectTab4<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>5', '<Plug>AirlineSelectTab5<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>6', '<Plug>AirlineSelectTab6<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>7', '<Plug>AirlineSelectTab7<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>8', '<Plug>AirlineSelectTab8<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>9', '<Plug>AirlineSelectTab9<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>-', '<Plug>AirlineSelectPrevTab<CR>', opts)
+vim.api.nvim_set_keymap('n', '<leader>+', '<Plug>AirlineSelectNextTab<CR>', opts)
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
@@ -581,13 +665,6 @@ vim.api.nvim_create_autocmd('FileType', {
     vim.g.editorconfig = false
   end
 })
-
--- Golang additional settings
--- Rely on nvim-treesitter for syntax highlighting and nvim-lspconfig for formatting.
-vim.g.go_auto_sameids = 0
-vim.g.go_def_mapping_enabled = 0
-vim.g.go_gopls_enabled = 0
-vim.g.go_gopls_gofumpt = 0
 
 -- Markdown settings
 vim.api.nvim_create_autocmd('FileType', {
