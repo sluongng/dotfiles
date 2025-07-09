@@ -83,9 +83,7 @@ vim.pack.add({
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 -- Set options
-vim.opt.compatible = false
 vim.opt.ruler = true
-vim.opt.hidden = true
 vim.opt.cmdheight = 2
 vim.opt.history = 9000
 vim.opt.signcolumn = "auto"
@@ -132,9 +130,6 @@ vim.opt.tabstop = 2
 -- No bell on error, don't use swapfile
 vim.opt.errorbells = false
 vim.opt.visualbell = false
-vim.opt.backup = false
-vim.opt.writebackup = false
-vim.opt.swapfile = false
 
 -- Indentation
 vim.opt.autoindent = true
@@ -148,7 +143,10 @@ vim.opt.smartcase = true
 -- vim.g.mapleader = ";"
 
 -- Fast way to escape
-vim.api.nvim_set_keymap('i', 'jj', '<Esc>', { noremap = true, silent = true })
+local map, default_opts = vim.keymap.set, { noremap = true, silent = true }
+
+-- Fast way to escape
+map('i', 'jj', '<Esc>', default_opts)
 
 -- Pack management commands
 
@@ -234,18 +232,11 @@ vim.opt.splitright = true
 vim.api.nvim_set_keymap('n', 'Q', '<Nop>', { noremap = true, silent = true })
 
 -- Color and autocmd for color scheme
-local colorextend_group = vim.api.nvim_create_augroup('colorextend', { clear = true })
-local off_white = { gui = "#ABB2BF", cterm = "145", cterm16 = "7" }
-vim.api.nvim_create_autocmd('ColorScheme', {
-  group = colorextend_group,
-  pattern = '*',
-  callback = function()
-    vim.fn['onedark#set_highlight']('LspInlayHint', { fg = off_white })
-  end,
-})
-
 vim.opt.termguicolors = true
-vim.cmd("colorscheme onedark")
+vim.cmd.colorscheme('onedark')
+
+-- Make inlay hints slightly brighter than comment grey
+vim.api.nvim_set_hl(0, 'LspInlayHint', { fg = '#ABB2BF' })
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LSP Config >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 -- remove the default keymaps from https://github.com/neovim/neovim/pull/28650
@@ -283,10 +274,12 @@ vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('my.lsp.attach', { clear = true }), -- Clear previous autocmds for this group
   callback = function(args)
     local bufnr = args.buf
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
     local opts = { buffer = bufnr, remap = false }
-
-    vim.notify("LspAttach triggered for client: " .. client.name .. " (bufnr: " .. bufnr .. ")", vim.log.levels.INFO)
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if not client then
+      vim.notify("lsp client id " .. args.data.client_id .. " not found.", vim.log.levels.WARN)
+      return -- Stop
+    end
 
     -- Set buffer-local options
     vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
