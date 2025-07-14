@@ -286,7 +286,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
     vim.bo[bufnr].tagfunc = 'v:lua.vim.lsp.tagfunc'
     vim.bo[bufnr].formatexpr = 'v:lua.vim.lsp.formatexpr()'
 
-    -- Keymaps (combining existing and common lsp-zero defaults)
     if client:supports_method('textDocument/rename') then
       vim.keymap.set("n", "<Leader>rn", function() vim.lsp.buf.rename() end, opts)
     end
@@ -473,8 +472,6 @@ lspconfig.lua_ls.setup({
 
 local cmp = require('cmp')
 cmp.setup({
-  -- if you don't know what is a "source" in nvim-cmp read this:
-  -- https://github.com/VonHeikemen/lsp-zero.nvim/blob/v3.x/doc/md/autocomplete.md#adding-a-source
   sources = {
     { name = 'path' },
     { name = 'nvim_lsp' },
