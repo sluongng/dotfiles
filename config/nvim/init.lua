@@ -388,8 +388,38 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 
-local lspconfig = require 'lspconfig'
-lspconfig.gopls.setup {
+local function enable_lsp_config(name, overrides)
+  if overrides then
+    vim.lsp.config(name, overrides)
+  end
+
+  local resolved = vim.lsp.config[name]
+  if not resolved then
+    vim.notify(string.format('Skipping %s LSP: config not found', name), vim.log.levels.INFO)
+    return
+  end
+
+  local cmd = resolved.cmd
+  local executable
+
+  if type(cmd) == 'table' then
+    executable = cmd[1]
+  elseif type(cmd) == 'string' then
+    executable = cmd
+  end
+
+  if executable and executable ~= '' and vim.fn.executable(executable) == 0 then
+    vim.notify(
+      string.format('Skipping %s LSP: command "%s" is not executable', name, executable),
+      vim.log.levels.INFO
+    )
+    return
+  end
+
+  vim.lsp.enable(name)
+end
+
+enable_lsp_config('gopls', {
   settings = {
     gopls = {
       usePlaceholders = true,
@@ -419,8 +449,9 @@ lspconfig.gopls.setup {
       },
     },
   },
-}
-lspconfig.rust_analyzer.setup {
+})
+
+enable_lsp_config('rust_analyzer', {
   settings = {
     ["rust-analyzer"] = {
       diagnostics = {
@@ -428,12 +459,14 @@ lspconfig.rust_analyzer.setup {
       },
     },
   },
-}
-lspconfig.starpls.setup {}
-lspconfig.bazelrc_lsp.setup {}
-lspconfig.protols.setup {}
-lspconfig.ts_ls.setup {}
-lspconfig.lua_ls.setup({
+})
+
+enable_lsp_config('starpls')
+enable_lsp_config('bazelrc_lsp')
+enable_lsp_config('protols')
+enable_lsp_config('ts_ls')
+
+enable_lsp_config('lua_ls', {
   settings = {
     Lua = {
       diagnostics = {
