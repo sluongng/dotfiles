@@ -83,7 +83,9 @@ else
   )
 
   # Fix environment for Wayland + zsh + snapd
-  source /etc/profile.d/apps-bin-path.sh
+  if [ -r /etc/profile.d/apps-bin-path.sh ]; then
+    source /etc/profile.d/apps-bin-path.sh
+  fi
 fi
 
 # Disable Magic Pasting
@@ -129,7 +131,9 @@ export GIT_EDITOR=nvim
 export JQ_COLORS='0;33:0;39:0;39:0;39:0;32:1;39:1;39'
 
 # Ripgrep sane defaults
-export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
+if [ -f "$HOME/.ripgreprc" ]; then
+  export RIPGREP_CONFIG_PATH=$HOME/.ripgreprc
+fi
 
 # FZF
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
@@ -194,16 +198,16 @@ if [[ -f ~/secret.sh ]]; then
 fi
 
 # Toolings
-alias icat='kitten icat --align=left'
 alias cat=bat
-alias gotop=gotop-cjbassi
 # alias ls=lsd
 alias ls=eza # eza is not actively mantained
 # alias bazel=bazelisk
 
 # Containers
-alias kb=kubectl
-source <(kubectl completion zsh)
+if command -v kubectl >/dev/null 2>&1; then
+  alias kb=kubectl
+  source <(kubectl completion zsh)
+fi
 
 # QoL commands
 ## List out all dir in ${PATH}
