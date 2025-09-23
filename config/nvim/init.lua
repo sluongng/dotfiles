@@ -94,20 +94,51 @@ vim.opt.scrolloff = 5
 -- Faster CursorHold events etc.
 vim.opt.updatetime = 300
 
--- Set clipboard control for Unix
 if vim.fn.has('macunix') == 0 and vim.fn.has('unix') == 1 then
-  vim.g.clipboard = {
-    name = 'xsel',
-    copy = {
-      ['+'] = 'xsel -ib',
-      ['*'] = 'xsel -ip',
-    },
-    paste = {
-      ['+'] = 'xsel -ob',
-      ['*'] = 'xsel -op',
-    },
-    cache_enabled = 1,
-  }
+  local clipboard = nil
+
+  if vim.fn.executable('wl-copy') == 1 and vim.fn.executable('wl-paste') == 1 then
+    clipboard = {
+      name = 'wl-clipboard',
+      copy = {
+        ['+'] = 'wl-copy --foreground --primary',
+        ['*'] = 'wl-copy --foreground',
+      },
+      paste = {
+        ['+'] = 'wl-paste --no-newline --primary',
+        ['*'] = 'wl-paste --no-newline',
+      },
+      cache_enabled = 1,
+    }
+  elseif vim.fn.executable('xclip') == 1 then
+    clipboard = {
+      name = 'xclip',
+      copy = {
+        ['+'] = 'xclip -selection clipboard',
+        ['*'] = 'xclip -selection primary',
+      },
+      paste = {
+        ['+'] = 'xclip -selection clipboard -o',
+        ['*'] = 'xclip -selection primary -o',
+      },
+      cache_enabled = 1,
+    }
+  elseif vim.fn.executable('xsel') == 1 then
+    clipboard = {
+      name = 'xsel',
+      copy = {
+        ['+'] = 'xsel -ib',
+        ['*'] = 'xsel -ip',
+      },
+      paste = {
+        ['+'] = 'xsel -ob',
+        ['*'] = 'xsel -op',
+      },
+      cache_enabled = 1,
+    }
+  end
+
+  vim.g.clipboard = clipboard
 end
 
 -- Mouse support
