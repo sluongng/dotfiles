@@ -5,6 +5,8 @@
 
     "layer": "top",
 
+    "exclusive": true,
+
     "position": "bottom",
 
     "mode": "hide",
