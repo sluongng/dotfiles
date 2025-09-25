@@ -167,8 +167,16 @@ export EDITOR="${VISUAL}"
 export PATH=$PATH:/snap/bin
 
 # JAVA
-export JAVA_HOME="/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
-export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+case "$(uname)" in
+  Darwin)
+    export JAVA_HOME="/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
+    export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+    ;;
+  Linux)
+    export JAVA_HOME="/usr/lib/jvm/java-25-openjdk"
+    export PATH="$JAVA_HOME/bin:$PATH"
+    ;;
+esac
 
 # Python
 export PATH=$PATH:~/.local/bin
