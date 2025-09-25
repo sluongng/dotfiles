@@ -101,12 +101,12 @@ if vim.fn.has('macunix') == 0 and vim.fn.has('unix') == 1 then
     clipboard = {
       name = 'wl-clipboard',
       copy = {
-        ['+'] = 'wl-copy --foreground --primary',
-        ['*'] = 'wl-copy --foreground',
+        ['+'] = 'wl-copy --foreground',
+        ['*'] = 'wl-copy --foreground --primary',
       },
       paste = {
-        ['+'] = 'wl-paste --no-newline --primary',
-        ['*'] = 'wl-paste --no-newline',
+        ['+'] = 'wl-paste --no-newline',
+        ['*'] = 'wl-paste --no-newline --primary',
       },
       cache_enabled = 1,
     }
