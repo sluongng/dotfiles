@@ -15,7 +15,7 @@
 
 DIR_DOTFILE=~/.dotfiles
 DIR_HOME=${HOME}
-DIR_CONFIG=${DIR_HOME}/.config
+DIR_CONFIG=${XDG_CONFIG_HOME:-${DIR_HOME}/.config}
 
 # Clone repo
 if [ ! -d "${DIR_HOME}/.dotfiles" ]; then
@@ -96,6 +96,7 @@ mkdir -p ${DIR_CONFIG}/nvim/
 mkdir -p ${DIR_CONFIG}/alacritty/
 mkdir -p ${DIR_CONFIG}/kitty/
 mkdir -p ${DIR_CONFIG}/bat/
+mkdir -p ${DIR_CONFIG}/git/
 
 # Link all the dotfiles
 ln -sfn ${DIR_DOTFILE}/.zshrc ${DIR_HOME}/.zshrc
@@ -114,6 +115,9 @@ echo 'Linked .tmux.conf from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/libinput-gestures.conf ${DIR_CONFIG}/libinput-gestures.conf
 echo 'Linked libinput-gestures config from dotfiles'
+
+ln -sfn ${DIR_DOTFILE}/config/git/config ${DIR_CONFIG}/git/config
+echo 'Linked git config from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/alacritty/alacritty.yml ${DIR_CONFIG}/alacritty/alacritty.yml
 echo 'Linked alacritty config from dotfiles'
@@ -143,4 +147,3 @@ echo 'Linked bat config from dotfiles'
 # TODO: What about Ubuntu and apt/snap packages?
 
 # TODO: Install and update neovim + coc.nvim + treesitter plugins/extensions
-

@@ -52,10 +52,6 @@
 	sort = -committerdate
 [tag]
 	sort = version:refname
-[maintenance]
-	repo = /Users/sluongng/work/buildbuddy/buildbuddy
-	repo = /Users/sluongng/work/buildbuddy/buildbuddy-helm
-	repo = /Users/sluongng/work/buildbuddy/buildbuddy-internal
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
