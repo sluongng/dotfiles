@@ -1,0 +1,42 @@
+{
+  "plugins": {
+    "cmp-buffer": [],
+    "cmp-ctags": [],
+    "cmp-nvim-lsp": [],
+    "copilot.vim": [],
+    "cscope_maps.nvim": [],
+    "fileline.nvim": [],
+    "fzf-lua": {
+      "rev": "a8458b7"
+    },
+    "indent-blankline.nvim": [],
+    "neotest": {
+      "rev": "366175e"
+    },
+    "neotest-bazel": [],
+    "nvim-cmp": {
+      "rev": "cf22c9e"
+    },
+    "nvim-lspconfig": {
+      "rev": "e25994a"
+    },
+    "nvim-nio": [],
+    "nvim-treesitter": [],
+    "nvim-web-devicons": {
+      "rev": "8dcb311"
+    },
+    "onedark.vim": [],
+    "playground": [],
+    "plenary.nvim": [],
+    "vim-airline": [],
+    "vim-fugitive": [],
+    "vim-gitgutter": [],
+    "vim-go": [],
+    "vim-gutentags": [],
+    "vim-helm": [],
+    "vim-peekaboo": [],
+    "vim-repeat": [],
+    "vim-sneak": [],
+    "vim-surround": []
+  }
+}

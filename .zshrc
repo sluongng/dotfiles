@@ -219,7 +219,7 @@ fi
 
 # QoL commands
 ## List out all dir in ${PATH}
-alias path="echo ${PATH} | sed 's/:/\n/g'"
+alias path="echo ${PATH} | sed 's/:/\n/g' | sort | uniq -c | sort -n"
 
 # Use bat for man pager
 export PAGER='less -FX'
