@@ -275,8 +275,6 @@ vim.keymap.del("n", "grn")
 vim.keymap.del("n", "grr")
 vim.keymap.del({ "v", "n" }, "gra")
 
-vim.lsp.inlay_hint.enable(true)
-
 local function on_list(options)
   vim.fn.setqflist({}, ' ', options)
   if #options.items > 1 then
@@ -316,6 +314,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
     vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
     vim.bo[bufnr].tagfunc = 'v:lua.vim.lsp.tagfunc'
     vim.bo[bufnr].formatexpr = 'v:lua.vim.lsp.formatexpr()'
+
+    if client:supports_method('textDocument/inlayHint') then
+      vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+    end
 
     if client:supports_method('textDocument/rename') then
       vim.keymap.set("n", "<Leader>rn", function() vim.lsp.buf.rename() end, opts)
@@ -497,6 +499,7 @@ enable_lsp_config('bazelrc_lsp')
 enable_lsp_config('protols')
 enable_lsp_config('ts_ls')
 
+local data_pack_root = vim.fs.joinpath(vim.fn.stdpath('data'), 'site', 'pack', 'core', 'opt')
 enable_lsp_config('lua_ls', {
   settings = {
     Lua = {
@@ -505,17 +508,11 @@ enable_lsp_config('lua_ls', {
         unusedLocalExclude = { "_*" },
       },
       runtime = {
-        path = {
-          "./?.lua",
-          "/Users/sluongng/work/misc/neovim/.deps/usr/share/lua/5.1/?.lua",
-          "/Users/sluongng/work/misc/neovim/.deps/usr/share/lua/5.1/?/init.lua",
-          "/Users/sluongng/work/misc/neovim/.deps/usr/share/luajit-2.1/?.lua",
-          "/usr/local/share/lua/5.1/?.lua",
-          "/usr/local/share/lua/5.1/?/init.lua",
-          "lua/?.lua",
-          "lua/?/init.lua",
-        },
-        version = "LuaJIT"
+        version = "LuaJIT",
+        path = vim.list_extend(
+          vim.split(package.path, ';'),
+          { "lua/?.lua", "lua/?/init.lua" }
+        ),
       },
       telemetry = {
         enable = false
@@ -524,10 +521,10 @@ enable_lsp_config('lua_ls', {
         checkThirdParty = false,
         library = {
           vim.env.VIMRUNTIME,
-          vim.fn.expand("~/.local/share/nvim/site/pack/core/opt/neotest/lua/"),
-          vim.fn.expand("~/.local/share/nvim/site/pack/core/opt/plenary.nvim/lua"),
-          vim.fn.expand("~/.local/share/nvim/site/pack/core/opt/nvim-lspconfig/lua"),
-          vim.fn.expand("~/.local/share/nvim/site/pack/core/opt/nvim-cmp/lua"),
+          vim.fs.joinpath(data_pack_root, "neotest", "lua"),
+          vim.fs.joinpath(data_pack_root, "plenary.nvim", "lua"),
+          vim.fs.joinpath(data_pack_root, "nvim-lspconfig", "lua"),
+          vim.fs.joinpath(data_pack_root, "nvim-cmp", "lua"),
         }
       },
     }
