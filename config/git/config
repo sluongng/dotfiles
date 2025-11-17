@@ -41,7 +41,6 @@
 	prune = true
 	pruneTags = true
 [credential]
-	# helper = /usr/local/share/gcm-core/git-credential-manager
 	helper = /usr/bin/git-credential-manager
 	credentialStore = plaintext
 [mergetool]
