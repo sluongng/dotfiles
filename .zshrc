@@ -29,6 +29,9 @@ plugins=(
   zsh-autosuggestions
   web-search
 
+  # CachyOS
+  archlinux
+
   # Git
   git
   gitfast
