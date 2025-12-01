@@ -11,6 +11,7 @@
       "src": "https://github.com/hrsh7th/cmp-nvim-lsp"
     },
     "copilot.vim": {
+      "rev": "f89e977c87180519ba3b942200e3d05b17b1e2fc",
       "src": "https://github.com/github/copilot.vim"
     },
     "cscope_maps.nvim": {
@@ -21,7 +22,7 @@
       "src": "https://github.com/lewis6991/fileline.nvim"
     },
     "fzf-lua": {
-      "rev": "24d77b04c754c1c9ed5bb417984162be4dc5a603",
+      "rev": "9a0704e8af8f8442110ff22a83b5608366b235df",
       "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "indent-blankline.nvim": {
@@ -39,7 +40,7 @@
       "src": "https://github.com/hrsh7th/nvim-cmp"
     },
     "nvim-lspconfig": {
-      "rev": "dc7e7c7699cc01b1b6fefa97f9b496d8f447d7a1",
+      "rev": "07f4e93de92e8d4ea7ab99602e3a8c9ac0fb778a",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-nio": {
@@ -62,13 +63,14 @@
       "src": "https://github.com/nvim-lua/plenary.nvim"
     },
     "vim-airline": {
-      "rev": "6b51799f26c5fe262ebb04742ce7cdb011082ed7",
+      "rev": "e06b45a8705d945d795337deaf64d9652f96076b",
       "src": "https://github.com/vim-airline/vim-airline"
     },
     "vim-fugitive": {
       "src": "https://github.com/tpope/vim-fugitive"
     },
     "vim-gitgutter": {
+      "rev": "23f4fa532b1edcca87ec62d060f8ea39b02e363a",
       "src": "https://github.com/airblade/vim-gitgutter"
     },
     "vim-go": {
@@ -88,7 +90,7 @@
       "src": "https://github.com/tpope/vim-repeat"
     },
     "vim-sneak": {
-      "rev": "ed9aff2df0d503f043269180bed03c0592ccdf4d",
+      "rev": "2727c6290a78b0d534a79abfd69d80c78179191f",
       "src": "https://github.com/justinmk/vim-sneak"
     },
     "vim-surround": {
