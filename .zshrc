@@ -6,8 +6,14 @@ export ZSH="$HOME/.oh-my-zsh"
 
 ZSH_THEME="sunaku"
 
-ZSH_TMUX_AUTOSTART=false
-ZSH_TMUX_AUTOQUIT=false
+# Disable tmux auto-start/auto-quit when connected over SSH to avoid nesting
+if [[ -n "$SSH_CONNECTION" || -n "$SSH_TTY" || -n "$SSH_CLIENT" ]]; then
+  ZSH_TMUX_AUTOSTART=false
+  ZSH_TMUX_AUTOQUIT=false
+else
+  ZSH_TMUX_AUTOSTART=true
+  ZSH_TMUX_AUTOQUIT=true
+fi
 
 SHOW_AWS_PROMPT=false
 
