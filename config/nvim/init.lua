@@ -447,10 +447,18 @@ vim.api.nvim_create_autocmd('LspAttach', {
 })
 
 
-local function enable_lsp_config(name, overrides)
-  if overrides then
-    vim.lsp.config(name, overrides)
+-- LSP capabilities (nvim-cmp integration)
+local lsp_capabilities = vim.lsp.protocol.make_client_capabilities()
+do
+  local ok, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
+  if ok then
+    lsp_capabilities = cmp_nvim_lsp.default_capabilities(lsp_capabilities)
   end
+end
+
+local function enable_lsp_config(name, overrides)
+  overrides = vim.tbl_deep_extend('force', { capabilities = lsp_capabilities }, overrides or {})
+  vim.lsp.config(name, overrides)
 
   local resolved = vim.lsp.config[name]
   if not resolved then
@@ -577,7 +585,48 @@ enable_lsp_config('lua_ls', {
 })
 
 local cmp = require('cmp')
+local compare = require('cmp.config.compare')
+
+local function snippet_can_jump(direction)
+  if not vim.snippet or type(vim.snippet.active) ~= 'function' then
+    return false
+  end
+
+  local ok, active = pcall(vim.snippet.active, { direction = direction })
+  if ok then
+    return active
+  end
+
+  ok, active = pcall(vim.snippet.active, direction)
+  return ok and active or false
+end
+
 cmp.setup({
+  -- Keep LSP preselect enabled, but sort so the highlighted item is more likely
+  -- to be near the top (match LSP sortText before grouping by kind).
+  preselect = cmp.PreselectMode.Item,
+  sorting = {
+    comparators = {
+      compare.offset,
+      compare.exact,
+      compare.score,
+      compare.recently_used,
+      compare.locality,
+      compare.sort_text,
+      compare.kind,
+      compare.length,
+      compare.order,
+    },
+  },
+  snippet = {
+    expand = function(args)
+      if vim.snippet and type(vim.snippet.expand) == 'function' then
+        vim.snippet.expand(args.body)
+        return
+      end
+      vim.notify('No snippet engine available (need Neovim 0.10+ vim.snippet)', vim.log.levels.WARN)
+    end,
+  },
   -- Put LSP items ahead of plain buffer-word ("Text") items by separating
   -- sources into groups; group 1 is shown before group 2.
   sources = cmp.config.sources(
@@ -595,6 +644,22 @@ cmp.setup({
     ['<Enter>'] = cmp.mapping.confirm({ select = true }),
     -- trigger completion menu
     ['<C-Space>'] = cmp.mapping.complete(),
+
+    -- Jump between LSP snippet placeholders (e.g. gopls function params).
+    ['<Tab>'] = cmp.mapping(function(fallback)
+      if snippet_can_jump(1) then
+        vim.snippet.jump(1)
+      else
+        fallback()
+      end
+    end, { "i", "s" }),
+    ['<S-Tab>'] = cmp.mapping(function(fallback)
+      if snippet_can_jump(-1) then
+        vim.snippet.jump(-1)
+      else
+        fallback()
+      end
+    end, { "i", "s" }),
 
     -- scroll up and down the documentation window
     ['<C-u>'] = cmp.mapping.scroll_docs(-4),
