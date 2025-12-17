@@ -278,6 +278,24 @@ vim.keymap.del("n", "grn")
 vim.keymap.del("n", "grr")
 vim.keymap.del({ "v", "n" }, "gra")
 
+local function is_bazel_repo(bufnr)
+  local path = vim.api.nvim_buf_get_name(bufnr)
+  if path == "" then
+    return false
+  end
+
+  local start_dir = vim.fs.dirname(path)
+  -- `.git` can be a directory or a file (worktrees).
+  local git_dir = vim.fs.find(".git", { path = start_dir, upward = true })[1]
+  if not git_dir then
+    return false
+  end
+
+  local root = vim.fs.dirname(git_dir)
+  local base = vim.fn.fnamemodify(root, ":t")
+  return base == "bazel" or base == "bazel.git"
+end
+
 local function on_list(options)
   vim.fn.setqflist({}, ' ', options)
   if #options.items > 1 then
@@ -315,7 +333,12 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
     -- Set buffer-local options
     vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-    vim.bo[bufnr].tagfunc = 'v:lua.vim.lsp.tagfunc'
+    -- Prefer ctags tagfiles for the Bazel repo; elsewhere prefer LSP-backed tags.
+    if is_bazel_repo(bufnr) then
+      vim.bo[bufnr].tagfunc = ''
+    else
+      vim.bo[bufnr].tagfunc = 'v:lua.vim.lsp.tagfunc'
+    end
     vim.bo[bufnr].formatexpr = 'v:lua.vim.lsp.formatexpr()'
 
     if client:supports_method('textDocument/inlayHint') then
@@ -624,26 +647,27 @@ vim.g.gutentags_file_list_command = 'fd "(bazelrc|WORKSPACE|BUILD|\\.(java|cc|c|
 vim.g.gutentags_cscope_build_inverted_index_maps = 1
 
 -- Set gutentags ctag tagfile
-vim.g.gutentags_ctag_tagfile = '.git/ctags'
+vim.g.gutentags_ctags_tagfile = '.git/ctags'
 
 -- Exclude specific paths from ctags
 vim.g.gutentags_ctags_exclude = { '*/bazel-out/*', '*/bazel-bin/*' }
 
--- Enable gutentags for specific directories
-vim.g.gutentags_enabled_dirs = { vim.fn.expand('~/work/bazelbuild/bazel') }
-
+-- Enable gutentags only for the Bazel repository.
 vim.cmd [[
-  function! CheckEnabledDirs(file) abort
-      let file_path = fnamemodify(a:file, ':p:h')
-      for enabled_dir in g:gutentags_enabled_dirs
-          let enabled_path = fnamemodify(enabled_dir, ':p:h')
-          if match(file_path, enabled_path) == 0
-              return 1
-          endif
-      endfor
-      return 0
+  function! GutentagsOnlyBazel(file) abort
+      let l:buf_dir = fnamemodify(a:file, ':p:h')
+      try
+          let l:root = gutentags#get_project_root(l:buf_dir)
+      catch
+          return 0
+      endtry
+      if empty(l:root)
+          return 0
+      endif
+      let l:base = fnamemodify(l:root, ':t')
+      return l:base ==# 'bazel' || l:base ==# 'bazel.git'
   endfunction
-  let g:gutentags_init_user_func = 'CheckEnabledDirs'
+  let g:gutentags_init_user_func = 'GutentagsOnlyBazel'
 ]]
 
 -- For copilot
