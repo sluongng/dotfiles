@@ -28,6 +28,9 @@ vim.g.airline_extensions_nvimlsp_enabled = 1
 vim.g.airline_extensions_gutentags_enabled = 1
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+local neotest_bazel_dir = vim.fs.normalize(vim.fn.expand('~/work/misc/neotest-bazel'))
+local neotest_bazel_src = vim.uv.fs_stat(neotest_bazel_dir) and neotest_bazel_dir or 'https://github.com/sluongng/neotest-bazel'
+
 vim.pack.add({
   -- Utilities
   'https://github.com/lewis6991/fileline.nvim',
@@ -69,7 +72,7 @@ vim.pack.add({
   'https://github.com/nvim-lua/plenary.nvim',
   'https://github.com/nvim-neotest/nvim-nio',
   'https://github.com/nvim-neotest/neotest',
-  '~/work/misc/neotest-bazel',
+  neotest_bazel_src,
 
   -- Bazel / Ctags
   'https://github.com/ludovicchabant/vim-gutentags',
@@ -679,7 +682,7 @@ vim.api.nvim_set_keymap('n', '<leader>+', '<Plug>AirlineSelectNextTab<CR>', opts
 local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
 parser_config.bazelrc = {
   install_info = {
-    url = "~/work/misc/tree-sitter-bazelrc",
+    url = vim.fs.normalize(vim.fn.expand("~/work/misc/tree-sitter-bazelrc")),
     files = { "src/parser.c" },
     branch = "main",                        -- default branch in case of git repo if different from master
     generate_requires_npm = false,          -- if stand-alone parser without npm dependencies
