@@ -578,12 +578,18 @@ enable_lsp_config('lua_ls', {
 
 local cmp = require('cmp')
 cmp.setup({
-  sources = {
-    { name = 'path' },
-    { name = 'nvim_lsp' },
-    { name = 'buffer',  keyword_length = 2 },
-    { name = 'ctags' },
-  },
+  -- Put LSP items ahead of plain buffer-word ("Text") items by separating
+  -- sources into groups; group 1 is shown before group 2.
+  sources = cmp.config.sources(
+    {
+      { name = 'nvim_lsp' },
+      { name = 'path' },
+      { name = 'ctags' },
+    },
+    {
+      { name = 'buffer', keyword_length = 2 },
+    }
+  ),
   mapping = cmp.mapping.preset.insert({
     -- confirm completion item
     ['<Enter>'] = cmp.mapping.confirm({ select = true }),
