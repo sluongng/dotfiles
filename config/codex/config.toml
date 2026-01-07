@@ -1,0 +1,29 @@
+model = "gpt-5.2-codex"
+model_reasoning_effort = "high"
+model_reasoning_summary = "auto"
+show_raw_agent_reasoning = true
+
+approval_policy = "on-failure"
+sandbox_mode = "danger-full-access"
+
+project_doc_fallback_filenames = [
+  "CLAUDE.md",
+  "OS.AGENTS.md",
+]
+
+[features]
+web_search_request = true
+unified_exec = true
+shell_snapshot = true
+
+[shell_environment_policy]
+inherit = "all"
+ignore_default_excludes = true
+
+[notice]
+hide_gpt5_1_migration_prompt = true
+"hide_gpt-5.1-codex-max_migration_prompt" = true
+hide_rate_limit_model_nudge = true
+
+[notice.model_migrations]
+"gpt-5.2" = "gpt-5.2-codex"
