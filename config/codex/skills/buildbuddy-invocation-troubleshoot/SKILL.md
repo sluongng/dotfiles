@@ -35,6 +35,7 @@ Reference request templates live in `references/requests.md`.
   - `cache_stats` and `score_card` (if remote cache was used)
   - `structured_command_line` to detect flags (remote executor, BES, etc.)
   - `invocation_status` to confirm completeness
+- Note and report the git commit hash, branch name, OS, and hostname from the invocation metadata. If these match the local environment, reproduction may be feasible.
 
 If `invocation_status` is not complete, expect partial logs and missing artifacts.
 
@@ -55,6 +56,7 @@ If `invocation_status` is not complete, expect partial logs and missing artifact
   - `execute_response` (use `inline_execute_response=true`) contains ActionResult and stdout/stderr digests.
   - `executed_action_metadata` provides queue/execute timestamps.
   - `execution_id`, `target_label`, `action_mnemonic`, and `command_snippet` help correlate to the failing target.
+- If multiple executions failed but later retries succeeded, filter `SearchExecution` by the exact failing target label (from `GetTarget`) or by `primary_output` to avoid unrelated transient failures. A single target label can map to many actions, so `primary_output` is often the best discriminator.
 - Download the execution profile (if enabled) via `/file/download?artifact=execution_profile&invocation_id=...&execution_id=...`.
 
 ### 5) Download build events / build log / Bazel profile
