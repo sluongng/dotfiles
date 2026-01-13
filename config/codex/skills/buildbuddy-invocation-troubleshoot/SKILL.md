@@ -17,6 +17,7 @@ Use this skill to investigate a BuildBuddy invocation end-to-end: locate the inv
 - If the API key is missing (empty output), ask the user to run `bb login` and retry.
 - Confirm the base URL (default `https://app.buildbuddy.io` unless self-hosted).
 - Collect `group_id` and (if already known) `invocation_id`.
+- Create a temp working directory (per investigation) and store **all** downloaded artifacts and API responses there. Reuse cached files to avoid re-calling the API; delete a cached file or set a force flag when you want a fresh response.
 
 Reference request templates live in `references/requests.md`.
 
