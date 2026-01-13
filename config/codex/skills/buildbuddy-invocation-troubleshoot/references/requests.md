@@ -10,6 +10,19 @@ API_KEY=$(git config --local buildbuddy.api-key)
 GROUP_ID=<GROUP_ID>
 INVOCATION_ID=<INVOCATION_ID>
 TZ_OFFSET_MINUTES=-60
+OUT_DIR=${OUT_DIR:-$(mktemp -d -t bb-invocation.XXXX)}
+mkdir -p "$OUT_DIR"
+
+# Cache API responses to avoid repeated calls. Set BB_FORCE=1 to refresh.
+bb_json() {
+  local name="$1"; shift
+  local path="$OUT_DIR/$name.json"
+  if [[ -s "$path" && -z "${BB_FORCE:-}" ]]; then
+    cat "$path"
+  else
+    "$@" | tee "$path"
+  fi
+}
 ```
 
 If `API_KEY` is empty, run `bb login` first.
@@ -17,7 +30,7 @@ If `API_KEY` is empty, run `bb login` first.
 ## SearchInvocation (find recent invocations)
 
 ```bash
-curl "$BASE_URL/rpc/BuildBuddyService/SearchInvocation" \
+bb_json search_invocation curl "$BASE_URL/rpc/BuildBuddyService/SearchInvocation" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -35,7 +48,7 @@ curl "$BASE_URL/rpc/BuildBuddyService/SearchInvocation" \
 ## GetInvocation (metadata + console buffer)
 
 ```bash
-curl "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
+bb_json get_invocation curl "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -47,7 +60,7 @@ curl "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
 ## GetTarget (failed targets + stdout/stderr)
 
 ```bash
-curl "$BASE_URL/rpc/BuildBuddyService/GetTarget" \
+bb_json get_target_failed curl "$BASE_URL/rpc/BuildBuddyService/GetTarget" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -62,7 +75,7 @@ Look for `actionEvents[].actionExecuted.stdout` / `stderr` (files may have `uri`
 ## GetExecution (RBE executions for an invocation)
 
 ```bash
-curl "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
+bb_json get_execution curl "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -75,7 +88,7 @@ curl "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
 ## SearchExecution (filter by repo/branch/time window)
 
 ```bash
-curl "$BASE_URL/rpc/BuildBuddyService/SearchExecution" \
+bb_json search_execution curl "$BASE_URL/rpc/BuildBuddyService/SearchExecution" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -93,7 +106,7 @@ curl "$BASE_URL/rpc/BuildBuddyService/SearchExecution" \
 ## GetCacheScoreCard (server-side cache request logs)
 
 ```bash
-curl "$BASE_URL/rpc/BuildBuddyService/GetCacheScoreCard" \
+bb_json get_cache_scorecard curl "$BASE_URL/rpc/BuildBuddyService/GetCacheScoreCard" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -107,7 +120,7 @@ curl "$BASE_URL/rpc/BuildBuddyService/GetCacheScoreCard" \
 ## GetEventLogChunk (build log text)
 
 ```bash
-curl "$BASE_URL/rpc/BuildBuddyService/GetEventLogChunk" \
+bb_json get_event_log_chunk curl "$BASE_URL/rpc/BuildBuddyService/GetEventLogChunk" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -122,28 +135,28 @@ curl "$BASE_URL/rpc/BuildBuddyService/GetEventLogChunk" \
 Raw build events:
 
 ```bash
-curl -L "$BASE_URL/file/download?artifact=raw_json&invocation_id=$INVOCATION_ID" -o "${INVOCATION_ID}_raw.json"
-curl -L "$BASE_URL/file/download?artifact=raw_proto&invocation_id=$INVOCATION_ID" -o "${INVOCATION_ID}_raw.proto"
+curl -L "$BASE_URL/file/download?artifact=raw_json&invocation_id=$INVOCATION_ID" -o "$OUT_DIR/${INVOCATION_ID}_raw.json"
+curl -L "$BASE_URL/file/download?artifact=raw_proto&invocation_id=$INVOCATION_ID" -o "$OUT_DIR/${INVOCATION_ID}_raw.proto"
 ```
 
 Build log (requires attempt number, usually `invocation.attempt`):
 
 ```bash
-curl -L "$BASE_URL/file/download?artifact=buildlog&invocation_id=$INVOCATION_ID&attempt=1" -o "${INVOCATION_ID}.log"
+curl -L "$BASE_URL/file/download?artifact=buildlog&invocation_id=$INVOCATION_ID&attempt=1" -o "$OUT_DIR/${INVOCATION_ID}.log"
 ```
 
 Execution profile (RBE only, needs execution_id from GetExecution):
 
 ```bash
 EXECUTION_ID=<EXECUTION_ID>
-curl -L "$BASE_URL/file/download?artifact=execution_profile&invocation_id=$INVOCATION_ID&execution_id=$EXECUTION_ID" -o "${EXECUTION_ID}.pb.gz"
+curl -L "$BASE_URL/file/download?artifact=execution_profile&invocation_id=$INVOCATION_ID&execution_id=$EXECUTION_ID" -o "$OUT_DIR/${EXECUTION_ID}.pb.gz"
 ```
 
 Bytestream file download (from File.uri):
 
 ```bash
 BYTESTREAM_URL='<BYTESTREAM_URL>'
-curl -L "$BASE_URL/file/download?invocation_id=$INVOCATION_ID&bytestream_url=$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' "$BYTESTREAM_URL")" -o output.bin
+curl -L "$BASE_URL/file/download?invocation_id=$INVOCATION_ID&bytestream_url=$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))' "$BYTESTREAM_URL")" -o "$OUT_DIR/output.bin"
 ```
 
 ## gRPC alternative (grpcurl)
