@@ -99,6 +99,15 @@ else
   echo 'No Codex config found'
 fi
 
+if [ -L "${DIR_CODEX}/skills" ]; then
+  rm "${DIR_CODEX}/skills"
+fi
+
+if [ -d "${DIR_CODEX}/skills" ]; then
+  mv ${DIR_CODEX}/skills ${DIR_CODEX}/skills.bak
+  echo 'Done back up Codex skills'
+fi
+
 # Provisioning directories
 mkdir -p ${DIR_CONFIG}/nvim/
 mkdir -p ${DIR_CONFIG}/alacritty/
@@ -124,6 +133,9 @@ echo 'Linked .tmux.conf from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/codex/config.toml ${DIR_CODEX}/config.toml
 echo 'Linked Codex config from dotfiles'
+
+ln -sfn ${DIR_DOTFILE}/config/codex/skills ${DIR_CODEX}/skills
+echo 'Linked Codex skills from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/libinput-gestures.conf ${DIR_CONFIG}/libinput-gestures.conf
 echo 'Linked libinput-gestures config from dotfiles'
