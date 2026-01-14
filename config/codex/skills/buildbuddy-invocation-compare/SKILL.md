@@ -1,6 +1,8 @@
 ---
 name: buildbuddy-invocation-compare
 description: Compare two BuildBuddy invocation URLs or IDs to troubleshoot hermeticity/reproducibility and cache invalidation. Use when asked to diff canonical Bazel flags, find the first shared action-cache misses, inspect Action/ActionResult differences (inputs/command/env/platform/outputs), or analyze compact execution logs with `bb explain`.
+metadata:
+  short-description: Compare two BuildBuddy invocations and pinpoint cache/action differences.
 ---
 
 # BuildBuddy Invocation Compare
