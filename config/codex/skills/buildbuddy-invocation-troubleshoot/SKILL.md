@@ -1,6 +1,8 @@
 ---
 name: buildbuddy-invocation-troubleshoot
 description: Troubleshoot BuildBuddy invocations via BuildBuddyService (HTTP JSON or gRPC). Use when asked to debug a BuildBuddy invocation, find failed targets and stdout/stderr, inspect remote cache vs RBE metadata, retrieve execution details/profiles/logs, download raw build events or Bazel profiles, or fetch cache scorecard data.
+metadata:
+  short-description: Troubleshoot a BuildBuddy invocation and fetch logs/artifacts.
 ---
 
 # BuildBuddy Invocation Troubleshoot
