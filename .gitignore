@@ -2,6 +2,10 @@
 # Install extension via CocInstall inside neovim
 node_modules
 
+# Ignore cache dirs created by coding agents running skills
+# with python scripts.
+__pycache__
+
 # Generally we do not want to track the exact brew package
 # version but stick to latest is fine. So no need for pinning this
 Brewfile.lock.json
