@@ -48,6 +48,10 @@
       "rev": "92ee7d42320edfbb81f3cad851314ab197fa324a",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
+    "nvim-metals": {
+      "rev": "90dadd67bb1069ce1ba2a4dabf4e45da2807ba80",
+      "src": "https://github.com/scalameta/nvim-metals"
+    },
     "nvim-nio": {
       "rev": "21f5324bfac14e22ba26553caf69ec76ae8a7662",
       "src": "https://github.com/nvim-neotest/nvim-nio"
@@ -61,7 +65,7 @@
       "src": "https://github.com/nvim-tree/nvim-web-devicons"
     },
     "onedark.vim": {
-      "rev": "68dca198f23ef979dc6a123ad50c598902117232",
+      "rev": "47bec7a6196a843dad195d2666c3ac84c6e80c78",
       "src": "https://github.com/joshdick/onedark.vim"
     },
     "playground": {

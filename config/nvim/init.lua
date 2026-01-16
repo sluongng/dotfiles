@@ -17,7 +17,7 @@ vim.g.go_gopls_gofumpt = 0
 -- Need to set before loading the plugin
 
 -- Using vim.pack to manage plugins
-vim.g.airline_extensions = { 'tabline', 'nvimlsp', 'gutentags' }
+vim.g.airline_extensions = { 'tabline', 'nvimlsp' }
 
 -- Enable Tab on top
 vim.g.airline_extensions_tabline_enabled = 1
@@ -25,7 +25,6 @@ vim.g.airline_extensions_tabline_buffer_idx_mode = 1
 
 -- LSP
 vim.g.airline_extensions_nvimlsp_enabled = 1
-vim.g.airline_extensions_gutentags_enabled = 1
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 local neotest_bazel_dir = vim.fs.normalize(vim.fn.expand('~/work/misc/neotest-bazel'))
@@ -53,11 +52,11 @@ vim.pack.add({
   'https://github.com/nvim-treesitter/playground',
 
   -- LSP Client
-  'https://github.com/delphinus/cmp-ctags',
   'https://github.com/hrsh7th/cmp-buffer',
   'https://github.com/hrsh7th/cmp-nvim-lsp',
   'https://github.com/hrsh7th/nvim-cmp',
   'https://github.com/neovim/nvim-lspconfig',
+  'https://github.com/scalameta/nvim-metals',
 
   -- Sneak
   'https://github.com/justinmk/vim-sneak',
@@ -73,10 +72,6 @@ vim.pack.add({
   'https://github.com/nvim-neotest/nvim-nio',
   'https://github.com/nvim-neotest/neotest',
   neotest_bazel_src,
-
-  -- Bazel / Ctags
-  'https://github.com/ludovicchabant/vim-gutentags',
-  'https://github.com/dhananjaylatkar/cscope_maps.nvim',
 
   -- Coloring
   'https://github.com/joshdick/onedark.vim',
@@ -278,24 +273,6 @@ vim.keymap.del("n", "grn")
 vim.keymap.del("n", "grr")
 vim.keymap.del({ "v", "n" }, "gra")
 
-local function is_bazel_repo(bufnr)
-  local path = vim.api.nvim_buf_get_name(bufnr)
-  if path == "" then
-    return false
-  end
-
-  local start_dir = vim.fs.dirname(path)
-  -- `.git` can be a directory or a file (worktrees).
-  local git_dir = vim.fs.find(".git", { path = start_dir, upward = true })[1]
-  if not git_dir then
-    return false
-  end
-
-  local root = vim.fs.dirname(git_dir)
-  local base = vim.fn.fnamemodify(root, ":t")
-  return base == "bazel" or base == "bazel.git"
-end
-
 local function on_list(options)
   vim.fn.setqflist({}, ' ', options)
   if #options.items > 1 then
@@ -333,12 +310,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
     -- Set buffer-local options
     vim.bo[bufnr].omnifunc = 'v:lua.vim.lsp.omnifunc'
-    -- Prefer ctags tagfiles for the Bazel repo; elsewhere prefer LSP-backed tags.
-    if is_bazel_repo(bufnr) then
-      vim.bo[bufnr].tagfunc = ''
-    else
-      vim.bo[bufnr].tagfunc = 'v:lua.vim.lsp.tagfunc'
-    end
+    vim.bo[bufnr].tagfunc = 'v:lua.vim.lsp.tagfunc'
     vim.bo[bufnr].formatexpr = 'v:lua.vim.lsp.formatexpr()'
 
     if client:supports_method('textDocument/inlayHint') then
@@ -453,6 +425,54 @@ do
   local ok, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
   if ok then
     lsp_capabilities = cmp_nvim_lsp.default_capabilities(lsp_capabilities)
+  end
+end
+
+do
+  local ok, metals = pcall(require, 'metals')
+  if not ok then
+    vim.notify('nvim-metals not available; skipping Metals setup', vim.log.levels.WARN)
+  else
+    local metals_config = metals.bare_config()
+    metals_config.capabilities = lsp_capabilities
+    metals_config.settings = {
+      serverVersion = "2.0.0-M2",
+      serverProperties = {
+        "-Xmx4g",
+        "-Djol.magicFieldOffset=true",
+        "-Djol.tryWithSudo=true",
+        "-Djdk.attach.allowAttachSelf",
+        "--add-opens=java.base/java.nio=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.resources=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+        "-XX:+DisplayVMOutputToStderr",
+        "-Xlog:disable",
+        "-Xlog:all=warning,gc=warning:stderr",
+      },
+    }
+
+    vim.api.nvim_create_autocmd('FileType', {
+      group = vim.api.nvim_create_augroup('my.metals', { clear = true }),
+      pattern = { 'scala', 'sbt', 'java' },
+      callback = function()
+        metals.initialize_or_attach(metals_config)
+      end,
+    })
   end
 end
 
@@ -633,7 +653,6 @@ cmp.setup({
     {
       { name = 'nvim_lsp' },
       { name = 'path' },
-      { name = 'ctags' },
     },
     {
       { name = 'buffer', keyword_length = 2 },
@@ -700,46 +719,6 @@ do
     return default_handler(err, result, ctx, config)
   end
 end
-
--- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Ctags >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
---  Use Gutentags(ctags) for projects that are not friendly to LSP
-require("cscope_maps").setup()
-
--- Set gutentags cache directory
-vim.g.gutentags_cache_dir = vim.fn.expand('~/.cache/vim/ctags/')
-
--- Set gutentags modules
-vim.g.gutentags_modules = { 'ctags', 'cscope_maps' }
-
--- Set gutentags file list command
-vim.g.gutentags_file_list_command = 'fd "(bazelrc|WORKSPACE|BUILD|\\.(java|cc|c|h|am|sh|bash|star|bazel|bzl|proto|py)$)"'
-
--- Enable cscope inverted index maps
-vim.g.gutentags_cscope_build_inverted_index_maps = 1
-
--- Set gutentags ctag tagfile
-vim.g.gutentags_ctags_tagfile = '.git/ctags'
-
--- Exclude specific paths from ctags
-vim.g.gutentags_ctags_exclude = { '*/bazel-out/*', '*/bazel-bin/*' }
-
--- Enable gutentags only for the Bazel repository.
-vim.cmd [[
-  function! GutentagsOnlyBazel(file) abort
-      let l:buf_dir = fnamemodify(a:file, ':p:h')
-      try
-          let l:root = gutentags#get_project_root(l:buf_dir)
-      catch
-          return 0
-      endtry
-      if empty(l:root)
-          return 0
-      endif
-      let l:base = fnamemodify(l:root, ':t')
-      return l:base ==# 'bazel' || l:base ==# 'bazel.git'
-  endfunction
-  let g:gutentags_init_user_func = 'GutentagsOnlyBazel'
-]]
 
 -- For copilot
 -- https://old.reddit.com/r/neovim/comments/wbx4r6/has_anyone_managed_to_use_github_copilot_in_nvchad/
