@@ -25,7 +25,7 @@
       "src": "https://github.com/lewis6991/fileline.nvim"
     },
     "fzf-lua": {
-      "rev": "578a11f9f7c5f4436b833731ccceeda9479562f0",
+      "rev": "d59f857c76eb474ec00debcf043f14fd001805cc",
       "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "indent-blankline.nvim": {
@@ -41,15 +41,15 @@
       "src": "/home/nb/work/misc/neotest-bazel"
     },
     "nvim-cmp": {
-      "rev": "85bbfad83f804f11688d1ab9486b459e699292d6",
+      "rev": "da88697d7f45d16852c6b2769dc52387d1ddc45f",
       "src": "https://github.com/hrsh7th/nvim-cmp"
     },
     "nvim-lspconfig": {
-      "rev": "92ee7d42320edfbb81f3cad851314ab197fa324a",
+      "rev": "ff9c0af8f9b2097fdd2695058db7e04c193908aa",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-metals": {
-      "rev": "90dadd67bb1069ce1ba2a4dabf4e45da2807ba80",
+      "rev": "7ed47cd3095508e80423e30922385d5b9988f9d6",
       "src": "https://github.com/scalameta/nvim-metals"
     },
     "nvim-nio": {
@@ -89,7 +89,7 @@
       "src": "https://github.com/airblade/vim-gitgutter"
     },
     "vim-go": {
-      "rev": "dc07b9082fecd47f8ebef5f2684758e570f66377",
+      "rev": "fc429c8e2c70c7964065a7e9631cca6da46a8f15",
       "src": "https://github.com/fatih/vim-go"
     },
     "vim-gutentags": {
