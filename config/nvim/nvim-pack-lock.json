@@ -25,7 +25,7 @@
       "src": "https://github.com/lewis6991/fileline.nvim"
     },
     "fzf-lua": {
-      "rev": "d59f857c76eb474ec00debcf043f14fd001805cc",
+      "rev": "36d60dd59cd9bc0442352119fc0e45e1c9011e03",
       "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "indent-blankline.nvim": {
@@ -45,7 +45,7 @@
       "src": "https://github.com/hrsh7th/nvim-cmp"
     },
     "nvim-lspconfig": {
-      "rev": "ff9c0af8f9b2097fdd2695058db7e04c193908aa",
+      "rev": "59cd07d8df2fefde32556268b8d52606a32152a1",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-metals": {
@@ -61,7 +61,7 @@
       "src": "https://github.com/nvim-treesitter/nvim-treesitter"
     },
     "nvim-web-devicons": {
-      "rev": "803353450c374192393f5387b6a0176d0972b848",
+      "rev": "746ffbb17975ebd6c40142362eee1b0249969c5c",
       "src": "https://github.com/nvim-tree/nvim-web-devicons"
     },
     "onedark.vim": {
@@ -89,7 +89,7 @@
       "src": "https://github.com/airblade/vim-gitgutter"
     },
     "vim-go": {
-      "rev": "fc429c8e2c70c7964065a7e9631cca6da46a8f15",
+      "rev": "a5a612535a92d68a4282d1c8dde901275c0c1260",
       "src": "https://github.com/fatih/vim-go"
     },
     "vim-gutentags": {
