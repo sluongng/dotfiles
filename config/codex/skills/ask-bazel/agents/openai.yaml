@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ask Bazel"
+  short_description: "Research Bazel questions via code, history, and GitHub context"
+  default_prompt: "Research and answer this Bazel question using local source code, git history, and GitHub Issues/PRs/Discussions. If a version is provided, use that exact version before researching."
