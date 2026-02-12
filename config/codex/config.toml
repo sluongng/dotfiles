@@ -17,11 +17,10 @@ personality = "pragmatic"
 web_search = "live"
 
 [features]
-unified_exec = true
-shell_snapshot = true
+undo = true
 collab = true
-collaboration_modes = true
-steer = true
+sqlite = true
+memory_tool = true
 
 [shell_environment_policy]
 inherit = "all"
