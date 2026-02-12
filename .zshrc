@@ -255,3 +255,12 @@ ulimit -c unlimited
 ulimit -n 10240
 export PATH="/opt/homebrew/opt/curl/bin:$PATH"
 export PATH="/opt/homebrew/opt/bison/bin:$PATH"
+
+# gsutil currently supports Python 3.9-3.13; prefer uv-managed 3.13 when available.
+if command -v uv >/dev/null 2>&1; then
+  _gsutil_python="$(uv python find 3.13 2>/dev/null)"
+  if [[ -n "${_gsutil_python}" ]]; then
+    export CLOUDSDK_PYTHON="${_gsutil_python}"
+  fi
+  unset _gsutil_python
+fi
