@@ -5,7 +5,7 @@ show_raw_agent_reasoning = true
 
 suppress_unstable_features_warning = true
 
-approval_policy = "on-failure"
+approval_policy = "never"
 sandbox_mode = "danger-full-access"
 
 project_doc_fallback_filenames = [
@@ -17,10 +17,11 @@ personality = "pragmatic"
 web_search = "live"
 
 [features]
-undo = true
-collab = true
+multi_agent = true
+responses_websockets_v2 = true
 sqlite = true
 memory_tool = true
+undo = true
 
 [shell_environment_policy]
 inherit = "all"
@@ -37,6 +38,6 @@ hide_rate_limit_model_nudge = true
 [projects."/home/nb"]
 trust_level = "trusted"
 
-[mcp_servers.chrome-devtools]
-command = "npx"
-args = ["chrome-devtools-mcp@latest", "--autoConnect"]
+# [mcp_servers.chrome-devtools]
+# command = "npx"
+# args = ["chrome-devtools-mcp@latest", "--autoConnect"]
