@@ -35,3 +35,13 @@ hide_rate_limit_model_nudge = true
 [notice.model_migrations]
 "gpt-5.2" = "gpt-5.2-codex"
 
+[agents]
+max_threads = 12 # default is 6
+# max_depth = 2 # waiting for the next release
+
+[agents.explorer]
+config_file = "./agents/explorer.toml"
+
+# [mcp_servers.chrome-devtools]
+# command = "npx"
+# args = ["chrome-devtools-mcp@latest", "--autoConnect"]
