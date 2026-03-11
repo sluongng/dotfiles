@@ -1,31 +1,43 @@
-model = "gpt-5.3-codex"
-model_reasoning_effort = "xhigh"
-model_reasoning_summary = "auto"
-show_raw_agent_reasoning = true
+# Source of truth: this file lives in ~/.dotfiles/config/codex/config.toml.
+# Keep ~/.codex/config.toml as a symlink to this file; if it becomes a regular file, sync changes back here and restore the symlink.
 
-suppress_unstable_features_warning = true
+model = "gpt-5.4"
+model_reasoning_effort = "xhigh"
+model_reasoning_summary = "detailed"
+show_raw_agent_reasoning = true
 
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
+
+web_search = "live"
 
 project_doc_fallback_filenames = [
   "CLAUDE.md",
   "OS.AGENTS.md",
 ]
-personality = "pragmatic"
 
-web_search = "live"
-
+suppress_unstable_features_warning = true
 [features]
 multi_agent = true
 responses_websockets_v2 = true
-sqlite = true
-memory_tool = true
+memories = true
 undo = true
 
-[shell_environment_policy]
-inherit = "all"
-ignore_default_excludes = true
+[agents]
+max_threads = 12 # default is 6
+max_depth = 2
+
+[agents.explorer]
+config_file = "./agents/explorer.toml"
+
+[tui]
+status_line = ["model-with-reasoning", "project-root", "git-branch", "context-used", "five-hour-limit", "weekly-limit", "codex-version"]
+
+# [mcp_servers.chrome-devtools]
+# command = "npx"
+# args = ["chrome-devtools-mcp@latest", "--autoConnect"]
+
+#### TRASH ####
 
 [notice]
 hide_gpt5_1_migration_prompt = true
@@ -38,13 +50,17 @@ hide_rate_limit_model_nudge = true
 [projects."/home/nb"]
 trust_level = "trusted"
 
-[agents]
-max_threads = 12 # default is 6
-# max_depth = 2 # waiting for the next release
+[projects."/home/nb/work/misc/codex-app"]
+trust_level = "trusted"
 
-[agents.explorer]
-config_file = "./agents/explorer.toml"
+[projects."/home/nb/work/buildbuddy-io/buildbuddy"]
+trust_level = "trusted"
 
-# [mcp_servers.chrome-devtools]
-# command = "npx"
-# args = ["chrome-devtools-mcp@latest", "--autoConnect"]
+[projects."/home/nb/.codex"]
+trust_level = "trusted"
+
+[projects."/home/nb/work/misc/codex"]
+trust_level = "trusted"
+
+[projects."/home/nb/work/bazelbuild/bazel"]
+trust_level = "trusted"
