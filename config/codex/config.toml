@@ -17,6 +17,7 @@ project_doc_fallback_filenames = [
 ]
 
 suppress_unstable_features_warning = true
+personality = "pragmatic"
 [features]
 multi_agent = true
 responses_websockets_v2 = true
@@ -28,6 +29,15 @@ max_threads = 12 # default is 6
 max_depth = 2
 
 [agents.explorer]
+description = '''
+Use `explorer` for specific codebase questions.
+Explorers are fast and authoritative.
+They must be used to ask specific, well-scoped questions on the codebase.
+Rules:
+- In order to avoid redundant work, you should avoid exploring the same problem that explorers have already covered. Typically, you should trust the explorer results without additional verification. You are still allowed to inspect the code yourself to gain the needed context!
+- You are encouraged to spawn up multiple explorers in parallel when you have multiple distinct questions to ask about the codebase that can be answered independently. This allows you to get more information faster without waiting for one question to finish before asking the next. While waiting for the explorer results, you can continue working on other local tasks that do not depend on those results. This parallelism is a key advantage of delegation, so use it whenever you have multiple questions to ask.
+- Reuse existing explorers for related questions.
+'''
 config_file = "./agents/explorer.toml"
 
 [tui]
@@ -69,4 +79,7 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/sluongng/work/bazelbuild/rules_go"]
+trust_level = "trusted"
+
+[projects."/Users/sluongng/work/misc/codex"]
 trust_level = "trusted"
