@@ -1,0 +1,27 @@
+# Runtime and auth state generated under ~/.codex.
+.personality_migration
+auth.json
+config.json
+history.json
+history.jsonl
+instructions.md
+internal_storage.json
+log/
+logs_*.sqlite
+logs_*.sqlite-shm
+logs_*.sqlite-wal
+memories/
+models_cache.json
+sessions/
+shell_snapshots/
+state_*.sqlite
+state_*.sqlite-shm
+state_*.sqlite-wal
+tmp/
+update-check.json
+version.json
+
+# Keep sensitive or machine-specific Codex overrides out of git.
+local/
+*.local.toml
+*.secret.toml

@@ -64,3 +64,9 @@ trust_level = "trusted"
 
 [projects."/home/nb/work/bazelbuild/bazel"]
 trust_level = "trusted"
+
+[projects."/Users/sluongng/.dotfiles"]
+trust_level = "trusted"
+
+[projects."/Users/sluongng/work/bazelbuild/rules_go"]
+trust_level = "trusted"

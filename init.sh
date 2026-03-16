@@ -16,7 +16,6 @@
 DIR_DOTFILE=~/.dotfiles
 DIR_HOME=${HOME}
 DIR_CONFIG=${XDG_CONFIG_HOME:-${DIR_HOME}/.config}
-DIR_CODEX=${DIR_HOME}/.codex
 
 # Clone repo
 if [ ! -d "${DIR_HOME}/.dotfiles" ]; then
@@ -92,29 +91,12 @@ else
   echo 'No .tmux.conf(tmux config) found'
 fi
 
-if [ -f "${DIR_CODEX}/config.toml" ]; then
-  cp ${DIR_CODEX}/config.toml ${DIR_CODEX}/config.toml.bak
-  echo 'Done back up Codex config'
-else
-  echo 'No Codex config found'
-fi
-
-if [ -L "${DIR_CODEX}/skills" ]; then
-  rm "${DIR_CODEX}/skills"
-fi
-
-if [ -d "${DIR_CODEX}/skills" ]; then
-  mv ${DIR_CODEX}/skills ${DIR_CODEX}/skills.bak
-  echo 'Done back up Codex skills'
-fi
-
 # Provisioning directories
 mkdir -p ${DIR_CONFIG}/nvim/
 mkdir -p ${DIR_CONFIG}/alacritty/
 mkdir -p ${DIR_CONFIG}/kitty/
 mkdir -p ${DIR_CONFIG}/bat/
 mkdir -p ${DIR_CONFIG}/git/
-mkdir -p ${DIR_CODEX}/
 
 # Link all the dotfiles
 ln -sfn ${DIR_DOTFILE}/.zshrc ${DIR_HOME}/.zshrc
@@ -131,11 +113,8 @@ echo 'Linked .ideavimrc from dotfiles'
 ln -sfn ${DIR_DOTFILE}/.tmux.conf ${DIR_HOME}/.tmux.conf
 echo 'Linked .tmux.conf from dotfiles'
 
-ln -sfn ${DIR_DOTFILE}/config/codex/config.toml ${DIR_CODEX}/config.toml
+bash "${DIR_DOTFILE}/automation/codex/install-codex.sh"
 echo 'Linked Codex config from dotfiles'
-
-ln -sfn ${DIR_DOTFILE}/config/codex/skills ${DIR_CODEX}/skills
-echo 'Linked Codex skills from dotfiles'
 
 ln -sfn ${DIR_DOTFILE}/config/libinput-gestures.conf ${DIR_CONFIG}/libinput-gestures.conf
 echo 'Linked libinput-gestures config from dotfiles'
