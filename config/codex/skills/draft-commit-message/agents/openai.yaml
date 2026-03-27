@@ -1,0 +1,4 @@
+interface:
+  display_name: "Draft Commit Message"
+  short_description: "Draft Git-style commit messages"
+  default_prompt: "Use $draft-commit-message to draft a Git-style commit message from my staged changes."
