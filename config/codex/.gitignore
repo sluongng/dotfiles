@@ -1,7 +1,6 @@
 # Runtime and auth state generated under ~/.codex.
 .personality_migration
 auth.json
-config.json
 history.json
 history.jsonl
 instructions.md
