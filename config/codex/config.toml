@@ -18,11 +18,13 @@ project_doc_fallback_filenames = [
 
 suppress_unstable_features_warning = true
 personality = "pragmatic"
+service_tier = "fast"
 [features]
-multi_agent = true
+js_repl = true
 responses_websockets_v2 = true
 memories = true
 undo = true
+multi_agent = true
 
 [agents]
 max_threads = 12 # default is 6
@@ -47,13 +49,8 @@ status_line = ["model-with-reasoning", "project-root", "git-branch", "context-us
 # command = "npx"
 # args = ["chrome-devtools-mcp@latest", "--autoConnect"]
 
-#### TRASH ####
+[plugins."gmail@openai-curated"]
+enabled = true
 
-[notice]
-hide_gpt5_1_migration_prompt = true
-"hide_gpt-5.1-codex-max_migration_prompt" = true
-hide_rate_limit_model_nudge = true
-
-[notice.model_migrations]
-"gpt-5.2" = "gpt-5.2-codex"
-
+[plugins."github@openai-curated"]
+enabled = true
