@@ -1,5 +1,6 @@
-# Source of truth: this file lives in ~/.dotfiles/config/codex/config.toml.
-# Keep ~/.codex/config.toml as a symlink to this file; if it becomes a regular file, sync changes back here and restore the symlink.
+# Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
+# automation/codex/install-codex.sh renders ~/.codex/config.toml from this file plus local overlays.
+# Do not add [projects] here; machine-local trust entries belong in ~/.codex/projects.local.toml.
 
 model = "gpt-5.4"
 model_reasoning_effort = "xhigh"
@@ -45,51 +46,29 @@ config_file = "./agents/explorer.toml"
 [tui]
 status_line = ["model-with-reasoning", "project-root", "git-branch", "context-used", "five-hour-limit", "weekly-limit", "codex-version"]
 
+# Linux desktop trust entries kept here as comments on purpose.
+# They are not meant to be active on this laptop.
+# [projects."/home/nb"]
+# trust_level = "trusted"
+#
+# [projects."/home/nb/work/misc/codex-app"]
+# trust_level = "trusted"
+#
+# [projects."/home/nb/work/buildbuddy-io/buildbuddy"]
+# trust_level = "trusted"
+#
+# [projects."/home/nb/.codex"]
+# trust_level = "trusted"
+#
+# [projects."/home/nb/work/misc/codex"]
+# trust_level = "trusted"
+#
+# [projects."/home/nb/work/bazelbuild/bazel"]
+# trust_level = "trusted"
+#
 # [mcp_servers.chrome-devtools]
 # command = "npx"
 # args = ["chrome-devtools-mcp@latest", "--autoConnect"]
-
-[projects."/home/nb"]
-trust_level = "trusted"
-
-[projects."/home/nb/work/misc/codex-app"]
-trust_level = "trusted"
-
-[projects."/home/nb/work/buildbuddy-io/buildbuddy"]
-trust_level = "trusted"
-
-[projects."/home/nb/.codex"]
-trust_level = "trusted"
-
-[projects."/home/nb/work/misc/codex"]
-trust_level = "trusted"
-
-[projects."/home/nb/work/bazelbuild/bazel"]
-trust_level = "trusted"
-
-[projects."/Users/sluongng/.dotfiles"]
-trust_level = "trusted"
-
-[projects."/Users/sluongng/work/bazelbuild/rules_go"]
-trust_level = "trusted"
-
-[projects."/Users/sluongng/work/misc/codex"]
-trust_level = "trusted"
-
-[projects."/Users/sluongng/work/buildbuddy/buildbuddy"]
-trust_level = "trusted"
-
-[projects."/Users/sluongng/work/bazelbuild/bazel"]
-trust_level = "trusted"
-
-[projects."/Users/sluongng/work/misc/toolchains_llvm_bootstrapped"]
-trust_level = "trusted"
-
-[projects."/Users/sluongng/work/buildbuddy/buildbuddy-internal"]
-trust_level = "trusted"
-
-[projects."/Users/sluongng"]
-trust_level = "trusted"
 
 [plugins."gmail@openai-curated"]
 enabled = true
