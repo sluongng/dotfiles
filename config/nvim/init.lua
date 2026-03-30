@@ -54,6 +54,7 @@ vim.pack.add({
   -- LSP Client
   'https://github.com/hrsh7th/cmp-buffer',
   'https://github.com/hrsh7th/cmp-nvim-lsp',
+  'https://github.com/hrsh7th/cmp-path',
   'https://github.com/hrsh7th/nvim-cmp',
   'https://github.com/neovim/nvim-lspconfig',
   'https://github.com/scalameta/nvim-metals',
@@ -174,6 +175,17 @@ vim.opt.smartcase = true
 -- Fast way to escape
 local map, default_opts = vim.keymap.set, { noremap = true, silent = true }
 
+local function with_bufnr(opts, bufnr)
+  local merged = vim.tbl_extend('force', {}, opts or {})
+  local key = vim.fn.has('nvim-0.13') == 1 and 'buf' or 'buffer'
+  merged[key] = bufnr
+  return merged
+end
+
+local function try_del_keymap(modes, lhs, opts)
+  pcall(vim.keymap.del, modes, lhs, opts)
+end
+
 -- Fast way to escape
 map('i', 'jj', '<Esc>', default_opts)
 
@@ -268,10 +280,11 @@ vim.cmd.colorscheme('onedark')
 vim.api.nvim_set_hl(0, 'LspInlayHint', { fg = '#ABB2BF' })
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LSP Config >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
--- remove the default keymaps from https://github.com/neovim/neovim/pull/28650
-vim.keymap.del("n", "grn")
-vim.keymap.del("n", "grr")
-vim.keymap.del({ "v", "n" }, "gra")
+-- Remove builtin LSP keymaps so only the custom mappings below remain.
+try_del_keymap("n", "grn")
+try_del_keymap("n", "grr")
+try_del_keymap({ "v", "n" }, "gra")
+try_del_keymap("n", "grx")
 
 local function on_list(options)
   vim.fn.setqflist({}, ' ', options)
@@ -279,6 +292,18 @@ local function on_list(options)
     vim.cmd("botright cwindow") -- always take full width
   end
   vim.cmd.cfirst()
+end
+
+local function diagnostic_jump_open_float(diagnostic, bufnr)
+  if not diagnostic then
+    return
+  end
+
+  vim.diagnostic.open_float(bufnr, {
+    border = 'rounded',
+    focus = false,
+    scope = 'cursor',
+  })
 end
 
 
@@ -301,7 +326,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
   group = vim.api.nvim_create_augroup('my.lsp.attach', { clear = true }), -- Clear previous autocmds for this group
   callback = function(args)
     local bufnr = args.buf
-    local opts = { buffer = bufnr, remap = false }
+    local opts = with_bufnr({ remap = false }, bufnr)
     local client = vim.lsp.get_client_by_id(args.data.client_id)
     if not client then
       vim.notify("lsp client id " .. args.data.client_id .. " not found.", vim.log.levels.WARN)
@@ -371,10 +396,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
     vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
     vim.keymap.set('n', '<leader>E', vim.diagnostic.setloclist, opts)
     vim.keymap.set('n', ']d', function()
-      vim.diagnostic.jump({ count = 1, float = { border = 'rounded' } })
+      vim.diagnostic.jump({ count = 1, on_jump = diagnostic_jump_open_float })
     end, opts)
     vim.keymap.set('n', '[d', function() -- Add jump to previous diagnostic
-      vim.diagnostic.jump({ count = -1, float = { border = 'rounded' } })
+      vim.diagnostic.jump({ count = -1, on_jump = diagnostic_jump_open_float })
     end, opts)
 
     if client:supports_method('textDocument/hover') then
@@ -835,12 +860,12 @@ vim.cmd('filetype plugin on')
 -- Golang settings
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'go',
-  callback = function()
+  callback = function(args)
     vim.opt_local.expandtab = false
     vim.opt_local.shiftwidth = 2
     vim.opt_local.softtabstop = 2
     vim.opt_local.tabstop = 2
-    vim.g.editorconfig = false
+    vim.b[args.buf].editorconfig = false
   end
 })
 
