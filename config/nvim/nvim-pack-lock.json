@@ -12,6 +12,10 @@
       "rev": "cbc7b02bb99fae35cb42f514762b89b5126651ef",
       "src": "https://github.com/hrsh7th/cmp-nvim-lsp"
     },
+    "cmp-path": {
+      "rev": "c642487086dbd9a93160e1679a1327be111cbc25",
+      "src": "https://github.com/hrsh7th/cmp-path"
+    },
     "copilot.vim": {
       "rev": "a12fd5672110c8aa7e3c8419e28c96943ca179be",
       "src": "https://github.com/github/copilot.vim"
@@ -25,7 +29,7 @@
       "src": "https://github.com/lewis6991/fileline.nvim"
     },
     "fzf-lua": {
-      "rev": "d9508cc1d05ffcdc91a32dfd38fc1013a56b20da",
+      "rev": "8a79ee54d6216d10b2f153921a12b152be0c1a20",
       "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "indent-blankline.nvim": {
@@ -33,23 +37,23 @@
       "src": "https://github.com/lukas-reineke/indent-blankline.nvim"
     },
     "neotest": {
-      "rev": "deadfb1af5ce458742671ad3a013acb9a6b41178",
+      "rev": "b059824dc3c9422ccf6cfdbd7349df9f65389d39",
       "src": "https://github.com/nvim-neotest/neotest"
     },
     "neotest-bazel": {
       "rev": "eea503c32d4537db6634661556cc8ec9943f4a69",
-      "src": "/home/nb/work/misc/neotest-bazel"
+      "src": "/Users/sluongng/work/misc/neotest-bazel"
     },
     "nvim-cmp": {
       "rev": "da88697d7f45d16852c6b2769dc52387d1ddc45f",
       "src": "https://github.com/hrsh7th/nvim-cmp"
     },
     "nvim-lspconfig": {
-      "rev": "0203a9608d63eda57679b01e69f33a7b4c34b0d1",
+      "rev": "841c6d4139aedb8a3f2baf30cef5327371385b93",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-metals": {
-      "rev": "7ed47cd3095508e80423e30922385d5b9988f9d6",
+      "rev": "48b9d29a4e1370495db4d4b5ccbc17b285bc98eb",
       "src": "https://github.com/scalameta/nvim-metals"
     },
     "nvim-nio": {
@@ -57,7 +61,7 @@
       "src": "https://github.com/nvim-neotest/nvim-nio"
     },
     "nvim-treesitter": {
-      "rev": "42fc28ba918343ebfd5565147a42a26580579482",
+      "rev": "cf12346a3414fa1b06af75c79faebe7f76df080a",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter"
     },
     "nvim-web-devicons": {
@@ -77,7 +81,7 @@
       "src": "https://github.com/nvim-lua/plenary.nvim"
     },
     "vim-airline": {
-      "rev": "d9f7979cefa59ac044d4817e774e45d53a65d29c",
+      "rev": "512456e425409ec58627bd839fbb85d449d8cbc1",
       "src": "https://github.com/vim-airline/vim-airline"
     },
     "vim-fugitive": {
@@ -85,11 +89,11 @@
       "src": "https://github.com/tpope/vim-fugitive"
     },
     "vim-gitgutter": {
-      "rev": "0acb772e76064cc406664ab595b58b3fac76488a",
+      "rev": "55b368d4c68541775b4b253d3c98d3145b695c24",
       "src": "https://github.com/airblade/vim-gitgutter"
     },
     "vim-go": {
-      "rev": "9f4b56e32774604172be0dd2745b5aeacdb40ff5",
+      "rev": "005120403fce914b1592600aa38f09474c6ddee9",
       "src": "https://github.com/fatih/vim-go"
     },
     "vim-gutentags": {
