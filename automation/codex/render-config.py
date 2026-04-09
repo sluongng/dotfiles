@@ -15,6 +15,11 @@ GENERATED_HEADER = [
     "# Optional machine-local additive settings belong in ~/.codex/config.local.toml.",
     "# Machine-local trust entries belong in ~/.codex/projects.local.toml.",
 ]
+GENERATED_FOOTER = [
+    "# New [projects.\"...\"] trust entries written here by Codex should be moved to",
+    "# ~/.codex/projects.local.toml. Rerun ~/.dotfiles/automation/codex/install-codex.sh",
+    "# to sync and clean them up.",
+]
 
 
 PROJECTS_TABLE_RE = re.compile(r"^\[projects(?:\]|\.)")
@@ -58,6 +63,8 @@ def extract_projects_tables(text: str) -> str:
                 in_projects = False
 
         if in_projects:
+            if line.startswith("#"):
+                continue
             current_block.append(raw_line)
 
     if current_block:
@@ -109,6 +116,7 @@ def build_rendered_config(shared: Path, local: Path, projects: Path) -> str:
         if stripped:
             parts.extend(["", stripped])
 
+    parts.extend(["", *GENERATED_FOOTER])
     return "\n".join(parts).rstrip() + "\n"
 
 
