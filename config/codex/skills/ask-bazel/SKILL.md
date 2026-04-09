@@ -62,6 +62,10 @@ Always report the exact commit hash and repo path used for research.
 
 1. Read relevant source, tests, and docs in the selected repo.
 2. Use fast code search first (`rg`, `git grep`) to find symbols, flags, errors, or behavior.
+   Before opening a file with `sed` or narrowing history to a path, confirm the
+   path in the checked-out ref with `rg --files`, `git grep -l`, or similar when
+   the exact location is not already known. Bazel moves files across packages
+   often enough that guessed paths are a common source of wasted turns.
 3. Investigate history with pickaxe and regex diffs:
 
 ```bash
