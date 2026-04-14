@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub Create PR"
-  short_description: "Draft and open GitHub pull requests"
-  default_prompt: "Use $github-create-pr to draft a PR title and description, ask for my review, then open the PR."
+  short_description: "Draft and open commit-style GitHub pull requests"
+  default_prompt: "Use $github-create-pr to draft a PR title and body that follow $draft-commit-message rules, let me review them, then open the PR."

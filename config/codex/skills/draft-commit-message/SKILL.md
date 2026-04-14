@@ -57,9 +57,27 @@ git log --format=%s -- path/to/area | head -n 20
 - Put the bulk of the context in the body.
 - Explain motivation, user impact, tradeoffs, or constraints that are not
   obvious from the diff.
+- Prefer 2-4 short, direct sentences over one dense paragraph when the first
+  draft starts chaining too many clauses together.
+- Start the first body paragraph with the concrete reason for the change when
+  it is knowable from the task or diff, such as a user request, regression,
+  missing support, broken workflow, or review feedback being addressed.
+- When fixing a regression, flake, or other incident, lead with the concrete
+  failure or user-visible symptom before explaining the mechanism.
+- When this text is likely to be reused for a PR body, write the opening
+  paragraph so it can be copied verbatim with little or no rewriting.
+- If a reproducer command or short error excerpt is central to the why,
+  include the real command or a brief concrete snippet. Do not leave
+  placeholders such as `<probe>` or `<failure log>` in the final message.
+- When citing upstream commits to explain when behavior changed, pair the hash
+  with a stable release version when that gives the reader a better sense of
+  time.
 - Wrap prose to 72 columns where practical.
 - If the repository context does not reveal the why, say that explicitly
   instead of fabricating a justification.
+- Do not turn the commit body into a PR template. Avoid Markdown headings such
+  as `Summary`, `Testing`, or `Checklist` in the permanent message unless the
+  user explicitly asks for that format.
 
 5. Preserve or supply trailers correctly.
 
@@ -70,6 +88,9 @@ git log --format=%s -- path/to/area | head -n 20
 
 - Make the commit message meaningful enough that a single-patch PR does not
   need a repeated description.
+- Keep the permanent commit message readable as plain text. If the user wants
+  long logs, many links, or reviewer-only reference material, prefer a short
+  appendix below `---` or move that material into the PR body.
 - If extra reviewer-only context is needed for emailed patches, put it below
   `---` rather than in the permanent commit message body.
 
@@ -77,6 +98,12 @@ git log --format=%s -- path/to/area | head -n 20
 
 - Return the final commit message in a fenced `text` block unless the user
   explicitly asks for a different format.
+- If the same change will also drive PR metadata, keep the technical story in
+  sync with the PR, but do not force GitHub Markdown conventions into the
+  permanent commit message unless the user explicitly asks for that.
+- If the commit and PR should match closely, draft the commit body first and
+  treat it as the source text for the PR description rather than writing two
+  separate narratives from scratch.
 - When confidence is low, add one short sentence after the block describing
   the missing context.
 - When reviewing an existing message, list the concrete violations first and
@@ -90,6 +117,16 @@ git log --format=%s -- path/to/area | head -n 20
 - Line 2 is blank.
 - Body lines stay within 72 columns where practical.
 - Body adds why/context that is not obvious from the diff.
+- Opening body paragraph names the regression, failure, or motivation when the
+  change fixes a concrete problem.
+- Body reads as plain prose, not a GitHub template.
+- Body uses short direct sentences when that makes the why easier to scan.
+- Any embedded commands or log excerpts are concrete and brief, not
+  placeholders.
+- If upstream commits are cited for timing context, release/version context is
+  included when it materially helps orientation.
+- If validation warns that the body lacks why/context, revise the opening body
+  lines to make the problem and motivation explicit, then re-run validation.
 - Trailers are preserved.
 
 ## Resources
@@ -97,7 +134,11 @@ git log --format=%s -- path/to/area | head -n 20
 - Read [git-my-first-contribution.md](references/git-my-first-contribution.md)
   for the distilled guidance that this skill follows.
 - Run `scripts/validate_commit_message.py` when the user asks to validate an
-  existing commit message or when a draft is close to the line-length limits.
+  existing commit message, when drafting a final message for commit/squash
+  workflows, or when a draft is close to the line-length limits.
+- Treat validator `WARN` output as actionable review feedback, not a green
+  light. If it says the body may be missing explicit why/context language, add
+  a more direct motivation sentence and re-check.
 
 ```bash
 python3 scripts/validate_commit_message.py .git/COMMIT_EDITMSG
