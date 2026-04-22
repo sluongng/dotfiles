@@ -611,48 +611,50 @@ do
 end
 
 do
+  local function find_supported_metals_java_home()
+    for _, home in ipairs({
+      '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home',
+      '/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home',
+    }) do
+      if vim.uv.fs_stat(vim.fs.joinpath(home, 'bin', 'java')) then
+        return home
+      end
+    end
+  end
+
   local ok, metals = pcall(require, 'metals')
   if not ok then
     vim.notify('nvim-metals not available; skipping Metals setup', vim.log.levels.WARN)
   else
-    local metals_config = metals.bare_config()
-    metals_config.capabilities = lsp_capabilities
-    metals_config.settings = {
-      serverVersion = "2.0.0-M2",
-      serverProperties = {
-        "-Xmx4g",
-        "-Djol.magicFieldOffset=true",
-        "-Djol.tryWithSudo=true",
-        "-Djdk.attach.allowAttachSelf",
-        "--add-opens=java.base/java.nio=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.resources=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-        "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-        "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED",
-        "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-        "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
-        "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
-        "--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
-        "-XX:+DisplayVMOutputToStderr",
-        "-Xlog:disable",
-        "-Xlog:all=warning,gc=warning:stderr",
-      },
-    }
+    local metals_java_home = find_supported_metals_java_home()
+
+    local function create_metals_config()
+      local metals_config = metals.bare_config()
+      metals_config.capabilities = lsp_capabilities
+      metals_config.settings = {
+        serverVersion = "latest.stable",
+        serverProperties = {
+          "-Xmx4g",
+          "-Dmetals.macos-max-watch-roots=65536",
+        },
+      }
+
+      if metals_java_home then
+        metals_config.settings.javaHome = metals_java_home
+      end
+
+      return metals_config
+    end
 
     vim.api.nvim_create_autocmd('FileType', {
       group = vim.api.nvim_create_augroup('my.metals', { clear = true }),
       pattern = { 'scala', 'sbt', 'java' },
       callback = function()
-        metals.initialize_or_attach(metals_config)
+        if metals_java_home then
+          vim.env.JAVA_HOME = metals_java_home
+        end
+
+        metals.initialize_or_attach(create_metals_config())
       end,
     })
   end
