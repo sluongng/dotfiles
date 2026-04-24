@@ -24,3 +24,6 @@ version.json
 local/
 *.local.toml
 *.secret.toml
+
+# This one is shared global Codex guidance, not a repo-local project override.
+!AGENTS.md

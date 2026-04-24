@@ -12,6 +12,7 @@ Deploy it with:
 The deploy script manages these paths under `~/.codex`:
 
 - renders `config.toml` from the tracked shared config plus local overlays
+- tracked global `AGENTS.md`
 - tracked files under `agents/`
 - tracked custom skill directories under `skills/`
 
