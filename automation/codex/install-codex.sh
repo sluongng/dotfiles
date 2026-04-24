@@ -69,6 +69,10 @@ main() {
     --projects "${projects_local_path}" \
     --target "${target_config_path}"
 
+  if [ -f "${SOURCE_DIR}/AGENTS.md" ]; then
+    ensure_symlink "${SOURCE_DIR}/AGENTS.md" "${TARGET_DIR}/AGENTS.md"
+  fi
+
   while IFS= read -r source_path; do
     relative_path="${source_path#"${SOURCE_DIR}/"}"
     ensure_symlink "${source_path}" "${TARGET_DIR}/${relative_path}"
