@@ -1,0 +1,4 @@
+interface:
+  display_name: "Personal Skill Review"
+  short_description: "Scan recent sessions for skill friction"
+  default_prompt: "Use $personal-skill-review to inspect recent Codex sessions for repeated personal-skill failures and recommend or apply fixes."
