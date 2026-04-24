@@ -9,20 +9,25 @@ Use this skill to inspect live BCR metadata, answer repo-local Bzlmod version qu
 
 ## Quick start
 
+Resolve the helper CLI from this skill directory first. Do not assume the current repo has a `scripts/` or `tools/` copy of `bcr_tool.py`.
+
+- Canonical helper path:
+  - `SKILL_DIR=/Users/sluongng/.dotfiles/config/codex/skills/bazel-central-registry`
+  - `BCR_TOOL="$SKILL_DIR/scripts/bcr_tool.py"`
 - Check which direct deps in a repo can be upgraded:
-  - `python3 scripts/bcr_tool.py check-upgrades --module-file /path/to/MODULE.bazel`
+  - `python3 "$BCR_TOOL" check-upgrades --module-file /path/to/MODULE.bazel`
 - Check one included file only:
-  - `python3 scripts/bcr_tool.py check-upgrades --module-file /path/to/deps/bazel_dep.MODULE.bazel --workspace-root /path/to/workspace`
+  - `python3 "$BCR_TOOL" check-upgrades --module-file /path/to/deps/bazel_dep.MODULE.bazel --workspace-root /path/to/workspace`
 - List direct deps from a workspace (follows `include()` chains):
-  - `python3 scripts/bcr_tool.py list-deps --module-file /path/to/MODULE.bazel`
+  - `python3 "$BCR_TOOL" list-deps --module-file /path/to/MODULE.bazel`
 - Check latest versions from BCR:
-  - `python3 scripts/bcr_tool.py latest --module rules_go --module rules_python`
+  - `python3 "$BCR_TOOL" latest --module rules_go --module rules_python`
 - Dry-run upgrade (print diffs only):
-  - `python3 scripts/bcr_tool.py upgrade --module-file /path/to/MODULE.bazel`
+  - `python3 "$BCR_TOOL" upgrade --module-file /path/to/MODULE.bazel`
 - Apply upgrade edits:
-  - `python3 scripts/bcr_tool.py upgrade --module-file /path/to/MODULE.bazel --write`
+  - `python3 "$BCR_TOOL" upgrade --module-file /path/to/MODULE.bazel --write`
 - Best-effort dependency tree (bounded depth):
-  - `python3 scripts/bcr_tool.py deps-tree --module-file /path/to/MODULE.bazel --max-depth 2`
+  - `python3 "$BCR_TOOL" deps-tree --module-file /path/to/MODULE.bazel --max-depth 2`
 
 ## Tasks
 
@@ -37,9 +42,9 @@ Use this skill to inspect live BCR metadata, answer repo-local Bzlmod version qu
 ### Find modules / versions (local registry clone)
 1. Clone or point at a local bazel-central-registry checkout.
 2. Search by substring:
-   - `python3 scripts/bcr_tool.py find --registry-path /path/to/bazel-central-registry --query rules_`
+   - `python3 "$BCR_TOOL" find --registry-path /path/to/bazel-central-registry --query rules_`
 3. List versions for a module:
-   - `python3 scripts/bcr_tool.py list-versions --registry-path /path/to/bazel-central-registry --module rules_go`
+   - `python3 "$BCR_TOOL" list-versions --registry-path /path/to/bazel-central-registry --module rules_go`
 
 ### Upgrade modules in MODULE.bazel
 - Start with `check-upgrades` or a dry-run `upgrade` before editing files.
