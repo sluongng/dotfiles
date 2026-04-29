@@ -627,12 +627,44 @@ do
     vim.notify('nvim-metals not available; skipping Metals setup', vim.log.levels.WARN)
   else
     local metals_java_home = find_supported_metals_java_home()
+    local metals_target_version = '2.0.0-M9'
+    local metals_version_marker = vim.fn.stdpath('cache') .. '/nvim-metals/version.txt'
+    local metals_config_lib = require('metals.config')
+    local metals_install = require('metals.install')
+    local metals_version_ready = false
+
+    local function read_metals_version_marker()
+      if vim.fn.filereadable(metals_version_marker) == 0 then
+        return nil
+      end
+
+      local lines = vim.fn.readfile(metals_version_marker)
+      return lines[1]
+    end
+
+    local function write_metals_version_marker(version)
+      vim.fn.mkdir(vim.fn.fnamemodify(metals_version_marker, ':h'), 'p')
+      vim.fn.writefile({ version }, metals_version_marker)
+    end
+
+    local function installed_metals_version(metals_bin)
+      if vim.fn.executable(metals_bin) == 0 then
+        return nil
+      end
+
+      local result = vim.system({ metals_bin, '-v' }, { text = true }):wait()
+      if result.code ~= 0 or not result.stdout then
+        return nil
+      end
+
+      return result.stdout:match('metals%s+([^\n]+)')
+    end
 
     local function create_metals_config()
       local metals_config = metals.bare_config()
       metals_config.capabilities = lsp_capabilities
       metals_config.settings = {
-        serverVersion = "latest.stable",
+        serverVersion = metals_target_version,
         serverProperties = {
           "-Xmx4g",
           "-Dmetals.macos-max-watch-roots=65536",
@@ -646,15 +678,63 @@ do
       return metals_config
     end
 
+    local function ensure_target_metals_version(metals_config)
+      if metals_version_ready then
+        return true
+      end
+
+      local metals_bin = metals_config_lib.metals_bin()
+      if vim.fn.executable(metals_bin) == 1 and read_metals_version_marker() == metals_target_version then
+        metals_version_ready = true
+        return true
+      end
+
+      local installed_version = installed_metals_version(metals_bin)
+      if installed_version == metals_target_version then
+        write_metals_version_marker(installed_version)
+        metals_version_ready = true
+        return true
+      end
+
+      local validated = metals_config_lib.validate_config(vim.deepcopy(metals_config), vim.api.nvim_get_current_buf())
+      if not validated and vim.fn.executable(metals_bin) == 1 then
+        return false
+      end
+
+      metals_install.install_or_update(true)
+
+      installed_version = installed_metals_version(metals_bin)
+      if installed_version == metals_target_version then
+        write_metals_version_marker(installed_version)
+        metals_version_ready = true
+        return true
+      end
+
+      vim.notify(
+        string.format(
+          'Expected Metals %s but found %s after install',
+          metals_target_version,
+          installed_version or 'no installed binary'
+        ),
+        vim.log.levels.ERROR
+      )
+      return false
+    end
+
     vim.api.nvim_create_autocmd('FileType', {
       group = vim.api.nvim_create_augroup('my.metals', { clear = true }),
       pattern = { 'scala', 'sbt', 'java' },
       callback = function()
+        local metals_config = create_metals_config()
+        if not ensure_target_metals_version(metals_config) then
+          return
+        end
+
         if metals_java_home then
           vim.env.JAVA_HOME = metals_java_home
         end
 
-        metals.initialize_or_attach(create_metals_config())
+        metals.initialize_or_attach(metals_config)
       end,
     })
   end
