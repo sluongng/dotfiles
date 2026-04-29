@@ -26,6 +26,11 @@ Use this skill when the user wants a Codex automation created or maintained. The
 - Make the prompt self-sufficient and include the expected output format when useful.
 - Do not include schedule, thread, or workspace details in the prompt.
 - Do not ask the automation to write files or to suppress output unless the user explicitly wants that behavior.
+- If the task should use automation memory, include the defensive path pattern
+  `${CODEX_HOME:-$HOME/.codex}/automations/<automation_id>/memory.md`
+  and tell the run to read it first and record the outcome before returning.
+  Avoid raw `$CODEX_HOME/automations/...` paths because `CODEX_HOME` may be
+  unset in cron runs.
 
 4. Choose schedule and execution details.
 - Interpret times in the user's locale.
@@ -60,6 +65,8 @@ Read the matched file before calling `update`, `view`, or `delete` so the automa
 - State the task, the source of truth, and the expected output.
 - For reports, specify grouping, ranking, and evidence expectations.
 - For monitors, state what condition should trigger action and what the follow-up should include.
+- For memory-backed recurring jobs, spell out the fallback memory path with
+  `${CODEX_HOME:-$HOME/.codex}` and the stable automation id.
 - Keep the prompt stable enough that later schedule changes do not require rewriting the task intent.
 
 ## Decision Hints
