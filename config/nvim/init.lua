@@ -4,6 +4,7 @@ local vim = vim
 vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
 vim.g.loaded_node_provider = 0
+vim.g.loaded_python3_provider = 0
 
 -- Golang additional settings
 -- Rely on nvim-treesitter for syntax highlighting and nvim-lspconfig for formatting.
@@ -11,6 +12,14 @@ vim.g.go_auto_sameids = 0
 vim.g.go_def_mapping_enabled = 0
 vim.g.go_gopls_enabled = 0
 vim.g.go_gopls_gofumpt = 0
+
+vim.filetype.add({
+  extension = {
+    bazelrc = 'bazelrc',
+    gotmpl = 'gotmpl',
+    tmpl = 'gotmpl',
+  },
+})
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Airline >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 -- Doc: https://github.com/vim-airline/vim-airline
@@ -991,6 +1000,7 @@ vim.g.copilot_assume_mapped = true
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fzf.vim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 --  Doc: https://github.com/junegunn/fzf.vim
 --  Make fzf use neovim floating window
+pcall(require, "nvim-web-devicons")
 require("fzf-lua").setup({ "fzf-vim" })
 
 local opts = { noremap = true, silent = false }
