@@ -1,0 +1,20 @@
+{
+  "name": "sluongng-dotfiles",
+  "interface": {
+    "displayName": "Sluong Ng Dotfiles"
+  },
+  "plugins": [
+    {
+      "name": "buildbuddy",
+      "source": {
+        "source": "local",
+        "path": "./plugins/buildbuddy"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Coding"
+    }
+  ]
+}
