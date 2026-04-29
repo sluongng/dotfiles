@@ -52,9 +52,14 @@ than canned GitHub template sections.
      plain prose before showing it to the user.
    - For regressions, flakes, or incident fixes, put the concrete failure or
      symptom near the top so reviewers can identify the issue quickly.
-   - Include exact repro or validation commands only when they materially
-     support the change. Inline them naturally in the body or in a short
-     supporting list. Do not force a separate `Testing` section.
+   - Omit validation commands from the PR body by default. Do not add trailing
+     "Validated with", "Testing", or "Tests" paragraphs unless the user
+     explicitly asks for validation details in the body or approves that exact
+     text during review. Validation belongs in the final response, not the PR
+     body.
+   - Include exact repro commands only when they materially support the change.
+     Inline them naturally in the body or in a short supporting list. Do not
+     force a separate `Testing` section.
    - If a short error excerpt or command is central to the why, include the
      real text rather than a placeholder.
    - Prefer short direct sentences. If a paragraph becomes a long chain of
@@ -116,6 +121,8 @@ than canned GitHub template sections.
   user explicitly asks for one.
 - Never force template headings, especially `Testing`, when the same context
   reads cleanly as commit-message-style prose.
+- Never add validation command blocks or trailing validation paragraphs to the
+  PR body unless explicitly requested or approved by the user.
 - Never decorate the first PR draft with extra issue refs, stack narration, or
   headings unless the user asked for them.
 - Never stage, commit, or push unrelated user changes silently.
@@ -128,6 +135,8 @@ than canned GitHub template sections.
 - body follows the same why/context rules as `draft-commit-message`
 - body avoids unnecessary template sections; `Testing` appears only when
   explicitly requested or clearly warranted
+- body omits validation commands unless the user explicitly requested or
+  approved them in the PR body
 - single-commit PRs default to the finalized commit body with only minimal
   reviewer-oriented edits
 - body avoids unrequested issue-closing syntax and extra framing
