@@ -16,6 +16,19 @@ The deploy script manages these paths under `~/.codex`:
 - tracked files under `agents/`
 - tracked custom skill directories under `skills/`
 
+Tracked plugin marketplaces can live in this directory as:
+
+- `.agents/plugins/marketplace.json`
+- `plugins/<plugin-name>/`
+
+Enable those marketplaces from `~/.codex/config.local.toml` with a local
+absolute `source` path. Keep development-only plugins under `~/.codex/local` so
+they stay outside dotfiles git.
+
+Codex materializes enabled marketplace plugins into `~/.codex/plugins/cache`;
+bump the plugin manifest version when changing tracked plugin contents, or
+clear the matching cache entry to force a local refresh.
+
 It intentionally leaves `~/.codex/auth.json`, histories, logs, memories,
 SQLite state, and Codex-managed system skills as local machine state.
 

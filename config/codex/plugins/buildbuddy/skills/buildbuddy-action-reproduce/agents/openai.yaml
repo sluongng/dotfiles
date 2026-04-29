@@ -1,0 +1,4 @@
+interface:
+  display_name: "BuildBuddy Action Repro"
+  short_description: "Reproduce and customize BuildBuddy actions"
+  default_prompt: "Use $buildbuddy-action-reproduce to reproduce a Bazel remote action from a BuildBuddy invocation and customize command args, env, and exec properties."

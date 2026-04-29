@@ -1,0 +1,39 @@
+{
+  "name": "buildbuddy",
+  "version": "0.1.1",
+  "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, and analyze usage.",
+  "author": {
+    "name": "Sluong Ng",
+    "url": "https://github.com/sluongng"
+  },
+  "homepage": "https://www.buildbuddy.io/",
+  "repository": "https://github.com/sluongng/dotfiles",
+  "keywords": [
+    "buildbuddy",
+    "bazel",
+    "remote-execution",
+    "invocations",
+    "usage"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "BuildBuddy",
+    "shortDescription": "Debug BuildBuddy invocations and usage",
+    "longDescription": "Use BuildBuddy to troubleshoot invocations, compare cache and action behavior, reproduce remote actions with bb execute, and analyze billing or usage trends while protecting API keys.",
+    "developerName": "Sluong Ng",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://www.buildbuddy.io/",
+    "defaultPrompt": [
+      "Troubleshoot this BuildBuddy invocation",
+      "Compare these two BuildBuddy invocations",
+      "Analyze BuildBuddy usage for this group"
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}
