@@ -620,12 +620,56 @@ do
 end
 
 do
+  local function is_macos()
+    return vim.uv.os_uname().sysname == 'Darwin'
+  end
+
+  local function is_linux()
+    return vim.uv.os_uname().sysname == 'Linux'
+  end
+
+  local function is_windows()
+    return vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1
+  end
+
+  local function has_java_sources(home)
+    if not home or home == '' then
+      return false
+    end
+
+    local java_bin = is_windows() and 'java.exe' or 'java'
+    return vim.uv.fs_stat(vim.fs.joinpath(home, 'bin', java_bin)) ~= nil and
+        vim.uv.fs_stat(vim.fs.joinpath(home, 'lib', 'src.zip')) ~= nil
+  end
+
   local function find_supported_metals_java_home()
+    local candidates = {}
     for _, home in ipairs({
-      '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home',
-      '/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home',
+      vim.env.METALS_JAVA_HOME,
+      vim.env.JAVA_HOME,
     }) do
-      if vim.uv.fs_stat(vim.fs.joinpath(home, 'bin', 'java')) then
+      if home and home ~= '' then
+        table.insert(candidates, home)
+      end
+    end
+
+    if is_macos() then
+      vim.list_extend(candidates, {
+        '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home',
+        '/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home',
+      })
+    elseif is_linux() then
+      vim.list_extend(candidates, {
+        '/usr/lib/jvm/java-25-openjdk',
+        '/usr/lib/jvm/java-21-openjdk',
+        '/usr/lib/jvm/java-17-openjdk',
+        '/usr/lib/jvm/default',
+        '/usr/lib/jvm/java-25-graalvm-ce',
+      })
+    end
+
+    for _, home in ipairs(candidates) do
+      if has_java_sources(home) then
         return home
       end
     end
@@ -636,7 +680,7 @@ do
     vim.notify('nvim-metals not available; skipping Metals setup', vim.log.levels.WARN)
   else
     local metals_java_home = find_supported_metals_java_home()
-    local metals_target_version = '2.0.0-M9'
+    local metals_target_version = '2.0.0-M10'
     local metals_version_marker = vim.fn.stdpath('cache') .. '/nvim-metals/version.txt'
     local metals_config_lib = require('metals.config')
     local metals_install = require('metals.install')
@@ -669,19 +713,132 @@ do
       return result.stdout:match('metals%s+([^\n]+)')
     end
 
+    local function is_bazel_mbt_workspace()
+      local buffer_name = vim.api.nvim_buf_get_name(0)
+      local path = buffer_name ~= '' and vim.fn.fnamemodify(buffer_name, ':p:h') or vim.fn.getcwd()
+      return vim.fs.find('bazel.mbt.sh', { upward = true, path = path, type = 'file' })[1] ~= nil
+    end
+
+    local function proto_java_virtual_target(uri)
+      local proto_uri, class_name = uri:match('^(.*%.proto)%.metals%-proto%-java/([^/]+)%.java$')
+      if not proto_uri then
+        return nil
+      end
+
+      local proto_path = vim.uri_to_fname(proto_uri)
+      if vim.fn.filereadable(proto_path) == 0 then
+        return nil
+      end
+
+      return proto_path, class_name
+    end
+
+    local function proto_decl_range(proto_path, class_name)
+      local ok, lines = pcall(vim.fn.readfile, proto_path)
+      if not ok then
+        return nil
+      end
+
+      local escaped = vim.pesc(class_name)
+      for index, line in ipairs(lines) do
+        if line:find('^%s*message%s+' .. escaped .. '%f[%W]')
+            or line:find('^%s*enum%s+' .. escaped .. '%f[%W]')
+            or line:find('^%s*service%s+' .. escaped .. '%f[%W]') then
+          local start_col = line:find(class_name, 1, true) - 1
+          return {
+            start = { line = index - 1, character = start_col },
+            ['end'] = { line = index - 1, character = start_col + #class_name },
+          }
+        end
+      end
+
+      return nil
+    end
+
+    local function rewrite_proto_java_virtual_location(location)
+      local uri = location.uri or location.targetUri
+      if not uri then
+        return location
+      end
+
+      local proto_path, class_name = proto_java_virtual_target(uri)
+      if not proto_path then
+        return location
+      end
+
+      local range = proto_decl_range(proto_path, class_name)
+      if not range then
+        return location
+      end
+
+      local rewritten = vim.deepcopy(location)
+      local proto_uri = vim.uri_from_fname(proto_path)
+      if rewritten.uri then
+        rewritten.uri = proto_uri
+        rewritten.range = range
+      end
+      if rewritten.targetUri then
+        rewritten.targetUri = proto_uri
+        rewritten.targetRange = range
+        rewritten.targetSelectionRange = range
+      end
+      return rewritten
+    end
+
+    local function install_proto_java_location_rewriter()
+      if vim.g.my_proto_java_location_rewriter_installed then
+        return
+      end
+
+      vim.g.my_proto_java_location_rewriter_installed = true
+      local default_locations_to_items = vim.lsp.util.locations_to_items
+      vim.lsp.util.locations_to_items = function(locations, offset_encoding)
+        local rewritten = locations
+        if type(locations) == 'table' then
+          local is_list = vim.islist or vim.tbl_islist
+          if is_list(locations) then
+            rewritten = {}
+            for index, location in ipairs(locations) do
+              rewritten[index] = rewrite_proto_java_virtual_location(location)
+            end
+          else
+            rewritten = rewrite_proto_java_virtual_location(locations)
+          end
+        end
+
+        return default_locations_to_items(rewritten, offset_encoding)
+      end
+    end
+
+    install_proto_java_location_rewriter()
+
     local function create_metals_config()
       local metals_config = metals.bare_config()
+      local server_properties = {
+        "-Xmx4g",
+      }
+
+      if is_bazel_mbt_workspace() then
+        table.insert(server_properties, "-Dmetals.auto-import-builds=all")
+        table.insert(server_properties, "-Dmetals.preferred-build-server=MBT")
+        table.insert(server_properties, "-Dmetals.presentation-compiler-diagnostics=false")
+      end
+
+      if is_macos() then
+        table.insert(server_properties, "-Dmetals.macos-max-watch-roots=65536")
+      end
+
       metals_config.capabilities = lsp_capabilities
       metals_config.settings = {
         serverVersion = metals_target_version,
-        serverProperties = {
-          "-Xmx4g",
-          "-Dmetals.macos-max-watch-roots=65536",
-        },
+        serverProperties = server_properties,
       }
 
       if metals_java_home then
         metals_config.settings.javaHome = metals_java_home
+        metals_config.cmd_env = vim.tbl_extend('force', metals_config.cmd_env or {}, {
+          JAVA_HOME = metals_java_home,
+        })
       end
 
       return metals_config
