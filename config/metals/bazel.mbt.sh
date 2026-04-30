@@ -375,7 +375,7 @@ if [[ "${MBT_SKIP_BAZEL_BUILD:-0}" != "1" ]]; then
   fi
 fi
 
-jq -r '.runtime_jars[]?' "$top_java_info_jsonl" | sort -u >"$runtime_jars_file"
+jq -r '.runtime_jars[]?' "$top_java_info_jsonl" "$transitive_java_info_jsonl" | sort -u >"$runtime_jars_file"
 
 jq -r '
   select((.direct_sources | length) == 1)
