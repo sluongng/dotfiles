@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ~/.codex/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in ~/.codex/projects.local.toml.
-# Last updated for codex-cli v0.124.0 on 2026-04-24.
+# Last updated for codex-cli v0.128.0 on 2026-04-30.
 
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
@@ -10,7 +10,7 @@ plan_mode_reasoning_effort = "xhigh"
 show_raw_agent_reasoning = true
 
 approval_policy = "never"
-sandbox_mode = "danger-full-access"
+default_permissions = ":danger-no-sandbox"
 
 web_search = "live"
 
@@ -24,14 +24,16 @@ suppress_unstable_features_warning = true
 personality = "pragmatic"
 service_tier = "fast"
 [features]
-js_repl = true
+goals = true
 memories = true
 prevent_idle_sleep = true
-undo = true
 tool_search = true
 
+[features.multi_agent_v2]
+enabled = true
+max_concurrent_threads_per_session = 13 # counts root; preserves 12 spawned agents
+
 [agents]
-max_threads = 12 # default is 6
 max_depth = 2
 
 [agents.explorer]
