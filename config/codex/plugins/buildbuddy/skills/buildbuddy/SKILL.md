@@ -32,6 +32,8 @@ Route by user intent:
   `../buildbuddy-invocation-compare/SKILL.md`
 - Replaying one remote action, modifying action args/env/exec properties, or
   pinning to an executor: `../buildbuddy-action-reproduce/SKILL.md`
+- Recent flaky tests, Test Analytics flakes lists, target flake samples, or
+  recurring flaky-test triage: `../buildbuddy-flaky-tests/SKILL.md`
 - Billing, usage, trends, heatmaps, drilldowns, cost anomalies, or projections:
   `../buildbuddy-usage-analysis/SKILL.md`
 

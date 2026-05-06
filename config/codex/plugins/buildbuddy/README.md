@@ -6,6 +6,7 @@ dotfiles:
 - invocation troubleshooting and artifact lookup
 - invocation comparison and cache-miss analysis
 - remote action replay command generation
+- flaky-test listing and triage from Test Analytics target stats
 - usage and billing trend analysis
 
 BuildBuddy also exposes an official MCP server at

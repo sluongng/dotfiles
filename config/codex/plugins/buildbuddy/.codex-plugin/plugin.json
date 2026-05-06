@@ -1,7 +1,7 @@
 {
   "name": "buildbuddy",
   "version": "0.1.1",
-  "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, and analyze usage.",
+  "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, and analyze usage.",
   "author": {
     "name": "Sluong Ng",
     "url": "https://github.com/sluongng"
@@ -13,13 +13,15 @@
     "bazel",
     "remote-execution",
     "invocations",
-    "usage"
+    "usage",
+    "flakes",
+    "flaky-tests"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "BuildBuddy",
-    "shortDescription": "Debug BuildBuddy invocations and usage",
-    "longDescription": "Use BuildBuddy to troubleshoot invocations, compare cache and action behavior, reproduce remote actions with bb execute, and analyze billing or usage trends while protecting API keys.",
+    "shortDescription": "Debug BuildBuddy invocations, flakes, and usage",
+    "longDescription": "Use BuildBuddy to troubleshoot invocations, compare cache and action behavior, reproduce remote actions with bb execute, inspect recent flaky tests, and analyze billing or usage trends while protecting API keys.",
     "developerName": "Sluong Ng",
     "category": "Coding",
     "capabilities": [
@@ -31,7 +33,8 @@
     "defaultPrompt": [
       "Troubleshoot this BuildBuddy invocation",
       "Compare these two BuildBuddy invocations",
-      "Analyze BuildBuddy usage for this group"
+      "Analyze BuildBuddy usage for this group",
+      "Fetch recent flaky tests from BuildBuddy"
     ],
     "brandColor": "#2563EB",
     "screenshots": []

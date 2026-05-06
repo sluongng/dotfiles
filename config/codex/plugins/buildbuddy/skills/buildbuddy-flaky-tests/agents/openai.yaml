@@ -1,0 +1,4 @@
+interface:
+  display_name: "BuildBuddy Flaky Tests"
+  short_description: "Find and triage recent flaky tests"
+  default_prompt: "Use $buildbuddy-flaky-tests to fetch the latest flaky tests from BuildBuddy."
