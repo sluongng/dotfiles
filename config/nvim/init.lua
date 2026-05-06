@@ -472,6 +472,648 @@ local function diagnostic_jump_open_float(diagnostic, bufnr)
   })
 end
 
+local function flatten_lsp_locations(result)
+  if not result then
+    return {}
+  end
+
+  if result.uri or result.targetUri then
+    return { result }
+  end
+
+  return result
+end
+
+local function location_decl_range(path, symbol)
+  local ok, lines = pcall(vim.fn.readfile, path)
+  if not ok then
+    return {
+      start = { line = 0, character = 0 },
+      ['end'] = { line = 0, character = 0 },
+    }
+  end
+
+  local escaped = vim.pesc(symbol)
+  local patterns = {
+    '@interface%s+' .. escaped .. '%f[%W]',
+    'class%s+' .. escaped .. '%f[%W]',
+    'interface%s+' .. escaped .. '%f[%W]',
+    'enum%s+' .. escaped .. '%f[%W]',
+    'record%s+' .. escaped .. '%f[%W]',
+  }
+
+  for index, line in ipairs(lines) do
+    for _, pattern in ipairs(patterns) do
+      if line:find(pattern) then
+        local start_col = line:find(symbol, 1, true) - 1
+        return {
+          start = { line = index - 1, character = start_col },
+          ['end'] = { line = index - 1, character = start_col + #symbol },
+        }
+      end
+    end
+  end
+
+  return {
+    start = { line = 0, character = 0 },
+    ['end'] = { line = 0, character = 0 },
+  }
+end
+
+local function jdk_src_zip_candidates()
+  local candidates = {}
+  for _, home in ipairs({
+    vim.env.METALS_JAVA_HOME,
+    vim.env.JAVA_HOME,
+  }) do
+    if home and home ~= '' then
+      table.insert(candidates, home)
+    end
+  end
+
+  local sysname = vim.uv.os_uname().sysname
+  if sysname == 'Linux' then
+    vim.list_extend(candidates, {
+      '/usr/lib/jvm/java-25-graalvm-ce',
+      '/usr/lib/jvm/java-25-openjdk',
+      '/usr/lib/jvm/java-21-openjdk',
+      '/usr/lib/jvm/java-17-openjdk',
+      '/usr/lib/jvm/default',
+    })
+  elseif sysname == 'Darwin' then
+    vim.list_extend(candidates, {
+      '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home',
+      '/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home',
+    })
+  end
+
+  local seen = {}
+  local src_zips = {}
+  for _, home in ipairs(candidates) do
+    if not seen[home] then
+      seen[home] = true
+      local src_zip = vim.fs.joinpath(home, 'lib', 'src.zip')
+      if vim.fn.filereadable(src_zip) == 1 then
+        table.insert(src_zips, src_zip)
+      end
+    end
+  end
+
+  return src_zips
+end
+
+local function first_jdk_src_entry(src_zip, relative_path)
+  if vim.fn.executable('unzip') ~= 1 then
+    return nil
+  end
+
+  local result = vim.system({ 'unzip', '-Z', '-1', src_zip, '*/' .. relative_path }, { text = true }):wait()
+  if result.code ~= 0 or not result.stdout or result.stdout == '' then
+    return nil
+  end
+
+  return result.stdout:match('[^\r\n]+')
+end
+
+local function extract_jdk_source(workspace, relative_path)
+  local output = vim.fs.joinpath(workspace, '.metals', 'readonly', 'dependencies', 'jdk-src', relative_path)
+  if vim.fn.filereadable(output) == 1 then
+    return output
+  end
+
+  for _, src_zip in ipairs(jdk_src_zip_candidates()) do
+    local entry = first_jdk_src_entry(src_zip, relative_path)
+    if entry then
+      local result = vim.system({ 'unzip', '-p', src_zip, entry }, { text = true }):wait()
+      if result.code == 0 and result.stdout and result.stdout ~= '' then
+        vim.fn.mkdir(vim.fn.fnamemodify(output, ':h'), 'p')
+        local lines = vim.split(result.stdout, '\n', { plain = true })
+        if lines[#lines] == '' then
+          table.remove(lines)
+        end
+        vim.fn.writefile(lines, output)
+        return output
+      end
+    end
+  end
+
+  return nil
+end
+
+local function metals_workspace_for_buffer(bufnr)
+  local buffer_name = vim.api.nvim_buf_get_name(bufnr)
+  local start_path = buffer_name ~= '' and vim.fn.fnamemodify(buffer_name, ':p:h') or vim.fn.getcwd()
+  local marker = vim.fs.find('.metals', { upward = true, path = start_path, type = 'directory' })[1]
+  if not marker then
+    return nil
+  end
+
+  return vim.fs.dirname(marker)
+end
+
+local function java_source_root_from_buffer(bufnr)
+  local buffer_name = vim.api.nvim_buf_get_name(bufnr)
+  if buffer_name == '' or not buffer_name:match('%.java$') then
+    return nil
+  end
+
+  local package
+  for _, line in ipairs(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+    package = line:match('^%s*package%s+([%w_%.]+)%s*;%s*$')
+    if package then
+      break
+    end
+  end
+
+  if not package then
+    return nil
+  end
+
+  local package_path = package:gsub('%.', '/')
+  local absolute = vim.fn.fnamemodify(buffer_name, ':p')
+  local suffix = '/' .. package_path .. '/' .. vim.fn.fnamemodify(buffer_name, ':t')
+  if absolute:sub(-#suffix) ~= suffix then
+    return nil
+  end
+
+  return absolute:sub(1, #absolute - #suffix)
+end
+
+local function workspace_java_source_path(workspace, relative_path, bufnr)
+  local roots = {}
+  local seen = {}
+
+  local function add_root(root)
+    if not root or root == '' or seen[root] then
+      return
+    end
+    seen[root] = true
+    table.insert(roots, root)
+  end
+
+  add_root(java_source_root_from_buffer(bufnr))
+
+  for _, root in ipairs({
+    'src/main/java',
+    'src/test/java',
+    'src/java_tools/buildjar/java',
+    'src/java_tools/junitrunner/java',
+    'src/tools/android/java',
+    'tools/java/runfiles',
+  }) do
+    add_root(vim.fs.joinpath(workspace, root))
+  end
+
+  add_root(workspace)
+
+  for _, root in ipairs(roots) do
+    local path = vim.fs.joinpath(root, relative_path)
+    if vim.fn.filereadable(path) == 1 then
+      return path
+    end
+  end
+
+  return nil
+end
+
+local function split_dotted_name(name)
+  local parts = {}
+  for part in name:gmatch('[^%.]+') do
+    table.insert(parts, part)
+  end
+  return parts
+end
+
+local function join_parts(parts, start_index, end_index, separator)
+  local selected = {}
+  for index = start_index, end_index do
+    table.insert(selected, parts[index])
+  end
+  return table.concat(selected, separator)
+end
+
+local function java_import_relative_paths(import)
+  local parts = split_dotted_name(import)
+  local paths = {}
+  local seen = {}
+
+  local function add_path(end_index)
+    if end_index < 1 then
+      return
+    end
+
+    local relative_path = join_parts(parts, 1, end_index, '/') .. '.java'
+    if not seen[relative_path] then
+      seen[relative_path] = true
+      table.insert(paths, relative_path)
+    end
+  end
+
+  add_path(#parts)
+  for end_index = #parts - 1, 1, -1 do
+    add_path(end_index)
+  end
+
+  return paths
+end
+
+local proto_files_cache = {}
+local proto_java_outer_cache = {}
+
+local function upper_camel_from_proto_basename(name)
+  local words = {}
+  for word in name:gmatch('[A-Za-z0-9]+') do
+    table.insert(words, word:sub(1, 1):upper() .. word:sub(2))
+  end
+
+  return table.concat(words, '')
+end
+
+local function proto_java_package(lines)
+  for _, line in ipairs(lines) do
+    local package = line:match('^%s*option%s+java_package%s*=%s*"([^"]+)"%s*;%s*$')
+    if package then
+      return package
+    end
+  end
+
+  return nil
+end
+
+local function proto_outer_class_name(path, lines)
+  for _, line in ipairs(lines) do
+    local outer = line:match('^%s*option%s+java_outer_classname%s*=%s*"([^"]+)"%s*;%s*$')
+    if outer then
+      return outer
+    end
+  end
+
+  return upper_camel_from_proto_basename(vim.fn.fnamemodify(path, ':t:r'))
+end
+
+local function workspace_proto_files(workspace)
+  if proto_files_cache[workspace] then
+    return proto_files_cache[workspace]
+  end
+
+  local files = {}
+  if vim.fn.executable('rg') == 1 then
+    local result = vim.system({
+      'rg',
+      '--files',
+      '--glob',
+      '*.proto',
+      '--glob',
+      '!bazel-*',
+      '--glob',
+      '!.metals/**',
+      '--glob',
+      '!.bazelbsp/**',
+    }, { cwd = workspace, text = true }):wait()
+    if result.code == 0 and result.stdout then
+      for line in result.stdout:gmatch('[^\r\n]+') do
+        table.insert(files, vim.fs.joinpath(workspace, line))
+      end
+    end
+  end
+
+  if #files == 0 then
+    files = vim.fn.globpath(workspace, 'src/**/*.proto', false, true)
+  end
+
+  proto_files_cache[workspace] = files
+  return files
+end
+
+local function proto_for_java_outer(workspace, package_name, outer_class)
+  local cache_key = workspace .. '\0' .. package_name .. '\0' .. outer_class
+  if proto_java_outer_cache[cache_key] ~= nil then
+    return proto_java_outer_cache[cache_key] or nil
+  end
+
+  for _, path in ipairs(workspace_proto_files(workspace)) do
+    local ok, lines = pcall(vim.fn.readfile, path)
+    if ok and proto_java_package(lines) == package_name and proto_outer_class_name(path, lines) == outer_class then
+      proto_java_outer_cache[cache_key] = path
+      return path
+    end
+  end
+
+  proto_java_outer_cache[cache_key] = false
+  return nil
+end
+
+local function proto_block_end(lines, start_line, limit)
+  local depth = 0
+  local saw_open = false
+  for index = start_line, limit do
+    local line = lines[index]
+    local _, opens = line:gsub('{', '')
+    local _, closes = line:gsub('}', '')
+    if opens > 0 then
+      saw_open = true
+    end
+    depth = depth + opens - closes
+    if saw_open and depth <= 0 then
+      return index
+    end
+  end
+
+  return limit
+end
+
+local function proto_decl_range(path, nested_names)
+  local ok, lines = pcall(vim.fn.readfile, path)
+  if not ok then
+    return {
+      start = { line = 0, character = 0 },
+      ['end'] = { line = 0, character = 0 },
+    }
+  end
+
+  local search_start = 1
+  local search_end = #lines
+  local found_line = 1
+  local found_col = 0
+
+  for _, name in ipairs(nested_names) do
+    local escaped = vim.pesc(name)
+    local match_line
+    for index = search_start, search_end do
+      local line = lines[index]
+      if line:find('^%s*message%s+' .. escaped .. '%f[%W]') or line:find('^%s*enum%s+' .. escaped .. '%f[%W]') then
+        match_line = index
+        break
+      end
+    end
+
+    if not match_line then
+      break
+    end
+
+    found_line = match_line
+    found_col = (lines[match_line]:find(name, 1, true) or 1) - 1
+    search_start = match_line + 1
+    search_end = proto_block_end(lines, match_line, search_end) - 1
+  end
+
+  return {
+    start = { line = found_line - 1, character = found_col },
+    ['end'] = { line = found_line - 1, character = found_col + #nested_names[#nested_names] },
+  }
+end
+
+local function generated_proto_definition(workspace, import)
+  local parts = split_dotted_name(import)
+  if #parts < 2 then
+    return nil
+  end
+
+  for outer_index = #parts - 1, 2, -1 do
+    local package_name = join_parts(parts, 1, outer_index - 1, '.')
+    local outer_class = parts[outer_index]
+    local proto_path = proto_for_java_outer(workspace, package_name, outer_class)
+    if proto_path then
+      local nested_names = {}
+      for index = outer_index + 1, #parts do
+        table.insert(nested_names, parts[index])
+      end
+      if #nested_names == 0 then
+        return nil
+      end
+
+      return {
+        uri = vim.uri_from_fname(proto_path),
+        range = proto_decl_range(proto_path, nested_names),
+      }
+    end
+  end
+
+  return nil
+end
+
+local function java_import_definition_at_cursor(bufnr)
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+  local line = vim.api.nvim_buf_get_lines(bufnr, row - 1, row, false)[1] or ''
+  local import = line:match('^%s*import%s+([%w_%.]+)%s*;%s*$')
+  if not import then
+    return nil
+  end
+
+  local workspace = metals_workspace_for_buffer(bufnr)
+  if not workspace then
+    return nil
+  end
+
+  local symbol = import:match('([^.]+)$')
+  local relative_path = import:gsub('%.', '/') .. '.java'
+  if import:match('^java%.') then
+    local jdk_source = extract_jdk_source(workspace, relative_path)
+    if jdk_source then
+      return {
+        uri = vim.uri_from_fname(jdk_source),
+        range = location_decl_range(jdk_source, symbol),
+      }
+    end
+  end
+
+  for _, candidate in ipairs(java_import_relative_paths(import)) do
+    local workspace_source = workspace_java_source_path(workspace, candidate, bufnr)
+    if workspace_source then
+      return {
+        uri = vim.uri_from_fname(workspace_source),
+        range = location_decl_range(workspace_source, symbol),
+      }
+    end
+  end
+
+  local dependency_root = vim.fs.joinpath(workspace, '.metals', 'readonly', 'dependencies')
+  local matches = vim.fn.globpath(dependency_root, '*/' .. relative_path, false, true)
+  if #matches > 0 then
+    table.sort(matches)
+    local path = matches[1]
+    return {
+      uri = vim.uri_from_fname(path),
+      range = location_decl_range(path, symbol),
+    }
+  end
+
+  return generated_proto_definition(workspace, import)
+end
+
+local function show_definition_locations(locations, opts)
+  if opts and opts.on_list then
+    opts.on_list({
+      title = 'LSP definitions',
+      items = vim.lsp.util.locations_to_items(locations, 'utf-16'),
+    })
+    return
+  end
+
+  if #locations == 1 then
+    vim.lsp.util.show_document(locations[1], 'utf-16', { focus = true })
+    return
+  end
+
+  vim.fn.setqflist({}, ' ', {
+    title = 'LSP definitions',
+    items = vim.lsp.util.locations_to_items(locations, 'utf-16'),
+  })
+  vim.cmd('botright cwindow')
+end
+
+local function lsp_definition_with_java_import_fallback(opts)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local fallback = java_import_definition_at_cursor(bufnr)
+  if fallback then
+    show_definition_locations({ fallback }, opts)
+    return
+  end
+
+  local params = vim.lsp.util.make_position_params(0, 'utf-16')
+
+  vim.lsp.buf_request_all(bufnr, 'textDocument/definition', params, function(responses)
+    local locations = {}
+    for _, response in pairs(responses or {}) do
+      if response.result then
+        for _, location in ipairs(flatten_lsp_locations(response.result)) do
+          table.insert(locations, location)
+        end
+      end
+    end
+
+    if #locations > 0 then
+      show_definition_locations(locations, opts)
+      return
+    end
+
+    vim.notify('No definition found', vim.log.levels.INFO)
+  end)
+end
+
+local function java_reference_symbol_at_cursor(bufnr)
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+  local line = vim.api.nvim_buf_get_lines(bufnr, row - 1, row, false)[1] or ''
+  local import = line:match('^%s*import%s+([%w_%.]+)%s*;%s*$')
+  if import then
+    return import:match('([^.]+)$')
+  end
+
+  local symbol = vim.fn.expand('<cword>')
+  if symbol:match('^[A-Z][%w_]*$') then
+    return symbol
+  end
+
+  return nil
+end
+
+local function java_reference_search_roots(workspace, bufnr)
+  local roots = {}
+  local seen = {}
+
+  local function add_root(root)
+    if not root or root == '' or seen[root] or vim.fn.isdirectory(root) ~= 1 then
+      return
+    end
+    seen[root] = true
+    table.insert(roots, root)
+  end
+
+  add_root(java_source_root_from_buffer(bufnr))
+
+  for _, root in ipairs({
+    'src/main/java',
+    'src/test/java',
+    'src/java_tools/buildjar/java',
+    'src/java_tools/junitrunner/java',
+    'src/tools/android/java',
+    'tools/java/runfiles',
+  }) do
+    add_root(vim.fs.joinpath(workspace, root))
+  end
+
+  if #roots == 0 then
+    add_root(workspace)
+  end
+
+  return roots
+end
+
+local function java_references_from_rg(symbol, workspace, bufnr, opts)
+  if vim.fn.executable('rg') ~= 1 then
+    return false
+  end
+
+  local roots = java_reference_search_roots(workspace, bufnr)
+  if #roots == 0 then
+    return false
+  end
+
+  local args = {
+    'rg',
+    '--no-heading',
+    '--color',
+    'never',
+    '-n',
+    '--column',
+    '--glob',
+    '*.java',
+    '\\b' .. symbol .. '\\b',
+  }
+
+  for _, root in ipairs(roots) do
+    table.insert(args, root)
+  end
+
+  local result = vim.system(args, { text = true }):wait()
+  if result.code ~= 0 or not result.stdout or result.stdout == '' then
+    return false
+  end
+
+  local items = {}
+  for line in result.stdout:gmatch('[^\r\n]+') do
+    local filename, lnum, col, text = line:match('^([^:]+):(%d+):(%d+):(.*)$')
+    if filename then
+      table.insert(items, {
+        filename = filename,
+        lnum = tonumber(lnum),
+        col = tonumber(col),
+        text = text,
+      })
+    end
+  end
+
+  if #items == 0 then
+    return false
+  end
+
+  local list = {
+    title = 'Java references for ' .. symbol,
+    items = items,
+  }
+  if opts and opts.on_list then
+    opts.on_list(list)
+  else
+    vim.fn.setqflist({}, ' ', list)
+    vim.cmd('botright cwindow')
+  end
+
+  return true
+end
+
+local function lsp_references_with_java_fallback(opts)
+  local bufnr = vim.api.nvim_get_current_buf()
+  if vim.bo[bufnr].filetype == 'java' then
+    local symbol = java_reference_symbol_at_cursor(bufnr)
+    local workspace = metals_workspace_for_buffer(bufnr)
+    if symbol and workspace and java_references_from_rg(symbol, workspace, bufnr, opts) then
+      return
+    end
+  end
+
+  vim.lsp.buf.references(nil, opts)
+end
+
 
 
 -- Configure diagnostics globally
@@ -546,17 +1188,17 @@ vim.api.nvim_create_autocmd('LspAttach', {
       })
     end
     if client:supports_method('textDocument/references') then
-      vim.keymap.set("n", "gr", function() vim.lsp.buf.references(nil, { on_list = on_list }) end, opts)
+      vim.keymap.set("n", "gr", function() lsp_references_with_java_fallback({ on_list = on_list }) end, opts)
       vim.keymap.set("n", "gR", function()
         vim.cmd.vsplit()
-        vim.lsp.buf.references(nil, { on_list = on_list })
+        lsp_references_with_java_fallback({ on_list = on_list })
       end, opts)
     end
     if client:supports_method('textDocument/definition') then
-      vim.keymap.set("n", "gd", function() vim.lsp.buf.definition({ on_list = on_list }) end, opts)
+      vim.keymap.set("n", "gd", function() lsp_definition_with_java_import_fallback({ on_list = on_list }) end, opts)
       vim.keymap.set("n", "gD", function()
         vim.cmd.vsplit()
-        vim.lsp.buf.definition({ on_list = on_list })
+        lsp_definition_with_java_import_fallback({ on_list = on_list })
       end, opts)
     end
     vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, opts)
