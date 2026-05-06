@@ -1355,10 +1355,50 @@ do
       return result.stdout:match('metals%s+([^\n]+)')
     end
 
-    local function is_bazel_mbt_workspace()
+    local function current_workspace_search_path()
       local buffer_name = vim.api.nvim_buf_get_name(0)
-      local path = buffer_name ~= '' and vim.fn.fnamemodify(buffer_name, ':p:h') or vim.fn.getcwd()
-      return vim.fs.find('bazel.mbt.sh', { upward = true, path = path, type = 'file' })[1] ~= nil
+      return buffer_name ~= '' and vim.fn.fnamemodify(buffer_name, ':p:h') or vim.fn.getcwd()
+    end
+
+    local function find_workspace_marker(name, marker_type)
+      return vim.fs.find(name, {
+        upward = true,
+        path = current_workspace_search_path(),
+        type = marker_type,
+      })[1]
+    end
+
+    local function bazel_bsp_config_path()
+      local bsp_dir = find_workspace_marker('.bsp', 'directory')
+      local config_path = bsp_dir and (bsp_dir .. '/bazelbsp.json') or nil
+      if config_path and vim.fn.filereadable(config_path) == 1 then
+        return config_path
+      end
+
+      return nil
+    end
+
+    local function bazel_bsp_server_name()
+      local config_path = bazel_bsp_config_path()
+      if not config_path then
+        return nil
+      end
+
+      local ok, lines = pcall(vim.fn.readfile, config_path)
+      if not ok then
+        return 'bazelbsp'
+      end
+
+      local decode_ok, decoded = pcall(vim.json.decode, table.concat(lines, '\n'))
+      if decode_ok and type(decoded) == 'table' and type(decoded.name) == 'string' and decoded.name ~= '' then
+        return decoded.name
+      end
+
+      return 'bazelbsp'
+    end
+
+    local function is_bazel_mbt_workspace()
+      return find_workspace_marker('bazel.mbt.sh', 'file') ~= nil
     end
 
     local function proto_java_virtual_target(uri)
@@ -1459,8 +1499,14 @@ do
       local server_properties = {
         "-Xmx4g",
       }
+      local bazel_bsp_server = bazel_bsp_server_name()
+      local bazel_bsp_workspace = bazel_bsp_server ~= nil
 
-      if is_bazel_mbt_workspace() then
+      if bazel_bsp_workspace then
+        table.insert(server_properties, "-Dmetals.auto-import-builds=all")
+        table.insert(server_properties, "-Dmetals.preferred-build-server=" .. bazel_bsp_server)
+        table.insert(server_properties, "-Dmetals.presentation-compiler-diagnostics=false")
+      elseif is_bazel_mbt_workspace() then
         table.insert(server_properties, "-Dmetals.auto-import-builds=all")
         table.insert(server_properties, "-Dmetals.preferred-build-server=MBT")
         table.insert(server_properties, "-Dmetals.presentation-compiler-diagnostics=false")
@@ -1475,6 +1521,10 @@ do
         serverVersion = metals_target_version,
         serverProperties = server_properties,
       }
+
+      if bazel_bsp_workspace then
+        metals_config.settings.defaultBspToBuildTool = true
+      end
 
       if metals_java_home then
         metals_config.settings.javaHome = metals_java_home
