@@ -1,0 +1,4 @@
+interface:
+  display_name: "BuildBuddy PR Coach"
+  short_description: "Triage BuildBuddy PRs and merge candidates"
+  default_prompt: "Use $buildbuddy-pr-coach to triage open BuildBuddy PRs and identify the highest-likelihood merges."
