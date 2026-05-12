@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/steamlink-host-mode"
+state_file="$state_dir/enabled"
+ttl_seconds="${STEAMLINK_HOST_MODE_TTL_SECONDS:-43200}"
+monitor_name="${STEAMLINK_HOST_MODE_MONITOR:-HDMI-A-1}"
+devices_file="$state_dir/local-input-devices"
+
+# Physical devices at the desk. Remote Play's virtual inputs should not be
+# listed here, or the stream will lose control together with local input.
+local_input_devices=(
+    "alice-qk-alice"
+    "alice-qk-alice-keyboard"
+    "alice-qk-alice-mouse"
+    "alice-qk-alice-system-control"
+    "alice-qk-alice-consumer-control"
+    "alice-qk-alice-consumer-control-1"
+    "yubico-yubikey-otp+fido+ccid"
+)
+
+load_hypr_env() {
+    if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" && -n "${WAYLAND_DISPLAY:-}" ]]; then
+        return 0
+    fi
+
+    local line key
+    while IFS= read -r line; do
+        key="${line%%=*}"
+        case "$key" in
+            HYPRLAND_INSTANCE_SIGNATURE|WAYLAND_DISPLAY|XDG_CURRENT_DESKTOP|XDG_RUNTIME_DIR)
+                export "$line"
+                ;;
+        esac
+    done < <(systemctl --user show-environment)
+}
+
+hypr() {
+    load_hypr_env
+    hyprctl "$@"
+}
+
+set_local_inputs_enabled() {
+    local enabled="$1"
+    shift
+
+    local device failed=0
+    for device in "$@"; do
+        if ! hypr -r -- keyword "device[$device]:enabled" "$enabled" >/dev/null; then
+            printf 'failed to set device[%s]:enabled %s\n' "$device" "$enabled" >&2
+            failed=1
+        fi
+    done
+
+    return "$failed"
+}
+
+disable_local_inputs() {
+    printf '%s\n' "${local_input_devices[@]}" > "$devices_file"
+    set_local_inputs_enabled false "${local_input_devices[@]}"
+}
+
+enable_local_inputs() {
+    local devices=()
+
+    if [[ -f "$devices_file" ]]; then
+        mapfile -t devices < "$devices_file"
+    else
+        devices=("${local_input_devices[@]}")
+    fi
+
+    if ((${#devices[@]} > 0)); then
+        set_local_inputs_enabled true "${devices[@]}"
+    fi
+}
+
+enable_mode() {
+    if pgrep -x hyprlock >/dev/null; then
+        printf '%s\n' "hyprlock is active; unlock the desktop before enabling Steam Link host mode." >&2
+        return 2
+    fi
+
+    mkdir -p "$state_dir"
+    if ! disable_local_inputs; then
+        enable_local_inputs || true
+        printf '%s\n' "failed to disable local input devices; Steam Link host mode was not enabled." >&2
+        return 1
+    fi
+
+    date +%s > "$state_file"
+    hypr dispatch dpms off "$monitor_name"
+    printf '%s\n' "Steam Link host mode enabled; local input is disabled and $monitor_name DPMS is off."
+}
+
+disable_mode() {
+    enable_local_inputs || true
+    rm -f "$state_file"
+    rm -f "$devices_file"
+    hypr dispatch dpms on "$monitor_name"
+    printf '%s\n' "Steam Link host mode disabled; local input is enabled and $monitor_name DPMS is on."
+}
+
+mode_active() {
+    [[ -f "$state_file" ]] || return 1
+
+    local started now age
+    started="$(<"$state_file")"
+    [[ "$started" =~ ^[0-9]+$ ]] || return 1
+
+    now="$(date +%s)"
+    age=$((now - started))
+    (( age >= 0 && age < ttl_seconds ))
+}
+
+maybe_lock() {
+    if mode_active; then
+        exit 0
+    fi
+
+    pidof hyprlock >/dev/null || exec hyprlock
+}
+
+status() {
+    if mode_active; then
+        printf '%s\n' "enabled"
+    else
+        printf '%s\n' "disabled"
+    fi
+}
+
+case "${1:-status}" in
+    on|enable)
+        enable_mode
+        ;;
+    off|disable)
+        disable_mode
+        ;;
+    maybe-lock)
+        maybe_lock
+        ;;
+    status)
+        status
+        ;;
+    *)
+        printf 'usage: %s {on|off|maybe-lock|status}\n' "${0##*/}" >&2
+        exit 64
+        ;;
+esac
