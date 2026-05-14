@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Friendly Fork"
+  short_description: "Maintain rebased and restacked patch queues"
+  default_prompt: "Use $maintain-friendly-fork to rebase, regroup, validate, or publish this friendly-fork patch stack."
