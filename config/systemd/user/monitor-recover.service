@@ -1,0 +1,13 @@
+[Unit]
+Description=Recover Hyprland monitor state when HDMI reconnects
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.config/hypr/scripts/monitor-recover watch
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+connector="${MONITOR_RECOVER_CONNECTOR:-HDMI-A-1}"
+drm_card="${MONITOR_RECOVER_DRM_CARD:-card1}"
+status_path="/sys/class/drm/${drm_card}-${connector}/status"
+monitor_desc="${MONITOR_RECOVER_DESC:-Samsung Electric Company Odyssey G70B H1AK500000}"
+monitor_mode="${MONITOR_RECOVER_MODE:-3840x2160@60}"
+monitor_position="${MONITOR_RECOVER_POSITION:-0x0}"
+monitor_scale="${MONITOR_RECOVER_SCALE:-1}"
+poll_interval="${MONITOR_RECOVER_POLL_INTERVAL:-2}"
+
+log() {
+    printf 'monitor-recover: %s\n' "$*" >&2
+}
+
+load_hypr_env() {
+    local line key runtime_dir
+
+    while IFS= read -r line; do
+        key="${line%%=*}"
+        case "$key" in
+            HYPRLAND_INSTANCE_SIGNATURE|WAYLAND_DISPLAY|XDG_RUNTIME_DIR)
+                export "$line"
+                ;;
+        esac
+    done < <(systemctl --user show-environment 2>/dev/null || true)
+
+    runtime_dir="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    export XDG_RUNTIME_DIR="$runtime_dir"
+
+    if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" && -d "$runtime_dir/hypr" ]]; then
+        HYPRLAND_INSTANCE_SIGNATURE="$(
+            find "$runtime_dir/hypr" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %f\n' 2>/dev/null \
+                | sort -nr \
+                | awk 'NR == 1 { print $2 }'
+        )"
+        export HYPRLAND_INSTANCE_SIGNATURE
+    fi
+
+    if [[ -z "${WAYLAND_DISPLAY:-}" ]]; then
+        export WAYLAND_DISPLAY=wayland-1
+    fi
+}
+
+connector_status() {
+    if [[ ! -r "$status_path" ]]; then
+        printf 'missing\n'
+        return
+    fi
+
+    cat "$status_path"
+}
+
+recover_once() {
+    local attempt status monitor_rule
+
+    monitor_rule="desc:${monitor_desc},${monitor_mode},${monitor_position},${monitor_scale}"
+
+    for attempt in {1..10}; do
+        status="$(connector_status)"
+        if [[ "$status" == connected ]]; then
+            load_hypr_env
+            if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+                log "Hyprland instance not found"
+                return 1
+            fi
+
+            hyprctl --batch "keyword monitor ${monitor_rule}; dispatch dpms on ${connector}; reload" >/dev/null
+            log "recovered ${connector} with ${monitor_rule}"
+            return 0
+        fi
+
+        sleep 0.5
+    done
+
+    log "${connector} is $(connector_status); nothing to recover"
+}
+
+watch() {
+    local previous current
+
+    previous="$(connector_status)"
+    log "watching ${status_path}; initial status is ${previous}"
+
+    if [[ "$previous" == connected ]]; then
+        recover_once || true
+    fi
+
+    while true; do
+        sleep "$poll_interval"
+        current="$(connector_status)"
+
+        if [[ "$current" == connected && "$previous" != connected ]]; then
+            recover_once || true
+        fi
+
+        previous="$current"
+    done
+}
+
+case "${1:-once}" in
+    once)
+        recover_once
+        ;;
+    watch)
+        watch
+        ;;
+    status)
+        connector_status
+        ;;
+    *)
+        printf 'usage: %s {once|watch|status}\n' "${0##*/}" >&2
+        exit 64
+        ;;
+esac
