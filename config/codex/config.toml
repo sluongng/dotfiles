@@ -77,8 +77,8 @@ session_picker_view = "dense"
 #
 # Chrome DevTools MCP is intentionally not enabled in the shared or always-on
 # local config. Configured MCP servers start during every Codex conversation;
-# prefer the deferred chrome-devtools tools surfaced through tool_search. For a
-# deliberate long browser-debugging session, keep one Codex conversation open or
+# prefer the codex-chrome-linux skill and Chrome Extension native host bridge
+# for Linux Chrome control. For a deliberate Chrome DevTools MCP session,
 # temporarily enable the local ~/.codex/config.local.toml stanza.
 
 [plugins."gmail@openai-curated"]

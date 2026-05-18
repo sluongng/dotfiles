@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Chrome Linux"
+  short_description: "Control Linux Chrome via native host bridge."
+  default_prompt: "Use $codex-chrome-linux to inspect open Chrome tabs through the native host bridge."
