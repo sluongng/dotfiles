@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ~/.codex/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in ~/.codex/projects.local.toml.
-# Last reviewed for codex-cli v0.130.0 on 2026-05-10.
+# Last reviewed for codex-cli v0.130.0 and current main on 2026-05-18.
 
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
@@ -10,7 +10,8 @@ plan_mode_reasoning_effort = "xhigh"
 show_raw_agent_reasoning = true
 
 approval_policy = "never"
-default_permissions = ":danger-no-sandbox"
+sandbox_mode = "danger-full-access"
+zsh_path = "/usr/bin/zsh"
 
 web_search = "live"
 
@@ -24,9 +25,22 @@ suppress_unstable_features_warning = true
 personality = "pragmatic"
 service_tier = "fast"
 [features]
+apply_patch_streaming_events = true
+auth_elicitation = true
+child_agents_md = true
+code_mode = true
+code_mode_only = true
+enable_fanout = true
+external_migration = true
 goals = true
 memories = true
+mentions_v2 = true
+plugin_hooks = true
 prevent_idle_sleep = true
+realtime_conversation = true
+runtime_metrics = true
+shell_zsh_fork = true
+skill_env_var_dependency_prompt = true
 tool_search = true
 
 [features.multi_agent_v2]
@@ -39,6 +53,7 @@ max_depth = 2
 [tui]
 alternate_screen = "never"
 status_line = ["model-with-reasoning", "project-root", "git-branch", "context-used", "five-hour-limit", "weekly-limit", "codex-version"]
+session_picker_view = "dense"
 
 # Linux desktop trust entries kept here as comments on purpose.
 # They are not meant to be active on this laptop.
@@ -60,9 +75,11 @@ status_line = ["model-with-reasoning", "project-root", "git-branch", "context-us
 # [projects."/home/nb/work/bazelbuild/bazel"]
 # trust_level = "trusted"
 #
-# [mcp_servers.chrome-devtools]
-# command = "npx"
-# args = ["chrome-devtools-mcp@latest", "--autoConnect"]
+# Chrome DevTools MCP is intentionally not enabled in the shared or always-on
+# local config. Configured MCP servers start during every Codex conversation;
+# prefer the deferred chrome-devtools tools surfaced through tool_search. For a
+# deliberate long browser-debugging session, keep one Codex conversation open or
+# temporarily enable the local ~/.codex/config.local.toml stanza.
 
 [plugins."gmail@openai-curated"]
 enabled = true
