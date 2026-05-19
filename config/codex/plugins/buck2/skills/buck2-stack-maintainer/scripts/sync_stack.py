@@ -20,6 +20,7 @@ DEFAULT_WORKFLOW_HARNESS_PATHS = (
     "buildbuddy/run_buck2_test_matrix.sh",
     "shim/BUCK",
     "shim/git_fetch.bzl",
+    "shim/rust-toolchain",
     "shim/rust_toolchain.bzl",
     "shim/third-party/rust/BUCK.reindeer",
 )
