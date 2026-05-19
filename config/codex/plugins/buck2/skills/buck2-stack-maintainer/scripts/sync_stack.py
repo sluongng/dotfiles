@@ -67,6 +67,13 @@ class Git:
         return proc.stdout.strip()
 
 
+class BuildBuddyWorkflowError(SystemExit):
+    def __init__(self, returncode: int, output: str = "") -> None:
+        super().__init__(returncode)
+        self.returncode = returncode
+        self.output = output
+
+
 def require_tracked_clean(git: Git) -> None:
     dirty = git.run(["status", "--porcelain", "--untracked-files=no"], capture=True)
     if dirty:
@@ -182,7 +189,14 @@ def push_stack(git: Git, args: argparse.Namespace) -> None:
     ])
 
 
-def run_buildbuddy(args: argparse.Namespace, merge_sha: str, prefix_sha: str, *, poll: bool) -> None:
+def run_buildbuddy(
+    args: argparse.Namespace,
+    merge_sha: str,
+    prefix_sha: str,
+    *,
+    poll: bool,
+    capture_output: bool = False,
+) -> None:
     script = Path(__file__).with_name("buildbuddy_workflow.py")
     cmd = [
         sys.executable,
@@ -203,13 +217,65 @@ def run_buildbuddy(args: argparse.Namespace, merge_sha: str, prefix_sha: str, *,
     if poll:
         cmd.append("--poll")
     print(f"+ {quote(cmd)}", flush=True)
-    proc = subprocess.run(cmd, cwd=args.repo, check=False)
+    proc = subprocess.run(
+        cmd,
+        cwd=args.repo,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE if capture_output else None,
+        stderr=subprocess.STDOUT if capture_output else None,
+    )
+    if capture_output and proc.stdout:
+        sys.stdout.write(proc.stdout)
     if proc.returncode != 0:
-        raise SystemExit(proc.returncode)
+        raise BuildBuddyWorkflowError(proc.returncode, proc.stdout or "")
+
+
+def is_buildbuddy_repo_not_found(args: argparse.Namespace, output: str) -> bool:
+    return (
+        "ExecuteWorkflow failed" in output
+        and "repo " in output
+        and " not found" in output
+        and (args.repo_url in output or f"{args.repo_url}.git" in output)
+    )
+
+
+def attempt_link_buildbuddy_repo(args: argparse.Namespace) -> bool:
+    script = Path(__file__).with_name("buildbuddy_link_repo_browser.py")
+    cmd = [
+        sys.executable,
+        str(script),
+        "--repo-url",
+        args.repo_url,
+    ]
+    print("Attempting to link the repository in BuildBuddy before retrying preflight", flush=True)
+    print(f"+ {quote(cmd)}", flush=True)
+    proc = subprocess.run(
+        cmd,
+        cwd=args.repo,
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    if proc.stdout:
+        sys.stdout.write(proc.stdout)
+        if not proc.stdout.endswith("\n"):
+            sys.stdout.write("\n")
+    return proc.returncode == 0
 
 
 def preflight_buildbuddy(args: argparse.Namespace, current_merge_sha: str) -> None:
     print("Preflighting BuildBuddy workflow setup before rewriting fork/main", flush=True)
+    try:
+        run_buildbuddy(args, current_merge_sha, current_merge_sha, poll=False, capture_output=True)
+        return
+    except BuildBuddyWorkflowError as e:
+        if not args.attempt_buildbuddy_link or not is_buildbuddy_repo_not_found(args, e.output):
+            raise
+        if not attempt_link_buildbuddy_repo(args):
+            raise
+    print("Retrying BuildBuddy workflow preflight after repository link attempt", flush=True)
     run_buildbuddy(args, current_merge_sha, current_merge_sha, poll=False)
 
 
@@ -249,6 +315,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--work-merge-branch", default=f"merge-work-{os.getpid()}")
     parser.add_argument("--repo-url", default="https://github.com/sluongng/buck2")
     parser.add_argument("--action-name", default="Buck2 Stack Test")
+    parser.add_argument(
+        "--attempt-buildbuddy-link",
+        action="store_true",
+        help=(
+            "When preflight reports that the BuildBuddy workflow repo is not linked, "
+            "run buildbuddy_link_repo_browser.py once and retry the preflight."
+        ),
+    )
     parser.add_argument("--skip-fetch", action="store_true")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument(

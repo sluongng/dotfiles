@@ -53,7 +53,8 @@ except as a bootstrap or recovery source. The public CI branch is `fork/main`.
 
    ```bash
    python3 /home/nb/.dotfiles/config/codex/plugins/buck2/skills/buck2-stack-maintainer/scripts/sync_stack.py \
-     --check-buildbuddy-setup
+     --check-buildbuddy-setup \
+     --attempt-buildbuddy-link
    ```
 
    If this reports that `sluongng/buck2` is not known to BuildBuddy, stop and
@@ -80,7 +81,7 @@ except as a bootstrap or recovery source. The public CI branch is `fork/main`.
 
    ```bash
    python3 /home/nb/.dotfiles/config/codex/plugins/buck2/skills/buck2-stack-maintainer/scripts/sync_stack.py \
-     --apply --push --wait-buildbuddy \
+     --apply --push --wait-buildbuddy --attempt-buildbuddy-link \
      --source-ref HEAD
    ```
 

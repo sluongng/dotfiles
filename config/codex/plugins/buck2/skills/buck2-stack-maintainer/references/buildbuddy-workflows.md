@@ -24,6 +24,13 @@ rebase, merge, or push:
 python3 scripts/sync_stack.py --check-buildbuddy-setup
 ```
 
+Use `--attempt-buildbuddy-link` with the setup check in unattended runs. When
+the preflight sees BuildBuddy's `repo ... not found` setup error, the script
+runs `buildbuddy_link_repo_browser.py` once and retries the preflight. This is
+still fail-closed: if the GitHub App installation does not expose the repo, the
+link helper returns the accessible repo list and the sync stops before any
+branch rewrite.
+
 The helper reads the API key from `BUILDBUDDY_API_KEY` by default, falling back
 to `[buildbuddy] api_key = ...` in `.buckconfig.local`, and sends it as the
 `x-buildbuddy-api-key` header. Keep the key out of logs.
