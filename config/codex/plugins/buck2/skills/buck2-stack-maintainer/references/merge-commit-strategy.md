@@ -43,8 +43,8 @@ CI-only edits, but `M^1` remains upstream and `M^2` remains the tested stack
 prefix.
 
 Before rewriting `fork/main`, create a backup branch such as
-`backup/buck2-main-before-stack-sync-YYYYmmdd-HHMMSS`. Do not delete the old
-`fork/sluongng/codex-bes` branch during the first migration.
+`backup/buck2-main-before-stack-sync-YYYYmmdd-HHMMSS`. The retired
+`fork/sluongng/codex-bes` branch is not part of the maintenance workflow.
 
 Invariant checks:
 

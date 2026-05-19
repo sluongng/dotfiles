@@ -6,8 +6,9 @@ description: Maintain the Buck2 BuildBuddy patch stack in /home/nb/work/facebook
 # Buck2 Stack Maintainer
 
 Use this skill for the Buck2 fork stack in `/home/nb/work/facebook/buck2`.
-The durable stack branch is `fork/stack`; `fork/sluongng/codex-bes` is retired
-except as a bootstrap or recovery source. The public CI branch is `fork/main`.
+The durable stack branch is `fork/stack`. The public CI branch is
+`fork/main`. The retired `fork/sluongng/codex-bes` branch is not part of
+normal maintenance.
 
 ## Invariants
 
@@ -27,7 +28,7 @@ except as a bootstrap or recovery source. The public CI branch is `fork/main`.
    ```bash
    git status --short --branch
    git remote -v
-   git ls-remote --heads fork main stack sluongng/codex-bes
+   git ls-remote --heads fork main stack
    ```
 
    In automation worktrees, ensure only `.buckconfig.local` is linked from the
@@ -37,9 +38,9 @@ except as a bootstrap or recovery source. The public CI branch is `fork/main`.
    ln -s /home/nb/work/facebook/buck2/.buckconfig.local .buckconfig.local
    ```
 
-2. Dry-run the maintainer script from the Buck2 checkout. For the first
-   migration, use `--source-ref HEAD` if the local checkout has commits not yet
-   present on the retired remote branch.
+2. Dry-run the maintainer script from the Buck2 checkout. Use
+   `--source-ref HEAD` only when the source should be the current local stack
+   tip instead of `fork/stack`.
 
    ```bash
    python3 /home/nb/.dotfiles/config/codex/plugins/buck2/skills/buck2-stack-maintainer/scripts/sync_stack.py \
