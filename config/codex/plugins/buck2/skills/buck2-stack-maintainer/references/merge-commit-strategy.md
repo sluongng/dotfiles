@@ -33,6 +33,9 @@ Push them to `fork/main` sequentially with `--force-with-lease`, waiting for
 BuildBuddy after each push. The final remote state keeps only the full-stack
 merge commit as branch HEAD, while the earlier merge commits remain addressable
 by SHA in BuildBuddy results.
+If a polled BuildBuddy workflow fails after a prefix push, the maintainer
+script restores `fork/main` to the previous head by default before exiting;
+use `--leave-failed-main` only for deliberate manual debugging.
 
 BuildBuddy fetches `buildbuddy.yaml` at the exact commit SHA being executed.
 Prefix commits that predate the workflow setup therefore need the merge commit

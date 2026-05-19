@@ -88,6 +88,10 @@ normal maintenance.
 
 6. On failure, inspect the BuildBuddy invocation and the stack commit that
    introduced it. Prefer the existing Buck2 validation helpers:
+   When `sync_stack.py --push --wait-buildbuddy` observes a polled
+   BuildBuddy failure, it restores `fork/main` to the previous head by
+   default before exiting. Use `--leave-failed-main` only when deliberately
+   keeping the public branch on the failing prefix for manual debugging.
 
    ```bash
    buildbuddy/run_stack_test_matrix.sh --from origin/main --to HEAD --mode remote --matrix app-rust
