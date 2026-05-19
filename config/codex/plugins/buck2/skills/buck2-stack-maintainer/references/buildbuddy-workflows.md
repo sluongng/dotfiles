@@ -92,7 +92,7 @@ Useful API details:
   each temporary prefix merge commit before triggering this API.
 - Historical Buck2 prefix commits can predate the generated Rust third-party
   shim and portable Rust toolchain shim, so the overlay also includes
-  `shim/BUCK`, `shim/rust_toolchain.bzl`, `shim/git_fetch.bzl`, and
-  `shim/third-party/rust/BUCK.reindeer`.
+  `shim/BUCK`, `shim/rust-toolchain`, `shim/rust_toolchain.bzl`,
+  `shim/git_fetch.bzl`, and `shim/third-party/rust/BUCK.reindeer`.
 - A workflow invocation is done when `invocationStatus` is
   `COMPLETE_INVOCATION_STATUS`; then `success` determines pass/fail.
