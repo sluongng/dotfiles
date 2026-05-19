@@ -11,8 +11,8 @@ import sys
 import time
 
 
-DEFAULT_BUILDBUDDY_URL = "https://app.buildbuddy.io/workflows/new"
-DEFAULT_GROUP_ID = "GR11680003611988151853"
+DEFAULT_BUILDBUDDY_URL = "https://sluongng.buildbuddy.io/workflows/new"
+DEFAULT_GROUP_ID = ""
 DEFAULT_OWNER = "sluongng"
 DEFAULT_REPO_URL = "https://github.com/sluongng/buck2"
 
@@ -58,7 +58,7 @@ def link_expression(group_id: str, owner: str, repo_url: str) -> str:
 new Promise(resolve => setTimeout(async () => {{
   const svc = window._rpcService;
   if (!svc) return resolve({{ok: false, error: "missing _rpcService", href: location.href, title: document.title}});
-  const restore = svc.overrideGroupId({json.dumps(group_id)});
+  const restore = {json.dumps(group_id)} ? svc.overrideGroupId({json.dumps(group_id)}) : () => {{}};
   try {{
     const installs = await svc.service.getGitHubAppInstallations({{}});
     const linkedBefore = await svc.service.getLinkedGitHubRepos({{}});
