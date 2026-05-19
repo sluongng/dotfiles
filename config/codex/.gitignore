@@ -22,6 +22,7 @@ version.json
 
 # Keep sensitive or machine-specific Codex overrides out of git.
 local/
+plugins/buildbuddy-dev/
 *.local.toml
 *.secret.toml
 
