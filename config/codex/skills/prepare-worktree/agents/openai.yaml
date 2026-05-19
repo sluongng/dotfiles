@@ -1,0 +1,4 @@
+interface:
+  display_name: "Prepare Worktree"
+  short_description: "Prepare Git worktrees for background agents."
+  default_prompt: "Prepare this Git worktree for automation or background Codex work, including linked local config and agent context files."
