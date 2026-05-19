@@ -13,7 +13,7 @@ DEFAULT_REPOSITORY = "sluongng/buck2"
 DEFAULT_REPOSITORY_ID = "634428231"
 DEFAULT_INSTALLATION_ID = "36994646"
 DEFAULT_INSTALLATION_URL = "https://github.com/settings/installations/36994646"
-DEFAULT_BUILDBUDDY_LINK_URL = "https://app.buildbuddy.io/workflows/new"
+DEFAULT_BUILDBUDDY_LINK_URL = "https://sluongng.buildbuddy.io/workflows/new"
 
 
 def gh_api(args: list[str]) -> tuple[int, str, str]:

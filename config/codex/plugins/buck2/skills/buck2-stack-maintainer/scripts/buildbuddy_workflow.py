@@ -14,7 +14,7 @@ import urllib.request
 from pathlib import Path
 
 
-DEFAULT_BASE_URL = "https://app.buildbuddy.io/api/v1"
+DEFAULT_BASE_URL = "https://sluongng.buildbuddy.io/api/v1"
 BUCK2_REPO_URL = "https://github.com/sluongng/buck2"
 BUCK2_GITHUB_INSTALLATION_URL = "https://github.com/settings/installations/36994646"
 BUCK2_GITHUB_REPO_ID = "634428231"
@@ -36,7 +36,7 @@ def diagnose_http_error(endpoint: str, detail: str) -> str:
         f"- Current GitHub installation URL: {BUCK2_GITHUB_INSTALLATION_URL}.\n"
         f"- Current GitHub repo id: {BUCK2_GITHUB_REPO_ID}.\n"
         "- After granting the app access to that repo, link it from "
-        "https://app.buildbuddy.io/workflows/new in the Son Luong Ngoc org, "
+        "https://sluongng.buildbuddy.io/workflows/new in the sluongng org, "
         "then rerun this command.\n"
     )
 
@@ -153,7 +153,7 @@ def poll_invocation(args: argparse.Namespace, api_key: str, invocation_id: str) 
             invocation = invocations[0]
             status = get_field(invocation, "invocationStatus", "invocation_status")
             success = bool(invocation.get("success"))
-            url = invocation.get("url") or f"https://app.buildbuddy.io/invocation/{invocation_id}"
+            url = invocation.get("url") or f"https://sluongng.buildbuddy.io/invocation/{invocation_id}"
             print(f"{invocation_id}: {status} success={success} {url}")
             if status == "COMPLETE_INVOCATION_STATUS" or status == 1:
                 return success

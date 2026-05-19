@@ -31,9 +31,11 @@ still fail-closed: if the GitHub App installation does not expose the repo, the
 link helper returns the accessible repo list and the sync stops before any
 branch rewrite.
 
-The helper reads the API key from `BUILDBUDDY_API_KEY` by default, falling back
-to `[buildbuddy] api_key = ...` in `.buckconfig.local`, and sends it as the
-`x-buildbuddy-api-key` header. Keep the key out of logs.
+The API helper reads the local maintainer API key from `BUILDBUDDY_API_KEY` by
+default, falling back to `[buildbuddy] api_key = ...` in `.buckconfig.local`,
+and sends it as the `x-buildbuddy-api-key` header. Workflow actions themselves
+receive `BUILDBUDDY_API_KEY` from BuildBuddy's trusted workflow runner setup.
+Keep keys out of logs.
 
 If the API returns `repo "https://github.com/sluongng/buck2" not found`, the
 BuildBuddy GitHub App or Workflow setup is not enabled for the fork yet. Stop
@@ -46,8 +48,8 @@ BuildBuddy GitHub App installation for the `sluongng` account includes the
 
 - GitHub app installation URL: `https://github.com/settings/installations/36994646`
 - GitHub repository id: `634428231`
-- BuildBuddy org to link from: `Son Luong Ngoc`
-- BuildBuddy link page: `https://app.buildbuddy.io/workflows/new`
+- BuildBuddy org to link from: `sluongng`
+- BuildBuddy link page: `https://sluongng.buildbuddy.io/workflows/new`
 
 If GitHub asks for sudo-mode re-authentication, a human must complete it before
 the maintainer can link or trigger the workflow. The local `gh` OAuth token is
@@ -67,7 +69,7 @@ this can also attempt the desired repository grant:
 python3 scripts/github_app_prereq.py --attempt-add
 ```
 
-After GitHub App access exists, link the repository in the logged-in
+After GitHub App access exists, link the repository in the `sluongng`
 BuildBuddy org without clicking through the UI:
 
 ```bash
@@ -75,14 +77,14 @@ python3 scripts/buildbuddy_link_repo_browser.py
 ```
 
 This helper uses the local Codex Chrome bridge against the logged-in
-BuildBuddy page, selects the `Son Luong Ngoc` group, verifies that the GitHub
-App installation exposes `https://github.com/sluongng/buck2`, and then calls
-BuildBuddy's `linkGitHubRepo` RPC.
+`sluongng.buildbuddy.io` page, verifies that the GitHub App installation
+exposes `https://github.com/sluongng/buck2`, and then calls BuildBuddy's
+`linkGitHubRepo` RPC.
 
 Useful API details:
 
-- Execute endpoint: `https://app.buildbuddy.io/api/v1/ExecuteWorkflow`
-- Poll endpoint: `https://app.buildbuddy.io/api/v1/GetInvocation`
+- Execute endpoint: `https://sluongng.buildbuddy.io/api/v1/ExecuteWorkflow`
+- Poll endpoint: `https://sluongng.buildbuddy.io/api/v1/GetInvocation`
 - `ExecuteWorkflow` request fields used here:
   `repo_url`, `branch`, `commit_sha`, `action_names`, `async`, and `env`.
 - BuildBuddy fetches `buildbuddy.yaml` from `commit_sha`, so
