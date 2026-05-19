@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bazel Central Registry"
+  short_description: "Inspect BCR modules and Bzlmod deps."
+  default_prompt: "Use $bazel-central-registry to inspect or update Bzlmod dependency versions in this repo."
