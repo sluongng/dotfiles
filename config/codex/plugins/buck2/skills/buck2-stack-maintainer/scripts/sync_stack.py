@@ -312,6 +312,23 @@ def verify_current_merge(git: Git, args: argparse.Namespace) -> None:
     print(f"Verified {args.merge_ref} first-parent={upstream_sha[:12]} second-parent={stack_sha[:12]}")
 
 
+def current_merge_validated_prefix(git: Git, args: argparse.Namespace, commits: list[str]) -> int:
+    if not args.push or not args.wait_buildbuddy:
+        return 0
+    try:
+        first_parent = git.ref(f"{args.merge_ref}^1")
+        second_parent = git.ref(f"{args.merge_ref}^2")
+    except subprocess.CalledProcessError:
+        return 0
+    if first_parent != args.upstream_sha:
+        return 0
+    try:
+        index = commits.index(second_parent)
+    except ValueError:
+        return 0
+    return index + 1
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
@@ -445,6 +462,20 @@ def main() -> int:
         )
     if not commits:
         return 0
+
+    validated_prefixes = 0 if args.dry_run else current_merge_validated_prefix(git, args, commits)
+    if validated_prefixes:
+        print(
+            f"Resuming after {validated_prefixes} prefix(es) already represented by "
+            f"{args.fork_remote}/{args.merge_branch}"
+        )
+        commits = commits[validated_prefixes:]
+        if not commits:
+            print("All stack prefixes are already represented by the current merge branch.")
+            if args.push and not args.dry_run:
+                push_stack(git, args)
+            print("Done.")
+            return 0
 
     if args.push and args.wait_buildbuddy and not args.dry_run:
         preflight_buildbuddy(args, expected_main)
