@@ -158,7 +158,10 @@ def poll_invocation(args: argparse.Namespace, api_key: str, invocation_id: str) 
             if status == "COMPLETE_INVOCATION_STATUS" or status == 1:
                 return success
             if status == "DISCONNECTED_INVOCATION_STATUS" or status == 3:
-                return False
+                # Workflow invocations can briefly report DISCONNECTED while the
+                # runner is still alive and later return to PARTIAL. Keep polling
+                # until the invocation completes or the overall timeout expires.
+                pass
         else:
             print(f"{invocation_id}: not visible yet")
 
