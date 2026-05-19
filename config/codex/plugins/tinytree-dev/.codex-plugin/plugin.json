@@ -1,0 +1,38 @@
+{
+  "name": "tinytree-dev",
+  "version": "0.1.0",
+  "description": "TinyTree development helpers for product-page and devtools landing-page work.",
+  "author": {
+    "name": "Sluong Ng",
+    "url": "https://github.com/sluongng"
+  },
+  "homepage": "https://tinytree.dev/",
+  "repository": "https://github.com/sluongng/dotfiles",
+  "keywords": [
+    "tinytree",
+    "devtools",
+    "landing-page",
+    "frontend"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "TinyTree Dev",
+    "shortDescription": "TinyTree product-page development helpers",
+    "longDescription": "Use TinyTree Dev to design, review, and iterate on TinyTree product pages and devtools landing-page copy, structure, proof, and responsive implementation.",
+    "developerName": "Sluong Ng",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://tinytree.dev/",
+    "defaultPrompt": [
+      "Review this TinyTree landing-page change.",
+      "Tighten the TinyTree homepage copy.",
+      "Check the TinyTree page on desktop and mobile."
+    ],
+    "brandColor": "#16A34A",
+    "screenshots": []
+  }
+}
