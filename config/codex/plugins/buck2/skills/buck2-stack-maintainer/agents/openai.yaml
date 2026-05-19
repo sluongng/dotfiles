@@ -1,0 +1,4 @@
+interface:
+  display_name: "Buck2 Stack Maintainer"
+  short_description: "Maintain the Buck2 BuildBuddy stack"
+  default_prompt: "Use $buck2-stack-maintainer to refresh the Buck2 fork stack and validate it with BuildBuddy."
