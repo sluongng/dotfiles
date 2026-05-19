@@ -180,6 +180,22 @@ def push_main(git: Git, args: argparse.Namespace, expected_old: str) -> str:
     return merge_sha
 
 
+def restore_main(
+    git: Git,
+    args: argparse.Namespace,
+    expected_current: str,
+    restore_to: str,
+) -> None:
+    lease = f"refs/heads/{args.merge_branch}:{expected_current}"
+    git.run([
+        "push",
+        f"--force-with-lease={lease}",
+        args.fork_remote,
+        f"{restore_to}:refs/heads/{args.merge_branch}",
+    ])
+    print(f"Restored {args.fork_remote}/{args.merge_branch} to {restore_to}")
+
+
 def push_stack(git: Git, args: argparse.Namespace) -> None:
     git.run([
         "push",
@@ -303,6 +319,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--push", action="store_true", help="Push fork/main prefixes and fork/stack")
     parser.add_argument("--wait-buildbuddy", action="store_true", help="Trigger and poll BuildBuddy after each push")
+    parser.add_argument(
+        "--leave-failed-main",
+        action="store_true",
+        help=(
+            "When a polled BuildBuddy workflow fails after pushing a prefix merge, "
+            "leave fork/main on the failing prefix instead of restoring the previous head."
+        ),
+    )
     parser.add_argument("--repo", default=os.getcwd())
     parser.add_argument("--upstream-remote", default="origin")
     parser.add_argument("--upstream-branch", default="main")
@@ -442,13 +466,32 @@ def main() -> int:
                     f"--force-with-lease=refs/heads/{shlex.quote(args.merge_branch)}:<expected> "
                     f"{shlex.quote(args.fork_remote)} HEAD:refs/heads/{shlex.quote(args.merge_branch)}"
                 )
+                if args.wait_buildbuddy:
+                    print("+ trigger and poll BuildBuddy for this prefix")
+                    if not args.leave_failed_main:
+                        print(
+                            f"+ restore {shlex.quote(args.fork_remote)}/{shlex.quote(args.merge_branch)} "
+                            "to the previous head if the polled workflow fails"
+                        )
             continue
         merge_sha = create_merge_for_prefix(git, args, commit)
         print(f"  merge {merge_sha[:12]} first-parent={args.upstream_sha[:12]} second-parent={commit[:12]}")
         if args.push:
+            previous_main = expected_main
             expected_main = push_main(git, args, expected_main)
             if args.wait_buildbuddy:
-                run_buildbuddy(args, merge_sha, commit, poll=True)
+                try:
+                    run_buildbuddy(args, merge_sha, commit, poll=True)
+                except BuildBuddyWorkflowError:
+                    if not args.leave_failed_main:
+                        print(
+                            f"BuildBuddy failed for {merge_sha[:12]}; restoring "
+                            f"{args.fork_remote}/{args.merge_branch} to previous head",
+                            flush=True,
+                        )
+                        restore_main(git, args, expected_main, previous_main)
+                        expected_main = previous_main
+                    raise
 
     if args.push and not args.dry_run:
         push_stack(git, args)
