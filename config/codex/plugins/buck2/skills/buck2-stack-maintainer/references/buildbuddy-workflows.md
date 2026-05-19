@@ -91,7 +91,8 @@ Useful API details:
   `sync_stack.py` overlays the workflow harness files from the stack tip onto
   each temporary prefix merge commit before triggering this API.
 - Historical Buck2 prefix commits can predate the generated Rust third-party
-  shim, so the overlay also includes `shim/git_fetch.bzl` and
+  shim and portable Rust toolchain shim, so the overlay also includes
+  `shim/BUCK`, `shim/rust_toolchain.bzl`, `shim/git_fetch.bzl`, and
   `shim/third-party/rust/BUCK.reindeer`.
 - A workflow invocation is done when `invocationStatus` is
   `COMPLETE_INVOCATION_STATUS`; then `success` determines pass/fail.
