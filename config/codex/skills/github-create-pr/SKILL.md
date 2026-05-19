@@ -13,6 +13,12 @@ the title, and require explicit user review of the title and description
 before opening the PR. Default to commit-message-style PR metadata rather
 than canned GitHub template sections.
 
+Assume the usual workflow is co-development between the user and Codex, followed
+by handoff to a second human reviewer while CI runs. Optimize the PR body for
+reviewer understanding: explain the problem, why the change is needed, the
+chosen approach, impact, tradeoffs, rollout constraints, and any intentionally
+omitted work. Do not use the PR body to prove that local validation happened.
+
 ## Workflow
 
 1. Confirm the PR scope.
@@ -55,8 +61,8 @@ than canned GitHub template sections.
    - Omit validation commands from the PR body by default. Do not add trailing
      "Validated with", "Testing", or "Tests" paragraphs unless the user
      explicitly asks for validation details in the body or approves that exact
-     text during review. Validation belongs in the final response, not the PR
-     body.
+     text during review. CI is the reviewer-visible validation surface;
+     validation that Codex ran belongs in the final response, not the PR body.
    - Include exact repro commands only when they materially support the change.
      Inline them naturally in the body or in a short supporting list. Do not
      force a separate `Testing` section.
@@ -133,6 +139,8 @@ than canned GitHub template sections.
 
 - title follows the same subject rules as `draft-commit-message`
 - body follows the same why/context rules as `draft-commit-message`
+- body helps a second human reviewer understand the problem, approach,
+  tradeoffs, and rollout context
 - body avoids unnecessary template sections; `Testing` appears only when
   explicitly requested or clearly warranted
 - body omits validation commands unless the user explicitly requested or
