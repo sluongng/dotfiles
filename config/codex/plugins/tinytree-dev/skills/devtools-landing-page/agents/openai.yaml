@@ -1,0 +1,4 @@
+interface:
+  display_name: "Devtools Landing Page"
+  short_description: "Design and review B2B devtools landing pages"
+  default_prompt: "Use $devtools-landing-page to review this devtools startup landing page."

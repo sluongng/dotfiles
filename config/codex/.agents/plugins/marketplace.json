@@ -15,6 +15,18 @@
         "authentication": "ON_USE"
       },
       "category": "Coding"
+    },
+    {
+      "name": "tinytree-dev",
+      "source": {
+        "source": "local",
+        "path": "./plugins/tinytree-dev"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Coding"
     }
   ]
 }
