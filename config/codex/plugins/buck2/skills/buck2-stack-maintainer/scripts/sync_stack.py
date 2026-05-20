@@ -13,6 +13,9 @@ from pathlib import Path
 
 
 DEFAULT_WORKFLOW_HARNESS_PATHS = (
+    ".github/workflows/build-and-examples.yml",
+    ".github/workflows/build-and-test.yml",
+    ".github/workflows/upload_buck2.yml",
     "buildbuddy.yaml",
     ".buckconfig.buildbuddy",
     "buildbuddy/BUCK",
