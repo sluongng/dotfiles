@@ -345,6 +345,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--push", action="store_true", help="Push fork/main prefixes and fork/stack")
     parser.add_argument("--wait-buildbuddy", action="store_true", help="Trigger and poll BuildBuddy after each push")
     parser.add_argument(
+        "--revalidate-all",
+        action="store_true",
+        help="Validate from the first stack commit even if fork/main already represents a prefix.",
+    )
+    parser.add_argument(
+        "--skip-buildbuddy-preflight",
+        action="store_true",
+        help="Skip the initial unpolled BuildBuddy workflow setup check before rewriting fork/main.",
+    )
+    parser.add_argument(
         "--leave-failed-main",
         action="store_true",
         help=(
@@ -466,7 +476,7 @@ def main() -> int:
     if not commits:
         return 0
 
-    validated_prefixes = 0 if args.dry_run else current_merge_validated_prefix(git, args, commits)
+    validated_prefixes = 0 if args.dry_run or args.revalidate_all else current_merge_validated_prefix(git, args, commits)
     if validated_prefixes:
         print(
             f"Resuming after {validated_prefixes} prefix(es) already represented by "
@@ -480,7 +490,7 @@ def main() -> int:
             print("Done.")
             return 0
 
-    if args.push and args.wait_buildbuddy and not args.dry_run:
+    if args.push and args.wait_buildbuddy and not args.dry_run and not args.skip_buildbuddy_preflight:
         preflight_buildbuddy(args, expected_main)
 
     if args.push and not args.dry_run:
