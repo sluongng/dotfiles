@@ -98,7 +98,7 @@ def local_ref(remote: str, branch: str) -> str:
 
 def checkout_stack(git: Git, args: argparse.Namespace, source_ref: str) -> None:
     git.run(["checkout", "-B", args.work_stack_branch, source_ref])
-    git.run(["rebase", "--rebase-merges", args.upstream_ref])
+    git.run(["rebase", "--rebase-merges", args.upstream_sha])
 
 
 def rebase_conflict_message(git: Git, error: subprocess.CalledProcessError) -> str:
@@ -155,13 +155,13 @@ def overlay_workflow_harness(git: Git, args: argparse.Namespace) -> None:
 
 
 def create_merge_for_prefix(git: Git, args: argparse.Namespace, prefix_commit: str) -> str:
-    git.run(["checkout", "-B", args.work_merge_branch, args.upstream_ref])
+    git.run(["checkout", "-B", args.work_merge_branch, args.upstream_sha])
     git.run(["merge", "--no-ff", "--no-edit", prefix_commit])
     overlay_workflow_harness(git, args)
     merge_sha = git.ref("HEAD")
     first_parent = git.ref("HEAD^1")
     second_parent = git.ref("HEAD^2")
-    upstream_sha = git.ref(args.upstream_ref)
+    upstream_sha = args.upstream_sha
     if first_parent != upstream_sha:
         raise SystemExit(f"Bad merge first parent: {first_parent} != {upstream_sha}")
     if second_parent != prefix_commit:
@@ -306,7 +306,7 @@ def preflight_buildbuddy(args: argparse.Namespace, current_merge_sha: str) -> No
 def verify_current_merge(git: Git, args: argparse.Namespace) -> None:
     first_parent = git.ref(f"{args.merge_ref}^1")
     second_parent = git.ref(f"{args.merge_ref}^2")
-    upstream_sha = git.ref(args.upstream_ref)
+    upstream_sha = args.upstream_sha
     stack_sha = git.ref(args.stack_ref)
     if first_parent != upstream_sha:
         raise SystemExit(f"Bad remote merge first parent: {first_parent} != {upstream_sha}")
@@ -443,8 +443,8 @@ def main() -> int:
         print()
         print("Dry-run command sequence:")
         print(f"+ git checkout -B {shlex.quote(args.work_stack_branch)} {shlex.quote(source_ref)}")
-        print(f"+ git rebase --rebase-merges {shlex.quote(args.upstream_ref)}")
-        commits = commits_between(git, args.upstream_ref, source_ref, args.limit)
+        print(f"+ git rebase --rebase-merges {shlex.quote(args.upstream_sha)}")
+        commits = commits_between(git, args.upstream_sha, source_ref, args.limit)
         if not args.workflow_harness_ref:
             args.workflow_harness_ref = source_ref
     else:
@@ -454,7 +454,7 @@ def main() -> int:
             if len(e.cmd) >= 2 and e.cmd[1] == "rebase":
                 raise SystemExit(rebase_conflict_message(git, e)) from None
             raise
-        commits = commits_between(git, args.upstream_ref, args.work_stack_branch, args.limit)
+        commits = commits_between(git, args.upstream_sha, args.work_stack_branch, args.limit)
         if not args.workflow_harness_ref:
             args.workflow_harness_ref = args.work_stack_branch
     print(f"Stack prefixes to validate: {len(commits)}")
@@ -490,7 +490,7 @@ def main() -> int:
         subject = commit_subject(git, commit)
         print(f"[{index}/{len(commits)}] {commit[:12]} {subject}")
         if args.dry_run:
-            print(f"+ git checkout -B {shlex.quote(args.work_merge_branch)} {shlex.quote(args.upstream_ref)}")
+            print(f"+ git checkout -B {shlex.quote(args.work_merge_branch)} {shlex.quote(args.upstream_sha)}")
             print(f"+ git merge --no-ff --no-edit {shlex.quote(commit)}")
             if args.workflow_harness_paths:
                 print(
