@@ -70,6 +70,10 @@ def load_api_key(env_name: str, api_key_file: str) -> str:
 
 def post_json(base_url: str, endpoint: str, payload: dict, api_key: str) -> dict:
     url = f"{base_url.rstrip('/')}/{endpoint}"
+    return post_json_url(url, endpoint, payload, api_key)
+
+
+def post_json_url(url: str, endpoint: str, payload: dict, api_key: str) -> dict:
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -91,6 +95,17 @@ def post_json(base_url: str, endpoint: str, payload: dict, api_key: str) -> dict
     if not body:
         return {}
     return json.loads(body)
+
+
+def rpc_base_url(base_url: str) -> str:
+    base = base_url.rstrip("/")
+    if base.endswith("/api/v1"):
+        base = base[: -len("/api/v1")]
+    return f"{base}/rpc/BuildBuddyService"
+
+
+def post_rpc(base_url: str, method: str, payload: dict, api_key: str) -> dict:
+    return post_json_url(f"{rpc_base_url(base_url)}/{method}", method, payload, api_key)
 
 
 def get_field(obj: dict, *names: str):
@@ -138,6 +153,37 @@ def execute(args: argparse.Namespace, api_key: str) -> list[str]:
     return invocation_ids
 
 
+def execution_status(args: argparse.Namespace, api_key: str, invocation_id: str) -> str:
+    payload = {
+        "execution_lookup": {"invocation_id": invocation_id},
+        "inline_execute_response": False,
+    }
+    try:
+        response = post_rpc(args.base_url, "GetExecution", payload, api_key)
+    except SystemExit:
+        return "execution=<unavailable>"
+    executions = get_field(response, "execution", "executions") or []
+    if not executions:
+        return "execution=none"
+
+    parts = []
+    for execution in executions:
+        mnemonic = get_field(execution, "actionMnemonic", "action_mnemonic")
+        stage = get_field(execution, "stage")
+        status = execution.get("status") or {}
+        code = status.get("code")
+        message = status.get("message")
+        item = []
+        if mnemonic:
+            item.append(str(mnemonic))
+        if stage:
+            item.append(f"stage={stage}")
+        if code not in (None, 0, "0") or message:
+            item.append(f"status={code}:{message or ''}")
+        parts.append(" ".join(item) if item else "execution=<unknown>")
+    return "execution=[" + "; ".join(parts) + "]"
+
+
 def poll_invocation(args: argparse.Namespace, api_key: str, invocation_id: str) -> bool:
     deadline = time.monotonic() + args.timeout_seconds
     payload = {
@@ -152,11 +198,12 @@ def poll_invocation(args: argparse.Namespace, api_key: str, invocation_id: str) 
         if invocations:
             invocation = invocations[0]
             status = get_field(invocation, "invocationStatus", "invocation_status")
-            success = bool(invocation.get("success"))
+            success = invocation.get("success")
             url = invocation.get("url") or f"https://sluongng.buildbuddy.io/invocation/{invocation_id}"
-            print(f"{invocation_id}: {status} success={success} {url}")
+            execution = execution_status(args, api_key, invocation_id)
+            print(f"{invocation_id}: {status} success={success} {execution} {url}")
             if status == "COMPLETE_INVOCATION_STATUS" or status == 1:
-                return success
+                return bool(success)
             if status == "DISCONNECTED_INVOCATION_STATUS" or status == 3:
                 # Workflow invocations can briefly report DISCONNECTED while the
                 # runner is still alive and later return to PARTIAL. Keep polling
