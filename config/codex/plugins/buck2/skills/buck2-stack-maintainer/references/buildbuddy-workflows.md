@@ -37,6 +37,19 @@ and sends it as the `x-buildbuddy-api-key` header. Workflow actions themselves
 receive `BUILDBUDDY_API_KEY` from BuildBuddy's trusted workflow runner setup.
 Keep keys out of logs.
 
+The workflow gate should exercise Buck2 with BuildBuddy RBE enabled. Do not
+compile Buck2 with `cargo build` inside the workflow as the validation gate.
+Use a released/bootstrap Buck2 binary only as the client that invokes:
+
+```bash
+buck2 build --config-file .buckconfig.local --remote-only //:buck2
+```
+
+When the workflow harness changes, old prefix results are not valid evidence
+for the new gate. Rerun with `--revalidate-all --skip-buildbuddy-preflight`
+so the maintainer validates every prefix with the new harness and does not
+start the old workflow during the unpolled setup check.
+
 If the API returns `repo "https://github.com/sluongng/buck2" not found`, the
 BuildBuddy GitHub App or Workflow setup is not enabled for the fork yet. Stop
 and enable Workflows for `sluongng/buck2`; do not keep force-pushing while the
