@@ -86,6 +86,11 @@ normal maintenance.
      --source-ref HEAD
    ```
 
+   If the checked-in BuildBuddy workflow harness changed, add
+   `--revalidate-all --skip-buildbuddy-preflight` so every prefix is tested
+   with the new workflow and the old workflow is not started by the unpolled
+   preflight.
+
 6. On failure, inspect the BuildBuddy invocation and the stack commit that
    introduced it. Prefer the existing Buck2 validation helpers:
    When `sync_stack.py --push --wait-buildbuddy` observes a polled
