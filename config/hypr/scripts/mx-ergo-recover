@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+device="${MX_ERGO_MAC:-FF:85:7C:74:D6:71}"
+attempts="${MX_ERGO_CONNECT_ATTEMPTS:-3}"
+attempt_delay="${MX_ERGO_CONNECT_DELAY:-1}"
+power_on_delay="${MX_ERGO_POWER_ON_DELAY:-2}"
+bt_timeout="${MX_ERGO_BLUETOOTHCTL_TIMEOUT:-8}"
+
+log() {
+    printf 'mx-ergo-recover: %s\n' "$*" >&2
+}
+
+btctl() {
+    timeout "$bt_timeout" bluetoothctl "$@"
+}
+
+connected() {
+    bluetoothctl info "$device" 2>/dev/null \
+        | awk '/^[[:space:]]*Connected:/ { connected = ($2 == "yes") } END { exit connected ? 0 : 1 }'
+}
+
+controller_field() {
+    local field="$1"
+
+    bluetoothctl show 2>/dev/null \
+        | awk -v field="$field" '$1 == field ":" { value = $2 } END { if (value != "") print value }'
+}
+
+scan_off() {
+    btctl scan off >/dev/null 2>&1 || true
+}
+
+connect_direct() {
+    local attempt
+
+    scan_off
+
+    if connected; then
+        log "${device} is already connected"
+        return 0
+    fi
+
+    for ((attempt = 1; attempt <= attempts; attempt++)); do
+        log "direct connect attempt ${attempt}/${attempts}"
+        btctl connect "$device" >/dev/null 2>&1 || true
+
+        if connected; then
+            log "${device} connected"
+            return 0
+        fi
+
+        sleep "$attempt_delay"
+    done
+
+    return 1
+}
+
+power_cycle_adapter() {
+    log "power-cycling Bluetooth adapter"
+    btctl power off >/dev/null
+    sleep 1
+    btctl power on >/dev/null
+    sleep "$power_on_delay"
+    scan_off
+}
+
+status() {
+    local connected_state discovering_state
+
+    if connected; then
+        connected_state=yes
+    else
+        connected_state=no
+    fi
+
+    discovering_state="$(controller_field Discovering)"
+    printf 'device=%s connected=%s discovering=%s\n' "$device" "$connected_state" "${discovering_state:-unknown}"
+}
+
+case "${1:-recover}" in
+    connect)
+        connect_direct
+        ;;
+    recover)
+        connect_direct && exit 0
+        power_cycle_adapter
+        connect_direct
+        ;;
+    scan-off)
+        scan_off
+        ;;
+    status)
+        status
+        ;;
+    *)
+        printf 'usage: %s {connect|recover|scan-off|status}\n' "${0##*/}" >&2
+        exit 64
+        ;;
+esac
