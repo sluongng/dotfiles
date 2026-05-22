@@ -6,6 +6,8 @@ state_file="$state_dir/enabled"
 ttl_seconds="${STEAMLINK_HOST_MODE_TTL_SECONDS:-43200}"
 monitor_name="${STEAMLINK_HOST_MODE_MONITOR:-HDMI-A-1}"
 devices_file="$state_dir/local-input-devices"
+streaming_log="${STEAMLINK_HOST_MODE_STREAMING_LOG:-$HOME/.local/share/Steam/logs/streaming_log.txt}"
+stream_activity_seconds="${STEAMLINK_HOST_MODE_ACTIVITY_SECONDS:-90}"
 
 # Physical devices at the desk. Remote Play's virtual inputs should not be
 # listed here, or the stream will lose control together with local input.
@@ -74,12 +76,7 @@ enable_local_inputs() {
     fi
 }
 
-enable_mode() {
-    if pgrep -x hyprlock >/dev/null; then
-        printf '%s\n' "hyprlock is active; unlock the desktop before enabling Steam Link host mode." >&2
-        return 2
-    fi
-
+activate_mode() {
     mkdir -p "$state_dir"
     if ! disable_local_inputs; then
         enable_local_inputs || true
@@ -89,6 +86,18 @@ enable_mode() {
 
     date +%s > "$state_file"
     hypr dispatch dpms off "$monitor_name"
+}
+
+enable_mode() {
+    if pgrep -x hyprlock >/dev/null; then
+        printf '%s\n' "hyprlock is active; unlock the desktop before enabling Steam Link host mode." >&2
+        return 2
+    fi
+
+    if ! activate_mode; then
+        return 1
+    fi
+
     printf '%s\n' "Steam Link host mode enabled; local input is disabled and $monitor_name DPMS is off."
 }
 
@@ -112,9 +121,42 @@ mode_active() {
     (( age >= 0 && age < ttl_seconds ))
 }
 
+slay_window_active() {
+    hypr -j clients 2>/dev/null | grep -Fq '"class": "Slay the Spire 2"'
+}
+
+steam_remote_play_active() {
+    [[ -r "$streaming_log" ]] || return 1
+    slay_window_active || return 1
+
+    local modified now age marker
+    modified="$(stat -c %Y "$streaming_log" 2>/dev/null)" || return 1
+    [[ "$modified" =~ ^[0-9]+$ ]] || return 1
+
+    now="$(date +%s)"
+    age=$((now - modified))
+    (( age >= 0 && age <= stream_activity_seconds )) || return 1
+
+    marker="$(grep -E 'SteamNetworkingSockets connection: Connected|Slow framerate|Encoding complete|SessionStats' "$streaming_log" | tail -n 1 || true)"
+    [[ -n "$marker" ]] || return 1
+
+    case "$marker" in
+        *"Encoding complete"*|*"SessionStats"*)
+            return 1
+            ;;
+    esac
+}
+
 maybe_lock() {
     if mode_active; then
         exit 0
+    fi
+
+    if steam_remote_play_active; then
+        if activate_mode; then
+            printf '%s\n' "Steam Remote Play is active; enabled host mode instead of locking." >&2
+            exit 0
+        fi
     fi
 
     pidof hyprlock >/dev/null || exec hyprlock
