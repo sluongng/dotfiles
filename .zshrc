@@ -264,3 +264,7 @@ if command -v uv >/dev/null 2>&1; then
   fi
   unset _gsutil_python
 fi
+
+
+# Added by Antigravity CLI installer
+export PATH="/home/nb/.local/bin:$PATH"
