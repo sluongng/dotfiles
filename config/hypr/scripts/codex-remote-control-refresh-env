@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+set -eu
+
+env_vars="
+DISPLAY
+WAYLAND_DISPLAY
+HYPRLAND_INSTANCE_SIGNATURE
+XDG_CURRENT_DESKTOP
+XDG_SESSION_TYPE
+XDG_RUNTIME_DIR
+DBUS_SESSION_BUS_ADDRESS
+"
+
+systemctl --user import-environment $env_vars
+
+if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+  dbus-update-activation-environment --systemd $env_vars
+fi
+
+systemctl --user restart codex-remote-control.service
+
+main_pid="$(systemctl --user show codex-remote-control.service -p MainPID --value)"
+systemctl --user show codex-remote-control.service \
+  -p ActiveState \
+  -p SubState \
+  -p MainPID \
+  --no-pager
+
+if [ "$main_pid" != "0" ]; then
+  printf '\nCodex service graphical env:\n'
+  if ! tr '\0' '\n' <"/proc/$main_pid/environ" 2>/dev/null |
+    grep -E '^(DISPLAY|WAYLAND_DISPLAY|HYPRLAND_INSTANCE_SIGNATURE|XDG_CURRENT_DESKTOP|XDG_SESSION_TYPE|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS)='
+  then
+    printf 'Unable to read /proc/%s/environ from this context.\n' "$main_pid"
+  fi
+fi
