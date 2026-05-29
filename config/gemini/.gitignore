@@ -1,0 +1,3 @@
+# Skill payloads are local Gemini state; keep only config and manifests tracked.
+skills/
+plugins/*/skills/

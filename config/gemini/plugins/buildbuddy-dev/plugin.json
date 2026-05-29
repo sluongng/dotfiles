@@ -1,0 +1,37 @@
+{
+  "name": "buildbuddy-dev",
+  "version": "0.1.0",
+  "description": "Local BuildBuddy development helpers for executor inspection and workflow debugging.",
+  "author": {
+    "name": "Sluong Ng",
+    "url": "https://github.com/sluongng"
+  },
+  "homepage": "https://www.buildbuddy.io/",
+  "repository": "https://github.com/sluongng/dotfiles",
+  "keywords": [
+    "buildbuddy",
+    "development",
+    "executors",
+    "remote-execution"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "BuildBuddy Dev",
+    "shortDescription": "Local BuildBuddy development helpers",
+    "longDescription": "Use BuildBuddy Dev for local development workflows that need BuildBuddy-specific executor inspection and remote execution debugging helpers.",
+    "developerName": "Sluong Ng",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read"
+    ],
+    "websiteURL": "https://www.buildbuddy.io/",
+    "defaultPrompt": [
+      "Categorize these BuildBuddy executor host IDs.",
+      "Inspect executor registration and liveness.",
+      "Group BuildBuddy executors by pool and version."
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}

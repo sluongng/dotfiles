@@ -1,0 +1,37 @@
+{
+  "name": "buck2",
+  "version": "0.1.0",
+  "description": "Local Buck2 fork maintenance helpers for the BuildBuddy-backed patch stack.",
+  "author": {
+    "name": "Sluong Ng",
+    "url": "https://github.com/sluongng"
+  },
+  "homepage": "https://github.com/facebook/buck2",
+  "repository": "https://github.com/sluongng/dotfiles",
+  "keywords": [
+    "buck2",
+    "buildbuddy",
+    "fork",
+    "stack"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Buck2",
+    "shortDescription": "Maintain the Buck2 BuildBuddy stack",
+    "longDescription": "Use Buck2 for local workflows that maintain the Buck2 fork stack, create bazel-rbe-style merge commits, and validate stack prefixes with BuildBuddy Workflows.",
+    "developerName": "Sluong Ng",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/facebook/buck2",
+    "defaultPrompt": [
+      "Use $buck2-stack-maintainer to refresh the Buck2 fork stack.",
+      "Validate the Buck2 stack with BuildBuddy Workflows.",
+      "Check that fork/main has origin/main as its first parent."
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}
