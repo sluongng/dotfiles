@@ -11,7 +11,6 @@ show_raw_agent_reasoning = true
 
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
-zsh_path = "/usr/bin/zsh"
 
 web_search = "live"
 
@@ -40,7 +39,8 @@ prevent_idle_sleep = true
 realtime_conversation = true
 remote_compaction_v2 = true
 runtime_metrics = true
-shell_zsh_fork = true
+# require bundled zsh fork
+shell_zsh_fork = false
 
 [features.multi_agent_v2]
 enabled = true
