@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bazel Target Open"
+  short_description: "Open Bazel labels from terminal output."
+  default_prompt: "Use $bazel-target-open to resolve and open this Bazel label."
