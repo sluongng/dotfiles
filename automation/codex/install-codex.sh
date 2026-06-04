@@ -6,16 +6,19 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SOURCE_DIR="${DOTFILES_DIR}/config/codex"
 TARGET_DIR="${HOME}/.codex"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
+BACKUP_DIR="${TARGET_DIR}/backups/install-codex-${TIMESTAMP}"
 RENDER_CONFIG_SCRIPT="${DOTFILES_DIR}/automation/codex/render-config.py"
 
 backup_path() {
   local path="$1"
-  local backup_path="${path}.bak.${TIMESTAMP}"
+  local relative_path="${path#"${TARGET_DIR}/"}"
+  local backup_path="${BACKUP_DIR}/${relative_path}"
 
   if [ ! -e "${path}" ] && [ ! -L "${path}" ]; then
     return 0
   fi
 
+  mkdir -p "$(dirname "${backup_path}")"
   mv "${path}" "${backup_path}"
   echo "Backed up ${path} to ${backup_path}"
 }
