@@ -137,8 +137,6 @@ pack_add_specs({
   'indent_blankline',
   'vim_airline',
   'vim_gitgutter',
-  'nvim_treesitter',
-  'playground',
   'cmp_buffer',
   'cmp_nvim_lsp',
   'cmp_path',
@@ -1989,58 +1987,125 @@ vim.api.nvim_set_keymap('n', '<leader>-', '<Plug>AirlineSelectPrevTab<CR>', opts
 vim.api.nvim_set_keymap('n', '<leader>+', '<Plug>AirlineSelectNextTab<CR>', opts)
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
-parser_config.bazelrc = {
-  install_info = {
-    url = vim.fs.normalize(vim.fn.expand("~/work/misc/tree-sitter-bazelrc")),
-    files = { "src/parser.c" },
-    branch = "main",                        -- default branch in case of git repo if different from master
-    generate_requires_npm = false,          -- if stand-alone parser without npm dependencies
-    requires_generate_from_grammar = false, -- if folder contains pre-generated src/parser.c
-  },
-  filetype = "bazelrc",
-}
-require 'nvim-treesitter.configs'.setup {
-  ensure_installed = "all",
-  -- Install parsers synchronously (only applied to `ensure_installed`)
-  sync_install = false,
-  highlight = {
-    enable = true, -- false will disable the whole extension
-  },
-  ignore_install = { "ipkg" },
-  incremental_selection = {
-    enable = true,
-    keymaps = {
-      init_selection = "<A-J>", -- set to `false` to disable one of the mappings
-      scope_incremental = false,
-      node_incremental = "<A-J>",
-      node_decremental = "<A-K>",
+local treesitter_ready = false
+local function ensure_treesitter()
+  if treesitter_ready then
+    return
+  end
+
+  pack_add_once('treesitter', { 'nvim_treesitter', 'playground' })
+
+  local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
+  parser_config.bazelrc = {
+    install_info = {
+      url = vim.fs.normalize(vim.fn.expand("~/work/misc/tree-sitter-bazelrc")),
+      files = { "src/parser.c" },
+      branch = "main",                        -- default branch in case of git repo if different from master
+      generate_requires_npm = false,          -- if stand-alone parser without npm dependencies
+      requires_generate_from_grammar = false, -- if folder contains pre-generated src/parser.c
     },
-  },
-  playground = {
-    enable = true,
-    disable = {},
-    updatetime = 25,         -- Debounced time for highlighting nodes in the playground from source code
-    persist_queries = false, -- Whether the query persists across vim sessions
-    keybindings = {
-      toggle_query_editor = 'o',
-      toggle_hl_groups = 'i',
-      toggle_injected_languages = 't',
-      toggle_anonymous_nodes = 'a',
-      toggle_language_display = 'I',
-      focus_language = 'f',
-      unfocus_language = 'F',
-      update = 'R',
-      goto_node = '<cr>',
-      show_help = '?',
-    },
-  },
-  query_linter = {
-    enable = true,
-    use_virtual_text = true,
-    lint_events = { "BufWrite", "CursorHold" },
+    filetype = "bazelrc",
   }
-}
+  require 'nvim-treesitter.configs'.setup {
+    ensure_installed = {
+      'bash',
+      'bazelrc',
+      'c',
+      'cpp',
+      'css',
+      'diff',
+      'dockerfile',
+      'git_config',
+      'git_rebase',
+      'gitattributes',
+      'gitcommit',
+      'gitignore',
+      'go',
+      'gomod',
+      'gosum',
+      'gotmpl',
+      'helm',
+      'html',
+      'hyprlang',
+      'java',
+      'javascript',
+      'jq',
+      'json',
+      'jsonc',
+      'lua',
+      'make',
+      'markdown',
+      'markdown_inline',
+      'proto',
+      'python',
+      'query',
+      'regex',
+      'rust',
+      'scala',
+      'sql',
+      'starlark',
+      'terraform',
+      'toml',
+      'tsx',
+      'typescript',
+      'vim',
+      'vimdoc',
+      'xml',
+      'yaml',
+    },
+    -- Install parsers synchronously (only applied to `ensure_installed`)
+    sync_install = false,
+    highlight = {
+      enable = true, -- false will disable the whole extension
+    },
+    ignore_install = { "ipkg" },
+    incremental_selection = {
+      enable = true,
+      keymaps = {
+        init_selection = "<A-J>", -- set to `false` to disable one of the mappings
+        scope_incremental = false,
+        node_incremental = "<A-J>",
+        node_decremental = "<A-K>",
+      },
+    },
+    playground = {
+      enable = true,
+      disable = {},
+      updatetime = 25,         -- Debounced time for highlighting nodes in the playground from source code
+      persist_queries = false, -- Whether the query persists across vim sessions
+      keybindings = {
+        toggle_query_editor = 'o',
+        toggle_hl_groups = 'i',
+        toggle_injected_languages = 't',
+        toggle_anonymous_nodes = 'a',
+        toggle_language_display = 'I',
+        focus_language = 'f',
+        unfocus_language = 'F',
+        update = 'R',
+        goto_node = '<cr>',
+        show_help = '?',
+      },
+    },
+    query_linter = {
+      enable = true,
+      use_virtual_text = true,
+      lint_events = { "BufWrite", "CursorHold" },
+    }
+  }
+
+  treesitter_ready = true
+end
+
+local treesitter_group = vim.api.nvim_create_augroup('LazyTreesitter', { clear = true })
+vim.api.nvim_create_autocmd('FileType', {
+  group = treesitter_group,
+  callback = ensure_treesitter,
+})
+vim.api.nvim_create_autocmd('CmdUndefined', {
+  group = treesitter_group,
+  pattern = 'TS*',
+  callback = ensure_treesitter,
+})
 
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
