@@ -40,7 +40,6 @@ plugins=(
 
   # Git
   git
-  gitfast
   gh
 
   # Containers
