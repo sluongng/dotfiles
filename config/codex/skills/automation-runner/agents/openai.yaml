@@ -1,0 +1,4 @@
+interface:
+  display_name: "Automation Runner"
+  short_description: "Run automations with safe memory handling"
+  default_prompt: "Use $automation-runner to execute this scheduled automation and update its memory."
