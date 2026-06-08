@@ -42,8 +42,9 @@ mentions_v2 = true
 prevent_idle_sleep = true
 remote_compaction_v2 = true
 runtime_metrics = true
-# Use Codex's bundled zsh fork from the installed package; leave zsh_path unset
-# so each installation can resolve its own packaged binary.
+# The Homebrew cask should install Codex's package layout, including
+# codex-resources/zsh/bin/zsh for the forked-zsh shell backend. Leave zsh_path
+# unset so each installation can resolve its own packaged binary.
 shell_zsh_fork = true
 unified_exec = true
 unified_exec_zsh_fork = true
