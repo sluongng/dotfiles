@@ -137,10 +137,7 @@ pack_add_specs({
   'indent_blankline',
   'vim_airline',
   'vim_gitgutter',
-  'cmp_buffer',
   'cmp_nvim_lsp',
-  'cmp_path',
-  'nvim_cmp',
   'nvim_lspconfig',
   'nvim_metals',
   'vim_sneak',
@@ -1792,8 +1789,7 @@ enable_lsp_config('lua_ls', {
   }
 })
 
-local cmp = require('cmp')
-local compare = require('cmp.config.compare')
+local cmp_ready = false
 
 local function snippet_can_jump(direction)
   if not vim.snippet or type(vim.snippet.active) ~= 'function' then
@@ -1809,87 +1805,106 @@ local function snippet_can_jump(direction)
   return ok and active or false
 end
 
-cmp.setup({
-  -- Keep LSP preselect enabled, but sort so the highlighted item is more likely
-  -- to be near the top (match LSP sortText before grouping by kind).
-  preselect = cmp.PreselectMode.Item,
-  sorting = {
-    comparators = {
-      compare.offset,
-      compare.exact,
-      compare.score,
-      compare.recently_used,
-      compare.locality,
-      compare.sort_text,
-      compare.kind,
-      compare.length,
-      compare.order,
+local function ensure_cmp()
+  if cmp_ready then
+    return
+  end
+
+  pack_add_once('cmp', { 'cmp_buffer', 'cmp_path', 'nvim_cmp' })
+
+  local cmp = require('cmp')
+  local compare = require('cmp.config.compare')
+
+  cmp.setup({
+    -- Keep LSP preselect enabled, but sort so the highlighted item is more likely
+    -- to be near the top (match LSP sortText before grouping by kind).
+    preselect = cmp.PreselectMode.Item,
+    sorting = {
+      comparators = {
+        compare.offset,
+        compare.exact,
+        compare.score,
+        compare.recently_used,
+        compare.locality,
+        compare.sort_text,
+        compare.kind,
+        compare.length,
+        compare.order,
+      },
     },
-  },
-  snippet = {
-    expand = function(args)
-      if vim.snippet and type(vim.snippet.expand) == 'function' then
-        vim.snippet.expand(args.body)
-        return
-      end
-      vim.notify('No snippet engine available (need Neovim 0.10+ vim.snippet)', vim.log.levels.WARN)
-    end,
-  },
-  -- Put LSP items ahead of plain buffer-word ("Text") items by separating
-  -- sources into groups; group 1 is shown before group 2.
-  sources = cmp.config.sources(
-    {
-      { name = 'nvim_lsp' },
-      { name = 'path' },
+    snippet = {
+      expand = function(args)
+        if vim.snippet and type(vim.snippet.expand) == 'function' then
+          vim.snippet.expand(args.body)
+          return
+        end
+        vim.notify('No snippet engine available (need Neovim 0.10+ vim.snippet)', vim.log.levels.WARN)
+      end,
     },
-    {
-      { name = 'buffer', keyword_length = 2 },
-    }
-  ),
-  mapping = cmp.mapping.preset.insert({
-    -- confirm completion item
-    ['<Enter>'] = cmp.mapping.confirm({ select = true }),
-    -- trigger completion menu
-    ['<C-Space>'] = cmp.mapping.complete(),
+    -- Put LSP items ahead of plain buffer-word ("Text") items by separating
+    -- sources into groups; group 1 is shown before group 2.
+    sources = cmp.config.sources(
+      {
+        { name = 'nvim_lsp' },
+        { name = 'path' },
+      },
+      {
+        { name = 'buffer', keyword_length = 2 },
+      }
+    ),
+    mapping = cmp.mapping.preset.insert({
+      -- confirm completion item
+      ['<Enter>'] = cmp.mapping.confirm({ select = true }),
+      -- trigger completion menu
+      ['<C-Space>'] = cmp.mapping.complete(),
 
-    -- Jump between LSP snippet placeholders (e.g. gopls function params).
-    ['<Tab>'] = cmp.mapping(function(fallback)
-      if snippet_can_jump(1) then
-        vim.snippet.jump(1)
-      else
-        fallback()
-      end
-    end, { "i", "s" }),
-    ['<S-Tab>'] = cmp.mapping(function(fallback)
-      if snippet_can_jump(-1) then
-        vim.snippet.jump(-1)
-      else
-        fallback()
-      end
-    end, { "i", "s" }),
+      -- Jump between LSP snippet placeholders (e.g. gopls function params).
+      ['<Tab>'] = cmp.mapping(function(fallback)
+        if snippet_can_jump(1) then
+          vim.snippet.jump(1)
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
+      ['<S-Tab>'] = cmp.mapping(function(fallback)
+        if snippet_can_jump(-1) then
+          vim.snippet.jump(-1)
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
 
-    -- scroll up and down the documentation window
-    ['<C-u>'] = cmp.mapping.scroll_docs(-4),
-    ['<C-d>'] = cmp.mapping.scroll_docs(4),
+      -- scroll up and down the documentation window
+      ['<C-u>'] = cmp.mapping.scroll_docs(-4),
+      ['<C-d>'] = cmp.mapping.scroll_docs(4),
 
-    -- Custom mapping for Ctrl-J to select next item
-    ['<C-j>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_next_item()
-      else
-        fallback()
-      end
-    end, { "i", "s" }),
+      -- Custom mapping for Ctrl-J to select next item
+      ['<C-j>'] = cmp.mapping(function(fallback)
+        if cmp.visible() then
+          cmp.select_next_item()
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
 
-    -- Optionally map Ctrl-K to select previous item
-    ['<C-k>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_prev_item()
-      else
-        fallback()
-      end
-    end, { "i", "s" }),
-  }),
+      -- Optionally map Ctrl-K to select previous item
+      ['<C-k>'] = cmp.mapping(function(fallback)
+        if cmp.visible() then
+          cmp.select_prev_item()
+        else
+          fallback()
+        end
+      end, { "i", "s" }),
+    }),
+  })
+
+  cmp_ready = true
+end
+
+vim.api.nvim_create_autocmd('InsertEnter', {
+  group = vim.api.nvim_create_augroup('LazyCmp', { clear = true }),
+  callback = ensure_cmp,
+  once = true,
 })
 
 -- Use the default handler but prefer the location list instead of the quickfix
