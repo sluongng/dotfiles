@@ -223,7 +223,6 @@ alias ls=eza # eza is not actively mantained
 # Containers
 if command -v kubectl >/dev/null 2>&1; then
   alias kb=kubectl
-  source <(kubectl completion zsh)
 fi
 
 # QoL commands
