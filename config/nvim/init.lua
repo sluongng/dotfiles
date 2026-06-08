@@ -143,10 +143,6 @@ pack_add_specs({
   'vim_sneak',
   'copilot',
   'vim_go',
-  'plenary',
-  'nvim_nio',
-  'neotest',
-  'neotest_bazel',
   'onedark',
   'vim_helm',
 })
@@ -2250,22 +2246,32 @@ vim.cmd [[
 ]]
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Neotest-Bazel >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-local neotest = require("neotest")
-neotest.setup({
-  adapters = {
-    require("neotest-bazel")
-  },
-  discovery = {
-    concurrent = 1,
-    enabled = false,
-  },
-  running = {
-    concurrent = false,
-  },
-  log_level = vim.log.levels.DEBUG,
-})
+local neotest_ready = false
+local function ensure_neotest()
+  pack_add_once('neotest', { 'plenary', 'nvim_nio', 'neotest', 'neotest_bazel' })
 
-vim.keymap.set('n', '<leader>tr', function() neotest.run.run() end, {})
-vim.keymap.set('n', '<leader>tf', function() neotest.run.run(vim.fn.expand("%")) end, {})
-vim.keymap.set('n', '<leader>ts', function() neotest.summary.toggle() end, {})
-vim.keymap.set('n', '<leader>to', function() neotest.output_panel.toggle() end, {})
+  local neotest = require("neotest")
+  if not neotest_ready then
+    neotest.setup({
+      adapters = {
+        require("neotest-bazel")
+      },
+      discovery = {
+        concurrent = 1,
+        enabled = false,
+      },
+      running = {
+        concurrent = false,
+      },
+      log_level = vim.log.levels.DEBUG,
+    })
+    neotest_ready = true
+  end
+
+  return neotest
+end
+
+vim.keymap.set('n', '<leader>tr', function() ensure_neotest().run.run() end, {})
+vim.keymap.set('n', '<leader>tf', function() ensure_neotest().run.run(vim.fn.expand("%")) end, {})
+vim.keymap.set('n', '<leader>ts', function() ensure_neotest().summary.toggle() end, {})
+vim.keymap.set('n', '<leader>to', function() ensure_neotest().output_panel.toggle() end, {})
