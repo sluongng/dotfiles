@@ -4,6 +4,21 @@ if vim.loader then
   vim.loader.enable()
 end
 
+local function prepend_path(path)
+  local current_path = vim.env.PATH or ''
+  for entry in current_path:gmatch('[^:]+') do
+    if entry == path then
+      return
+    end
+  end
+  vim.env.PATH = path .. (current_path == '' and '' or ':' .. current_path)
+end
+
+local local_bin = vim.fs.normalize(vim.fn.expand('~/.local/bin'))
+if vim.uv.fs_stat(local_bin) then
+  prepend_path(local_bin)
+end
+
 -- Disable unused providers
 vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
