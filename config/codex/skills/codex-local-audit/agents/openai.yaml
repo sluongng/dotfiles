@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Local Audit"
+  short_description: "Audit local Codex sessions, tokens, and automation state"
+  default_prompt: "Use $codex-local-audit to inspect local Codex thread/session state for this question and report exact counts from ~/.codex."
