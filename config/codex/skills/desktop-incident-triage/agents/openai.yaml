@@ -1,0 +1,4 @@
+interface:
+  display_name: "Desktop Incident Triage"
+  short_description: "Debug Hyprland and Bluetooth incidents"
+  default_prompt: "Use $desktop-incident-triage to inspect this desktop issue from live state before changing config."
