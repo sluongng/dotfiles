@@ -17,7 +17,7 @@ Name the target tool, its source, and the first real jobs it should do:
 - Jobs: literal reads/writes such as `list drafts`, `download failed job logs`, `search messages`, `upload media`, `read queue schedule`.
 - Install name: a short binary name such as `ci-logs`, `slack-cli`, `sentry-cli`, or `buildkite-logs`.
 
-Prefer a new folder under `~/work/cli/<tool-name>` when the user wants a personal tool and has not named a repo.
+Prefer a new folder under `${CLI_WORK_ROOT:-$HOME/work/cli}/<tool-name>` when the user wants a personal tool and has not named a repo.
 
 Before scaffolding, check whether the proposed command already exists:
 

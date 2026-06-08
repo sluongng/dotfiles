@@ -11,9 +11,10 @@ Answer Bazel questions using evidence from code, history, and community context.
 
 ## Workspace Selection
 
-Use `~/work/bazelbuild/bazel` as the primary repository.
+Use `${BAZEL_REPO:-$HOME/work/bazelbuild/bazel}` as the primary repository.
 
-Set `repo=~/work/bazelbuild/bazel` before running git commands below.
+Set `repo="${BAZEL_REPO:-$HOME/work/bazelbuild/bazel}"` before running git
+commands below.
 
 Detect whether the user gave a Bazel version/ref (tag, branch, commit SHA, release name).
 
@@ -24,15 +25,15 @@ When a version/ref is provided, follow this exact flow:
 1. Check repository cleanliness.
 
 ```bash
-git -C ~/work/bazelbuild/bazel status --porcelain
+git -C "$repo" status --porcelain
 ```
 
 2. If clean, resolve and checkout that version/ref in place.
 3. If dirty, create a local clone first and use the clone for all versioned research.
 
 ```bash
-tmp_repo="$(mktemp -d ~/work/bazelbuild/bazel-codex-XXXX)"
-git clone --no-hardlinks ~/work/bazelbuild/bazel "$tmp_repo"
+tmp_repo="$(mktemp -d "$(dirname "$repo")/bazel-codex-XXXX")"
+git clone --no-hardlinks "$repo" "$tmp_repo"
 repo="$tmp_repo"
 ```
 

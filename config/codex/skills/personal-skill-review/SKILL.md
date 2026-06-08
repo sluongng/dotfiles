@@ -1,6 +1,6 @@
 ---
 name: personal-skill-review
-description: Review recent Codex session logs for repeated issues involving personal skills under ~/.dotfiles/config/codex/skills, then update or add a personal skill only when the evidence is concrete and recurring. Use for "scan recent sessions for skill issues", "should this become a skill?", or recurring automation runs that maintain personal skills.
+description: Review recent Codex session logs for repeated issues involving dotfiles-managed personal skills, then update or add a personal skill only when the evidence is concrete and recurring. Use for "scan recent sessions for skill issues", "should this become a skill?", or recurring automation runs that maintain personal skills.
 ---
 
 # Personal Skill Review
@@ -9,7 +9,7 @@ Use this skill when the task is to inspect recent Codex activity and decide whet
 
 Keep the scope tight:
 
-- Personal skills only: `/Users/sluongng/.dotfiles/config/codex/skills`
+- Personal skills only: `${DOTFILES_DIR:-$HOME/.dotfiles}/config/codex/skills`.
 - Ignore repo-local skills and built-in `.system` skills unless they are only being used as tooling
 - Default to no-op when recent logs do not show repeated, actionable friction
 
@@ -76,8 +76,10 @@ If the file exists, read it first. If the task requires writing the automation m
 After editing personal skills:
 
 ```bash
-python3 /Users/sluongng/.codex/skills/.system/skill-creator/scripts/quick_validate.py /Users/sluongng/.dotfiles/config/codex/skills/<skill-name>
-/Users/sluongng/.dotfiles/automation/codex/install-codex.sh
+dotfiles_dir="${DOTFILES_DIR:-$HOME/.dotfiles}"
+skill_creator="${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator"
+python3 "$skill_creator/scripts/quick_validate.py" "$dotfiles_dir/config/codex/skills/<skill-name>"
+"$dotfiles_dir/automation/codex/install-codex.sh"
 ```
 
 If `quick_validate.py` fails with `ModuleNotFoundError: No module named 'yaml'`,
@@ -87,7 +89,9 @@ do not stop there. Validate in a throwaway venv instead:
 tmpdir="$(mktemp -d)"
 python3 -m venv "$tmpdir/venv"
 "$tmpdir/venv/bin/pip" install PyYAML
-"$tmpdir/venv/bin/python" /Users/sluongng/.codex/skills/.system/skill-creator/scripts/quick_validate.py /Users/sluongng/.dotfiles/config/codex/skills/<skill-name>
+dotfiles_dir="${DOTFILES_DIR:-$HOME/.dotfiles}"
+skill_creator="${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator"
+"$tmpdir/venv/bin/python" "$skill_creator/scripts/quick_validate.py" "$dotfiles_dir/config/codex/skills/<skill-name>"
 rm -rf "$tmpdir"
 ```
 

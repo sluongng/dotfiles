@@ -20,9 +20,12 @@ Use the installed etoro-api CLI for eToro API work. Do not hand-build authentica
 
 Verify the command exists:
 
-    command -v etoro-api || /home/nb/plugins/etoro-api/scripts/install-local.sh
+    command -v etoro-api || \
+      "${ETORO_API_PLUGIN_DIR:-$HOME/plugins/etoro-api}/scripts/install-local.sh"
 
-If command lookup still fails because ~/.local/bin is not on PATH, use /home/nb/.local/bin/etoro-api directly or prepend PATH="$HOME/.local/bin:$PATH" for the command.
+If command lookup still fails because ~/.local/bin is not on PATH, use
+~/.local/bin/etoro-api directly or prepend PATH="$HOME/.local/bin:$PATH" for
+the command.
 
 Check setup:
 

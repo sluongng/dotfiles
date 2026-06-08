@@ -50,7 +50,7 @@ Most commands inject `session_id` and `turn_id` into params. Defaults come from
 If the CLI command is missing, build and install it from:
 
 ```bash
-cd /home/nb/work/misc/codex-app/codex-linux-extension-host
+cd "${CODEX_APP_CHECKOUT:-$HOME/work/misc/codex-app}/codex-linux-extension-host"
 make install-local
 ```
 
@@ -78,7 +78,7 @@ codex-linux-extension-host 'chrome-extension://hehggadaopoacecdllhhajmbjkdcmajg/
 
 That command should keep listening until interrupted. If it prints
 `unrecognized subcommand`, rebuild and reinstall the host from
-`/home/nb/work/misc/codex-app/codex-linux-extension-host`.
+`${CODEX_APP_CHECKOUT:-$HOME/work/misc/codex-app}/codex-linux-extension-host`.
 
 If `extension-ping` is false but `bridge-socket-ping` is true, the local host is
 alive but it is not connected to the Chrome extension side.

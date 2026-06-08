@@ -32,7 +32,8 @@ evidence.
 
 ## Hyprland Paths
 
-- Dotfile-managed Hyprland config lives under `/home/nb/.dotfiles/config/hypr`.
+- Dotfile-managed Hyprland config lives under
+  `${DOTFILES_DIR:-$HOME/.dotfiles}/config/hypr`.
 - Autostart belongs in `config/hypr/config/autostart.conf`.
 - User placement and focus overrides belong in
   `config/hypr/config/user-overrides.conf`.

@@ -26,7 +26,8 @@ field mapping details.
 From a BuildBuddy repo with `bb login` already done:
 
 ```bash
-python3 /home/nb/.codex/plugins/cache/sluongng-dotfiles/buildbuddy/local/skills/buildbuddy-flaky-tests/scripts/fetch_flaky_tests.py \
+FLAKY_SKILL_DIR="${BUILDBUDDY_FLAKY_TESTS_SKILL_DIR:-<path-to-this-skill>}"
+python3 "$FLAKY_SKILL_DIR/scripts/fetch_flaky_tests.py" \
   --org-slug buildbuddy \
   --repo auto \
   --branch master \

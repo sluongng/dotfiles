@@ -6,8 +6,9 @@ description: Build live portfolio updates, catalyst decision trees, fee-aware si
 # Portfolio Decision Tree
 
 Use this for portfolio updates, event timing, allocation decisions, and
-trade/no-trade calls in `/home/nb/work/misc/stock`. Use `$etoro-api` for the
-raw broker CLI mechanics.
+trade/no-trade calls in the local stock-analysis repo, usually
+`${STOCK_REPO:-$HOME/work/misc/stock}`. Use `$etoro-api` for the raw broker CLI
+mechanics.
 
 ## Fresh State First
 

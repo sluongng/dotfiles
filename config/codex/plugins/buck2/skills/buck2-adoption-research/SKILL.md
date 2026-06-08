@@ -5,10 +5,11 @@ description: Research and implement Buck2 adoption work that bridges Bazel ecosy
 
 # Buck2 Adoption Research
 
-Use this in `/home/nb/work/facebook/buck2` when the task is about making Buck2
-easier to adopt through Bazel ecosystem compatibility or BuildBuddy-backed
-workflow/release improvements. For routine fork stack refreshes, use
-`$buck2-stack-maintainer` instead.
+Use this in the local Buck2 checkout, usually
+`${BUCK2_CHECKOUT:-$HOME/work/facebook/buck2}`, when the task is about making
+Buck2 easier to adopt through Bazel ecosystem compatibility or
+BuildBuddy-backed workflow/release improvements. For routine fork stack
+refreshes, use `$buck2-stack-maintainer` instead.
 
 ## Start
 
