@@ -1,7 +1,7 @@
 {
   "name": "etoro-api",
-  "version": "0.2.0+codex.20260529143746",
-  "description": "Credential-safe eToro Public API CLI and Codex skill for portfolio, market-data, and approval-gated trading execution.",
+  "version": "0.2.0+codex.20260606104124",
+  "description": "Credential-safe eToro Public API CLI and Codex skills for portfolio decision trees, market data, and approval-gated trading execution.",
   "author": {
     "name": "Local developer"
   },
@@ -11,13 +11,15 @@
     "portfolio",
     "market-data",
     "investing",
-    "trading"
+    "trading",
+    "decision-tree",
+    "allocation"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "eToro API",
-    "shortDescription": "Analyze and prepare eToro trades with a local CLI.",
-    "longDescription": "A local eToro Public API integration for Codex. It provides a credential-safe CLI for identity, portfolio, PnL, trade history, instrument lookup, prices, candles, snapshots, and approval-gated trading execution while keeping API credentials in local config or environment variables outside model context.",
+    "shortDescription": "Analyze portfolios and prepare eToro trades.",
+    "longDescription": "A local eToro Public API integration for Codex. It provides a credential-safe CLI for identity, portfolio, PnL, trade history, instrument lookup, prices, candles, snapshots, portfolio decision trees, and approval-gated trading execution while keeping API credentials in local config or environment variables outside model context.",
     "developerName": "Local developer",
     "category": "Finance",
     "capabilities": [
@@ -30,7 +32,8 @@
       "Check my eToro API setup.",
       "Snapshot my eToro portfolio.",
       "Find an eToro instrument ID.",
-      "Prepare an eToro trade ticket."
+      "Prepare an eToro trade ticket.",
+      "Use $portfolio-decision-tree to build a fee-aware trade decision tree."
     ]
   }
 }

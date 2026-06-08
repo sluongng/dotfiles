@@ -1,6 +1,6 @@
 ---
 name: buildbuddy
-description: Route public BuildBuddy troubleshooting, invocation comparison, action reproduction, and usage-analysis requests to the focused BuildBuddy skills bundled in this plugin.
+description: Route public BuildBuddy troubleshooting, invocation comparison, action reproduction, log-root-cause, flaky-test, and usage-analysis requests to the focused BuildBuddy skills bundled in this plugin.
 ---
 
 # BuildBuddy
@@ -34,6 +34,10 @@ Route by user intent:
   pinning to an executor: `../buildbuddy-action-reproduce/SKILL.md`
 - Recent flaky tests, Test Analytics flakes lists, target flake samples, or
   recurring flaky-test triage: `../buildbuddy-flaky-tests/SKILL.md`
+- Pasted BuildBuddy or `bb` CLI log snippets, customer symptoms, FastCDC
+  warnings, BES upload failures, confusing invocation IDs, or source-backed
+  root-cause questions without a clean invocation URL:
+  `../buildbuddy-log-root-cause/SKILL.md`
 - Billing, usage, trends, heatmaps, drilldowns, cost anomalies, or projections:
   `../buildbuddy-usage-analysis/SKILL.md`
 

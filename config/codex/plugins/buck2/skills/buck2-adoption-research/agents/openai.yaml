@@ -1,0 +1,4 @@
+interface:
+  display_name: "Buck2 Adoption Research"
+  short_description: "Bridge Buck2 with Bazel workflows"
+  default_prompt: "Use $buck2-adoption-research to compare Buck2 with the Bazel ecosystem and propose fixture-backed adoption work."
