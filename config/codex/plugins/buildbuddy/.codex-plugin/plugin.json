@@ -1,7 +1,7 @@
 {
   "name": "buildbuddy",
-  "version": "0.1.1",
-  "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, and analyze usage.",
+  "version": "0.1.1+codex.20260606104124",
+  "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, diagnose log snippets, and analyze usage.",
   "author": {
     "name": "Sluong Ng",
     "url": "https://github.com/sluongng"
@@ -15,13 +15,16 @@
     "invocations",
     "usage",
     "flakes",
-    "flaky-tests"
+    "flaky-tests",
+    "logs",
+    "bes",
+    "sidecar"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "BuildBuddy",
-    "shortDescription": "Debug BuildBuddy invocations, flakes, and usage",
-    "longDescription": "Use BuildBuddy to troubleshoot invocations, compare cache and action behavior, reproduce remote actions with bb execute, inspect recent flaky tests, and analyze billing or usage trends while protecting API keys.",
+    "shortDescription": "Debug BuildBuddy invocations, logs, flakes, and usage",
+    "longDescription": "Use BuildBuddy to troubleshoot invocations, compare cache and action behavior, reproduce remote actions with bb execute, inspect recent flaky tests, diagnose BuildBuddy or bb CLI log snippets, and analyze billing or usage trends while protecting API keys.",
     "developerName": "Sluong Ng",
     "category": "Coding",
     "capabilities": [
@@ -34,7 +37,8 @@
       "Troubleshoot this BuildBuddy invocation",
       "Compare these two BuildBuddy invocations",
       "Analyze BuildBuddy usage for this group",
-      "Fetch recent flaky tests from BuildBuddy"
+      "Fetch recent flaky tests from BuildBuddy",
+      "Diagnose this BuildBuddy log snippet"
     ],
     "brandColor": "#2563EB",
     "screenshots": []

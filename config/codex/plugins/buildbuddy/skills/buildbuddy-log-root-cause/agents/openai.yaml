@@ -1,0 +1,4 @@
+interface:
+  display_name: "BuildBuddy Log Root Cause"
+  short_description: "Diagnose BuildBuddy log snippets"
+  default_prompt: "Use $buildbuddy-log-root-cause to diagnose this BuildBuddy log snippet and trace the likely root cause."
