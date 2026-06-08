@@ -4,6 +4,16 @@
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Start oh-my-zsh
 export ZSH="$HOME/.oh-my-zsh"
 
+typeset -gU path
+
+_path_prepend() {
+  [[ -d "$1" ]] && path=("$1" "${path[@]}")
+}
+
+_path_append() {
+  [[ -d "$1" ]] && path+=("$1")
+}
+
 ZSH_THEME="sunaku"
 
 # Disable tmux auto-start/auto-quit when connected over SSH to avoid nesting
@@ -20,7 +30,9 @@ SHOW_AWS_PROMPT=false
 # M1 Mac
 # Brew switched to /opt/homebrew
 if [[ `uname -m` == 'arm64' && `uname` == 'Darwin' ]]; then
-  export PATH=/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH
+  _path_prepend /opt/homebrew/sbin
+  _path_prepend /opt/homebrew/bin
+  _path_prepend /usr/local/bin
   export LIB=/opt/homebrew/lib:$LIB
   export INCLUDE=/opt/homebrew/include:$INCLUDE
 
@@ -169,32 +181,34 @@ export VISUAL=nvim
 export EDITOR="${VISUAL}"
 
 # Ubuntu Snap (this is a problem for Wayland, not for X11)
-export PATH=$PATH:/snap/bin
+_path_append /snap/bin
 
 # JAVA
 case "$(uname)" in
   Darwin)
-    export JAVA_HOME="/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
-    export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
+    if [[ -d /opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home ]]; then
+      export JAVA_HOME="/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
+      _path_prepend /opt/homebrew/opt/openjdk/bin
+    fi
     ;;
   Linux)
-    export JAVA_HOME="/usr/lib/jvm/java-25-openjdk"
-    export PATH="$JAVA_HOME/bin:$PATH"
+    if [[ -d /usr/lib/jvm/java-25-openjdk ]]; then
+      export JAVA_HOME="/usr/lib/jvm/java-25-openjdk"
+      _path_prepend "$JAVA_HOME/bin"
+    fi
     ;;
 esac
 
-# Python
-export PATH=$PATH:~/.local/bin
-
 # Golang
 export GOPATH=$HOME/work/golang
-export PATH=$PATH:/usr/local/go/bin:${GOPATH}/bin
+_path_append /usr/local/go/bin
+_path_append "${GOPATH}/bin"
 
 # Rust
-export PATH=$PATH:~/.cargo/bin
+_path_append "$HOME/.cargo/bin"
 
 # Git
-export PATH=~/bin:$PATH
+_path_prepend "$HOME/bin"
 if [[ `uname` == 'Darwin' ]]; then
   export XML_CATALOG_FILES="$(brew --prefix)/etc/xml/catalog"
   export MANPATH=$HOME/share/man:$MANPATH
@@ -202,8 +216,8 @@ fi
 
 # rvm
 [[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"
-# Add RVM to PATH for scripting. Make sure this is the last PATH variable change.
-export PATH="$PATH:$HOME/.rvm/bin"
+# Add RVM helpers for scripting when RVM is installed.
+_path_append "$HOME/.rvm/bin"
 
 # File that keeps secrets
 if [[ -f ~/secret.sh ]]; then
@@ -223,7 +237,7 @@ fi
 
 # QoL commands
 ## List out all dir in ${PATH}
-alias path="echo ${PATH} | sed 's/:/\n/g' | sort | uniq -c | sort -n"
+alias path='print -r -- "$PATH" | tr ":" "\n" | sort | uniq -c | sort -n'
 
 # Use bat for man pager
 export PAGER='less -FX'
@@ -242,14 +256,15 @@ export KUBE_CONFIG_PATH=~/.kube/config
 # uninstall by removing these lines
 [[ -f ~/.config/tabtab/zsh/__tabtab.zsh ]] && . ~/.config/tabtab/zsh/__tabtab.zsh || true
 
-export PATH="$PATH:/opt/homebrew/opt/binutils/bin"
-
 # Enable core dumps to debug Bazel JVM issue
 # https://github.com/bazelbuild/bazel/issues/23497
 ulimit -c unlimited
 ulimit -n 10240
-export PATH="/opt/homebrew/opt/curl/bin:$PATH"
-export PATH="/opt/homebrew/opt/bison/bin:$PATH"
+if [[ `uname` == 'Darwin' ]]; then
+  _path_append /opt/homebrew/opt/binutils/bin
+  _path_prepend /opt/homebrew/opt/curl/bin
+  _path_prepend /opt/homebrew/opt/bison/bin
+fi
 
 # gsutil currently supports Python 3.9-3.13; prefer uv-managed 3.13 when available.
 _gsutil_python_cache="${XDG_CACHE_HOME:-$HOME/.cache}/gsutil-python-3.13"
@@ -270,4 +285,6 @@ unset _gsutil_python _gsutil_python_cache
 
 
 # Added by Antigravity CLI installer
-export PATH="/home/nb/.local/bin:$PATH"
+_path_prepend "$HOME/.local/bin"
+
+unset -f _path_prepend _path_append
