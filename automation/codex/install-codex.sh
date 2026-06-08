@@ -66,6 +66,59 @@ prune_stale_skill_links() {
   done < <(find "${TARGET_DIR}/skills" -mindepth 1 -maxdepth 1 -type l | sort)
 }
 
+sync_tracked_plugin_caches() {
+  local marketplace_manifest="${SOURCE_DIR}/.agents/plugins/marketplace.json"
+  local marketplace_name=""
+  local manifest_path=""
+  local plugin_dir=""
+  local metadata=""
+  local plugin_name=""
+  local plugin_version=""
+  local cache_dir=""
+  local tmp_dir=""
+
+  if [ ! -d "${SOURCE_DIR}/plugins" ]; then
+    return 0
+  fi
+  if [ ! -f "${marketplace_manifest}" ]; then
+    echo "Missing plugin marketplace manifest: ${marketplace_manifest}" >&2
+    exit 1
+  fi
+
+  marketplace_name="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["name"])' "${marketplace_manifest}")"
+  if [ -z "${marketplace_name}" ]; then
+    echo "Invalid plugin marketplace metadata: ${marketplace_manifest}" >&2
+    exit 1
+  fi
+
+  while IFS= read -r manifest_path; do
+    plugin_dir="$(cd "$(dirname "${manifest_path}")/.." && pwd)"
+    metadata="$(python3 -c 'import json, sys; data = json.load(open(sys.argv[1])); print(data["name"] + "\t" + data["version"])' "${manifest_path}")"
+    IFS=$'\t' read -r plugin_name plugin_version <<< "${metadata}"
+
+    if [ -z "${plugin_name}" ] || [ -z "${plugin_version}" ]; then
+      echo "Invalid plugin manifest metadata: ${manifest_path}" >&2
+      exit 1
+    fi
+
+    cache_dir="${TARGET_DIR}/plugins/cache/${marketplace_name}/${plugin_name}/${plugin_version}"
+    tmp_dir="${cache_dir}.tmp.${TIMESTAMP}"
+
+    rm -rf "${tmp_dir}"
+    mkdir -p "$(dirname "${cache_dir}")" "${tmp_dir}"
+    (
+      cd "${plugin_dir}"
+      tar -cf - .
+    ) | (
+      cd "${tmp_dir}"
+      tar -xf -
+    )
+    rm -rf "${cache_dir}"
+    mv "${tmp_dir}" "${cache_dir}"
+    echo "Synced plugin cache ${cache_dir}"
+  done < <(find "${SOURCE_DIR}/plugins" -mindepth 3 -maxdepth 3 -path '*/.codex-plugin/plugin.json' -type f | sort)
+}
+
 main() {
   local relative_path=""
   local skill_name=""
@@ -96,10 +149,12 @@ main() {
     ensure_symlink "${SOURCE_DIR}/AGENTS.md" "${TARGET_DIR}/AGENTS.md"
   fi
 
-  while IFS= read -r source_path; do
-    relative_path="${source_path#"${SOURCE_DIR}/"}"
-    ensure_symlink "${source_path}" "${TARGET_DIR}/${relative_path}"
-  done < <(find "${SOURCE_DIR}/agents" -type f | sort)
+  if [ -d "${SOURCE_DIR}/agents" ]; then
+    while IFS= read -r source_path; do
+      relative_path="${source_path#"${SOURCE_DIR}/"}"
+      ensure_symlink "${source_path}" "${TARGET_DIR}/${relative_path}"
+    done < <(find "${SOURCE_DIR}/agents" -type f | sort)
+  fi
 
   while IFS= read -r source_path; do
     skill_name="$(basename "${source_path}")"
@@ -110,6 +165,7 @@ main() {
   done < <(find "${SOURCE_DIR}/skills" -mindepth 1 -maxdepth 1 -type d ! -name '.system' | sort)
 
   prune_stale_skill_links
+  sync_tracked_plugin_caches
 }
 
 main "$@"

@@ -22,6 +22,8 @@ The deploy script manages these paths under `${CODEX_HOME:-~/.codex}`:
 - tracked global `AGENTS.md`
 - tracked files under `agents/`
 - tracked custom skill directories under `skills/`
+- tracked local plugins under `plugins/`, synced into Codex's plugin cache by
+  plugin manifest name and version
 
 Tracked plugin marketplaces can live in this directory as:
 
@@ -37,10 +39,11 @@ personal plugins in `config.toml`. The marketplace location is machine-local,
 but the desired plugin state must be part of the rendered source of truth so a
 later deploy does not silently discard an install made by `codex plugin add`.
 
-Codex materializes enabled marketplace plugins into
-`${CODEX_HOME:-~/.codex}/plugins/cache`; bump the plugin manifest version when
-changing tracked plugin contents, or clear the matching cache entry to force a
-local refresh.
+The deploy script materializes tracked local marketplace plugins into
+`${CODEX_HOME:-~/.codex}/plugins/cache` by plugin manifest name and version.
+Bump the plugin manifest version when changing tracked plugin contents so fresh
+Codex sessions pick up the new cache entry, or clear the matching cache entry
+to force a local refresh.
 
 It intentionally leaves `auth.json`, histories, logs, memories, SQLite state,
 and Codex-managed system skills as local machine state inside the selected
