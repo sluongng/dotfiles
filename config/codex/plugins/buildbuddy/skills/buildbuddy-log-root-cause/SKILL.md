@@ -24,7 +24,8 @@ the local-only BuildBuddy Dev plugin.
    - flaky target ranking: `$buildbuddy-flaky-tests`
 
 3. If no focused skill fits, inspect source and logs directly:
-   - Prefer `rg` in `/home/nb/work/buildbuddy-io/buildbuddy` when the checkout is
+   - Prefer `rg` in the local BuildBuddy checkout, usually
+     `${BUILDBUDDY_CHECKOUT:-$HOME/work/buildbuddy-io/buildbuddy}`, when it is
      available.
    - Trace frontend gates and backend authorization separately for UI access
      questions.

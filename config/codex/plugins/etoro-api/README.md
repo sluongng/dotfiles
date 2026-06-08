@@ -11,11 +11,12 @@ The plugin provides:
 
 ## Install
 
-    /home/nb/plugins/etoro-api/scripts/install-local.sh
+    "${ETORO_API_PLUGIN_DIR:-$HOME/plugins/etoro-api}/scripts/install-local.sh"
     command -v etoro-api
     etoro-api --help
 
-If the current shell does not include ~/.local/bin on PATH, use /home/nb/.local/bin/etoro-api directly or run:
+If the current shell does not include ~/.local/bin on PATH, use
+~/.local/bin/etoro-api directly or run:
 
     export PATH="$HOME/.local/bin:$PATH"
 

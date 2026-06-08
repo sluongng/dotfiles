@@ -1,6 +1,6 @@
 {
   "name": "etoro-api",
-  "version": "0.2.0+codex.20260606104124",
+  "version": "0.2.0+codex.20260608102531",
   "description": "Credential-safe eToro Public API CLI and Codex skills for portfolio decision trees, market data, and approval-gated trading execution.",
   "author": {
     "name": "Local developer"

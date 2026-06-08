@@ -5,7 +5,7 @@ Use these templates to identify a single action in an invocation and replay it w
 ## Quick start with helper script
 
 ```bash
-SKILL_DIR=/Users/sluongng/.dotfiles/config/codex/plugins/buildbuddy/skills/buildbuddy-action-reproduce
+SKILL_DIR="${BUILDBUDDY_ACTION_REPRO_SKILL_DIR:-<path-to-this-skill>}"
 
 "$SKILL_DIR/scripts/generate_bb_execute.py" \
   --invocation 'https://app.buildbuddy.io/invocation/<INVOCATION_ID>' \

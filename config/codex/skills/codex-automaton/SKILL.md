@@ -7,7 +7,7 @@ description: Manage local Codex CLI automations backed by systemd user timers. U
 
 ## Overview
 
-Use the installed `codex-automaton` CLI for local Codex automations. It stores automation TOML under `${XDG_CONFIG_HOME:-~/.config}/codex-automaton`, run state under `${XDG_STATE_HOME:-~/.local/state}/codex-automaton`, and schedules runs through `systemd --user`.
+Use the installed `codex-automaton` CLI for local Codex automations. It stores automation TOML under `${XDG_CONFIG_HOME:-$HOME/.config}/codex-automaton`, run state under `${XDG_STATE_HOME:-$HOME/.local/state}/codex-automaton`, and schedules runs through `systemd --user`.
 
 ## Start Here
 
@@ -76,9 +76,12 @@ Open the UI at `http://codex-automaton.localhost:8767/` or `http://127.0.0.1:876
 
 ## Useful Files
 
-- Project source: `/home/nb/work/misc/codex-automaton`
-- Installed binary: `/home/nb/.local/bin/codex-automaton`
-- Server unit: `/home/nb/.config/systemd/user/codex-automaton-server.service`
-- Automation service template: `/home/nb/.config/systemd/user/codex-automaton@.service`
-- Installed automations: `/home/nb/.config/codex-automaton/automations`
-- Run state: `/home/nb/.local/state/codex-automaton`
+- Project source: `${CODEX_AUTOMATON_REPO:-$HOME/work/misc/codex-automaton}`
+- Installed binary: `~/.local/bin/codex-automaton`
+- Server unit:
+  `${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/codex-automaton-server.service`
+- Automation service template:
+  `${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/codex-automaton@.service`
+- Installed automations:
+  `${XDG_CONFIG_HOME:-$HOME/.config}/codex-automaton/automations`
+- Run state: `${XDG_STATE_HOME:-$HOME/.local/state}/codex-automaton`

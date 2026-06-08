@@ -12,7 +12,7 @@ Use this skill to inspect live BCR metadata, answer repo-local Bzlmod version qu
 Resolve the helper CLI from this skill directory first. Do not assume the current repo has a `scripts/` or `tools/` copy of `bcr_tool.py`.
 
 - Canonical helper path:
-  - `SKILL_DIR=/Users/sluongng/.dotfiles/config/codex/skills/bazel-central-registry`
+  - `SKILL_DIR="${BCR_SKILL_DIR:-<path-to-this-skill>}"`
   - `BCR_TOOL="$SKILL_DIR/scripts/bcr_tool.py"`
 - Check which direct deps in a repo can be upgraded:
   - `python3 "$BCR_TOOL" check-upgrades --module-file /path/to/MODULE.bazel`

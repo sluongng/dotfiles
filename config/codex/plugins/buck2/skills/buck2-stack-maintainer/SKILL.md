@@ -1,14 +1,14 @@
 ---
 name: buck2-stack-maintainer
-description: Maintain the Buck2 BuildBuddy patch stack in /home/nb/work/facebook/buck2 by rebasing fork/stack onto origin/main, publishing bazel-rbe-style merge commits to fork/main with origin/main as first parent, triggering or polling BuildBuddy Workflows, and fixing failed stack commits.
+description: Maintain the Buck2 BuildBuddy patch stack in a local Buck2 checkout by rebasing fork/stack onto origin/main, publishing bazel-rbe-style merge commits to fork/main with origin/main as first parent, triggering or polling BuildBuddy Workflows, and fixing failed stack commits.
 ---
 
 # Buck2 Stack Maintainer
 
-Use this skill for the Buck2 fork stack in `/home/nb/work/facebook/buck2`.
-The durable stack branch is `fork/stack`. The public CI branch is
-`fork/main`. The retired `fork/sluongng/codex-bes` branch is not part of
-normal maintenance.
+Use this skill for the Buck2 fork stack in a local Buck2 checkout, usually
+`${BUCK2_CHECKOUT:-$HOME/work/facebook/buck2}`. The durable stack branch is
+`fork/stack`. The public CI branch is `fork/main`. The retired
+`fork/sluongng/codex-bes` branch is not part of normal maintenance.
 
 ## Invariants
 
@@ -35,7 +35,8 @@ normal maintenance.
    primary checkout before using `--wait-buildbuddy`:
 
    ```bash
-   ln -s /home/nb/work/facebook/buck2/.buckconfig.local .buckconfig.local
+   primary="${BUCK2_CHECKOUT:-$HOME/work/facebook/buck2}"
+   ln -s "$primary/.buckconfig.local" .buckconfig.local
    ```
 
 2. Dry-run the maintainer script from the Buck2 checkout. Use
@@ -43,7 +44,8 @@ normal maintenance.
    tip instead of `fork/stack`.
 
    ```bash
-   python3 /home/nb/.dotfiles/config/codex/plugins/buck2/skills/buck2-stack-maintainer/scripts/sync_stack.py \
+   skill_root="${BUCK2_STACK_SKILL_DIR:-<path-to-this-skill>}"
+   python3 "$skill_root/scripts/sync_stack.py" \
      --dry-run \
      --source-ref HEAD
    ```
@@ -53,7 +55,8 @@ normal maintenance.
    against the current merge commit:
 
    ```bash
-   python3 /home/nb/.dotfiles/config/codex/plugins/buck2/skills/buck2-stack-maintainer/scripts/sync_stack.py \
+   skill_root="${BUCK2_STACK_SKILL_DIR:-<path-to-this-skill>}"
+   python3 "$skill_root/scripts/sync_stack.py" \
      --check-buildbuddy-setup \
      --attempt-buildbuddy-link
    ```
@@ -71,7 +74,8 @@ normal maintenance.
    local stack tip rather than the current `fork/stack` remote branch.
 
    ```bash
-   python3 /home/nb/.dotfiles/config/codex/plugins/buck2/skills/buck2-stack-maintainer/scripts/sync_stack.py \
+   skill_root="${BUCK2_STACK_SKILL_DIR:-<path-to-this-skill>}"
+   python3 "$skill_root/scripts/sync_stack.py" \
      --apply \
      --source-ref HEAD
    ```
@@ -81,7 +85,8 @@ normal maintenance.
    `fork/stack` at the end:
 
    ```bash
-   python3 /home/nb/.dotfiles/config/codex/plugins/buck2/skills/buck2-stack-maintainer/scripts/sync_stack.py \
+   skill_root="${BUCK2_STACK_SKILL_DIR:-<path-to-this-skill>}"
+   python3 "$skill_root/scripts/sync_stack.py" \
      --apply --push --wait-buildbuddy --attempt-buildbuddy-link \
      --source-ref HEAD
    ```
