@@ -142,7 +142,6 @@ pack_add_specs({
   'nvim_metals',
   'vim_sneak',
   'copilot',
-  'vim_go',
   'onedark',
   'vim_helm',
 })
@@ -2143,6 +2142,54 @@ vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
 
 -- Enable filetype plugins
 vim.cmd('filetype plugin on')
+
+local function source_vim_go_runtime(filetype)
+  for _, runtime in ipairs({
+    { directory = 'ftplugin', guard = 'did_ftplugin' },
+    { directory = 'indent', guard = 'did_indent' },
+  }) do
+    local runtime_file = runtime.directory .. '/' .. filetype .. '.vim'
+    for _, path in ipairs(vim.api.nvim_get_runtime_file(runtime_file, true)) do
+      if path:find('/vim-go/', 1, true) then
+        local previous_guard = vim.b[runtime.guard]
+        vim.b[runtime.guard] = nil
+        vim.cmd.source(vim.fn.fnameescape(path))
+        if vim.b[runtime.guard] == nil then
+          vim.b[runtime.guard] = previous_guard
+        end
+      end
+    end
+  end
+
+  if filetype == 'go' then
+    for _, path in ipairs(vim.api.nvim_get_runtime_file('ftplugin/go/*.vim', true)) do
+      if path:find('/vim-go/', 1, true) then
+        vim.cmd.source(vim.fn.fnameescape(path))
+      end
+    end
+  end
+end
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = {
+    'go',
+    'gomod',
+    'gosum',
+    'gowork',
+    'gotmpl',
+    'gohtmltmpl',
+    'godoc',
+    'asm',
+  },
+  callback = function(args)
+    local source_late_runtime = not loaded_pack_groups.vim_go
+    pack_add_once('vim_go', { 'vim_go' })
+
+    if source_late_runtime then
+      source_vim_go_runtime(args.match)
+    end
+  end,
+})
 
 -- Golang settings
 vim.api.nvim_create_autocmd('FileType', {
