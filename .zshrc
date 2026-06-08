@@ -252,13 +252,21 @@ export PATH="/opt/homebrew/opt/curl/bin:$PATH"
 export PATH="/opt/homebrew/opt/bison/bin:$PATH"
 
 # gsutil currently supports Python 3.9-3.13; prefer uv-managed 3.13 when available.
-if command -v uv >/dev/null 2>&1; then
-  _gsutil_python="$(uv python find 3.13 2>/dev/null)"
-  if [[ -n "${_gsutil_python}" ]]; then
-    export CLOUDSDK_PYTHON="${_gsutil_python}"
-  fi
-  unset _gsutil_python
+_gsutil_python_cache="${XDG_CACHE_HOME:-$HOME/.cache}/gsutil-python-3.13"
+if [[ -r "${_gsutil_python_cache}" ]]; then
+  _gsutil_python="$(<"${_gsutil_python_cache}")"
 fi
+if [[ ! -x "${_gsutil_python:-}" ]] && command -v uv >/dev/null 2>&1; then
+  _gsutil_python="$(uv python find 3.13 2>/dev/null)"
+  if [[ -x "${_gsutil_python}" ]]; then
+    mkdir -p "${_gsutil_python_cache:h}"
+    print -r -- "${_gsutil_python}" >| "${_gsutil_python_cache}"
+  fi
+fi
+if [[ -x "${_gsutil_python:-}" ]]; then
+  export CLOUDSDK_PYTHON="${_gsutil_python}"
+fi
+unset _gsutil_python _gsutil_python_cache
 
 
 # Added by Antigravity CLI installer
