@@ -58,53 +58,102 @@ vim.g.airline_extensions_nvimlsp_enabled = 1
 local neotest_bazel_dir = vim.fs.normalize(vim.fn.expand('~/work/misc/neotest-bazel'))
 local neotest_bazel_src = vim.uv.fs_stat(neotest_bazel_dir) and neotest_bazel_dir or 'https://github.com/sluongng/neotest-bazel'
 
-vim.pack.add({
+local pack_specs = {
   -- Utilities
-  'https://github.com/lewis6991/fileline.nvim',
-  'https://github.com/ibhagwan/fzf-lua',
-  'https://github.com/nvim-tree/nvim-web-devicons',
-  'https://github.com/junegunn/vim-peekaboo',
-  'https://github.com/tpope/vim-fugitive',
-  'https://github.com/tpope/vim-surround',
-  'https://github.com/tpope/vim-repeat',
+  fileline = 'https://github.com/lewis6991/fileline.nvim',
+  fzf_lua = 'https://github.com/ibhagwan/fzf-lua',
+  nvim_web_devicons = 'https://github.com/nvim-tree/nvim-web-devicons',
+  vim_peekaboo = 'https://github.com/junegunn/vim-peekaboo',
+  vim_fugitive = 'https://github.com/tpope/vim-fugitive',
+  vim_surround = 'https://github.com/tpope/vim-surround',
+  vim_repeat = 'https://github.com/tpope/vim-repeat',
 
   -- Indentation
-  'https://github.com/lukas-reineke/indent-blankline.nvim',
+  indent_blankline = 'https://github.com/lukas-reineke/indent-blankline.nvim',
 
   -- Status bar
-  'https://github.com/vim-airline/vim-airline',
-  'https://github.com/airblade/vim-gitgutter',
+  vim_airline = 'https://github.com/vim-airline/vim-airline',
+  vim_gitgutter = 'https://github.com/airblade/vim-gitgutter',
 
   -- TreeSitter
-  'https://github.com/nvim-treesitter/nvim-treesitter',
-  'https://github.com/nvim-treesitter/playground',
+  nvim_treesitter = 'https://github.com/nvim-treesitter/nvim-treesitter',
+  playground = 'https://github.com/nvim-treesitter/playground',
 
   -- LSP Client
-  'https://github.com/hrsh7th/cmp-buffer',
-  'https://github.com/hrsh7th/cmp-nvim-lsp',
-  'https://github.com/hrsh7th/cmp-path',
-  'https://github.com/hrsh7th/nvim-cmp',
-  'https://github.com/neovim/nvim-lspconfig',
-  'https://github.com/scalameta/nvim-metals',
+  cmp_buffer = 'https://github.com/hrsh7th/cmp-buffer',
+  cmp_nvim_lsp = 'https://github.com/hrsh7th/cmp-nvim-lsp',
+  cmp_path = 'https://github.com/hrsh7th/cmp-path',
+  nvim_cmp = 'https://github.com/hrsh7th/nvim-cmp',
+  nvim_lspconfig = 'https://github.com/neovim/nvim-lspconfig',
+  nvim_metals = 'https://github.com/scalameta/nvim-metals',
 
   -- Sneak
-  'https://github.com/justinmk/vim-sneak',
+  vim_sneak = 'https://github.com/justinmk/vim-sneak',
 
   -- Copilot
-  'https://github.com/github/copilot.vim',
+  copilot = 'https://github.com/github/copilot.vim',
 
   -- Golang
-  'https://github.com/fatih/vim-go',
+  vim_go = 'https://github.com/fatih/vim-go',
 
   -- Neotest
-  'https://github.com/nvim-lua/plenary.nvim',
-  'https://github.com/nvim-neotest/nvim-nio',
-  'https://github.com/nvim-neotest/neotest',
-  neotest_bazel_src,
+  plenary = 'https://github.com/nvim-lua/plenary.nvim',
+  nvim_nio = 'https://github.com/nvim-neotest/nvim-nio',
+  neotest = 'https://github.com/nvim-neotest/neotest',
+  neotest_bazel = neotest_bazel_src,
 
   -- Coloring
-  'https://github.com/joshdick/onedark.vim',
-  'https://github.com/towolf/vim-helm',
+  onedark = 'https://github.com/joshdick/onedark.vim',
+  vim_helm = 'https://github.com/towolf/vim-helm',
+}
+
+local loaded_pack_groups = {}
+
+local function pack_add_specs(names)
+  local specs = {}
+  for _, name in ipairs(names) do
+    local spec = assert(pack_specs[name], name)
+    table.insert(specs, spec)
+  end
+
+  vim.pack.add(specs, { confirm = false })
+end
+
+local function pack_add_once(group, names)
+  if loaded_pack_groups[group] then
+    return
+  end
+
+  pack_add_specs(names)
+  loaded_pack_groups[group] = true
+end
+
+pack_add_specs({
+  'fileline',
+  'vim_peekaboo',
+  'vim_fugitive',
+  'vim_surround',
+  'vim_repeat',
+  'indent_blankline',
+  'vim_airline',
+  'vim_gitgutter',
+  'nvim_treesitter',
+  'playground',
+  'cmp_buffer',
+  'cmp_nvim_lsp',
+  'cmp_path',
+  'nvim_cmp',
+  'nvim_lspconfig',
+  'nvim_metals',
+  'vim_sneak',
+  'copilot',
+  'vim_go',
+  'plenary',
+  'nvim_nio',
+  'neotest',
+  'neotest_bazel',
+  'onedark',
+  'vim_helm',
 })
 
 -- Neovim 0.12+ can pass a list of nodes for query captures, but the archived
@@ -1868,18 +1917,63 @@ vim.g.copilot_assume_mapped = true
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> fzf.vim >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 --  Doc: https://github.com/junegunn/fzf.vim
 --  Make fzf use neovim floating window
-pcall(require, "nvim-web-devicons")
-require("fzf-lua").setup({ "fzf-vim" })
+local fzf_lua_ready = false
+local fzf_lua_commands = { 'FzfLua', 'Commands', 'Buffers', 'Tags' }
+
+local function delete_fzf_lua_commands()
+  for _, command in ipairs(fzf_lua_commands) do
+    pcall(vim.api.nvim_del_user_command, command)
+  end
+end
+
+local function ensure_fzf_lua()
+  if not loaded_pack_groups.fzf_lua then
+    delete_fzf_lua_commands()
+  end
+  pack_add_once('fzf_lua', { 'nvim_web_devicons', 'fzf_lua' })
+
+  if not fzf_lua_ready then
+    pcall(require, "nvim-web-devicons")
+    require("fzf-lua").setup({ "fzf-vim" })
+    fzf_lua_ready = true
+  end
+
+  return require("fzf-lua")
+end
+
+vim.api.nvim_create_user_command('FzfLua', function(command_opts)
+  ensure_fzf_lua()
+  require("fzf-lua.cmd").run_command(unpack(command_opts.fargs))
+end, {
+  nargs = '*',
+  range = true,
+})
+
+for _, command in ipairs({ 'Commands', 'Buffers', 'Tags' }) do
+  vim.api.nvim_create_user_command(command, function(command_opts)
+    ensure_fzf_lua()
+    vim.api.nvim_cmd({
+      cmd = command,
+      args = command_opts.fargs,
+      bang = command_opts.bang,
+    }, {})
+  end, {
+    nargs = '*',
+    bang = true,
+  })
+end
 
 local opts = { noremap = true, silent = false }
 local silent_opts = { noremap = true, silent = true }
 
 -- Some QoL shortcuts
-vim.api.nvim_set_keymap('n', '<leader>a', ':Commands<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>b', ':Buffers<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>f', ':FzfLua files<CR>', opts)
-vim.api.nvim_set_keymap('n', '<leader>r', ':FzfLua grep search=<C-R><C-W><CR>', silent_opts)
-vim.api.nvim_set_keymap('n', '<leader>t', ':Tags <C-R><C-W><CR>', silent_opts)
+map('n', '<leader>a', function() ensure_fzf_lua().commands() end, opts)
+map('n', '<leader>b', function() ensure_fzf_lua().buffers() end, opts)
+map('n', '<leader>f', function() ensure_fzf_lua().files() end, opts)
+map('n', '<leader>r', function() ensure_fzf_lua().grep_cword() end, silent_opts)
+map('n', '<leader>t', function()
+  ensure_fzf_lua().tags({ query = vim.fn.expand('<cword>') })
+end, silent_opts)
 
 -- Key mappings for Airline Tab navigation
 vim.api.nvim_set_keymap('n', '<leader>1', '<Plug>AirlineSelectTab1<CR>', opts)
