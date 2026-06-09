@@ -2,7 +2,9 @@
 
 ## Fixed Values
 
-- CLI: `codex-linux-extension-host`
+- CLI: `codex-linux-extension-host`, or
+  `$HOME/.local/bin/codex-linux-extension-host` when the Codex shell PATH does
+  not include `$HOME/.local/bin`
 - Native messaging host name: `com.openai.codexextension`
 - Extension ID: `hehggadaopoacecdllhhajmbjkdcmajg`
 - Manifest path: `~/.config/google-chrome/NativeMessagingHosts/com.openai.codexextension.json`
@@ -39,6 +41,9 @@ is running but Chrome has not connected the extension yet.
 - `cdp --tab-id <id> <method> --params <json>`: extension `executeCdp`.
 - `navigate <url> [--tab-id <id>]`: create or use a tab, attach, and run CDP
   `Page.navigate`.
+- `name-session <name>`: extension `nameSession`.
+- `finalize-tabs [--keep <tab-id>[:handoff|deliverable]]...`: extension
+  `finalizeTabs`.
 - `turn-ended`: extension `turnEnded`.
 
 Most commands inject `session_id` and `turn_id` into params. Defaults come from
@@ -57,7 +62,8 @@ make install-local
 If the manifest points at an old path, reinstall it:
 
 ```bash
-codex-linux-extension-host --json install-manifest --host-path "$(command -v codex-linux-extension-host)"
+HOST_BIN="$(command -v codex-linux-extension-host || printf '%s' "$HOME/.local/bin/codex-linux-extension-host")"
+"$HOST_BIN" --json install-manifest --host-path "$HOST_BIN"
 ```
 
 If `bridge-socket-ping` is false, Chrome has not started the native host or the
