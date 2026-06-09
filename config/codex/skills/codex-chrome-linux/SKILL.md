@@ -17,15 +17,16 @@ troubleshooting details matter.
 1. Verify the CLI and bridge health:
 
 ```bash
-command -v codex-linux-extension-host
-codex-linux-extension-host --json doctor
+HOST_BIN="$(command -v codex-linux-extension-host || printf '%s' "$HOME/.local/bin/codex-linux-extension-host")"
+"$HOST_BIN" --json doctor
 ```
 
 2. If `manifest-json`, `manifest-origin`, or `manifest-host-path` is false,
 install the Chrome native messaging manifest, then restart or trigger Chrome:
 
 ```bash
-codex-linux-extension-host --json install-manifest --host-path "$(command -v codex-linux-extension-host)"
+HOST_BIN="$(command -v codex-linux-extension-host || printf '%s' "$HOME/.local/bin/codex-linux-extension-host")"
+"$HOST_BIN" --json install-manifest --host-path "$HOST_BIN"
 ```
 
 3. Confirm the Codex Chrome Extension is installed and enabled. Extension ID:
@@ -51,11 +52,14 @@ codex-linux-extension-host --json history --limit 10
 ```
 
 6. Use browser-control commands only when requested: `create-tab`,
-`claim-tab`, `navigate`, `attach`, `cdp`, `detach`, and `turn-ended`.
+`claim-tab`, `navigate`, `attach`, `cdp`, `detach`, `name-session`,
+`finalize-tabs`, and `turn-ended`.
 
-7. Release controls after browser work:
+7. Finalize session tabs after browser work, keeping only deliverable or
+   handoff tabs. Then release controls for the turn:
 
 ```bash
+codex-linux-extension-host --json finalize-tabs
 codex-linux-extension-host --json turn-ended
 ```
 
@@ -71,6 +75,12 @@ Navigate with a session tab:
 
 ```bash
 codex-linux-extension-host --json navigate https://example.com --session codex-manual --turn nav
+```
+
+Finalize the session, keeping a tab for handoff:
+
+```bash
+codex-linux-extension-host --json finalize-tabs --session codex-manual --turn nav --keep 123:handoff
 ```
 
 Evaluate JavaScript after claiming, creating, or navigating a tab:
