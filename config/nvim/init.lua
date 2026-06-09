@@ -1805,7 +1805,7 @@ local function ensure_cmp()
     return
   end
 
-  pack_add_once('cmp', { 'cmp_buffer', 'cmp_path', 'nvim_cmp' })
+  pack_add_once('cmp', { 'nvim_cmp', 'cmp_buffer', 'cmp_path' })
 
   local cmp = require('cmp')
   local compare = require('cmp.config.compare')
