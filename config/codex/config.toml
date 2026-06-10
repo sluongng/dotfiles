@@ -47,7 +47,7 @@ unified_exec = true
 unified_exec_zsh_fork = true
 
 [features.multi_agent_v2]
-enabled = true
+enabled = false
 max_concurrent_threads_per_session = 13 # counts root; preserves 12 spawned agents
 
 [agents]
