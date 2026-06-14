@@ -1,0 +1,19 @@
+{
+  "name": "tinytree-dev",
+  "displayName": "TinyTree Dev",
+  "version": "0.1.0",
+  "description": "TinyTree development helpers for product-page and devtools landing-page work.",
+  "author": {
+    "name": "Sluong Ng",
+    "url": "https://github.com/sluongng"
+  },
+  "homepage": "https://tinytree.dev/",
+  "repository": "https://github.com/sluongng/dotfiles",
+  "keywords": [
+    "tinytree",
+    "devtools",
+    "landing-page",
+    "frontend"
+  ],
+  "skills": "./skills/"
+}
