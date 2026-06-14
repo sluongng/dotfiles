@@ -1,6 +1,6 @@
 ---
 name: buildbuddy
-description: Route public BuildBuddy troubleshooting, invocation comparison, action reproduction, log-root-cause, flaky-test, and usage-analysis requests to the focused BuildBuddy skills bundled in this plugin.
+description: Route public BuildBuddy troubleshooting, source research, invocation comparison, action reproduction, log-root-cause, flaky-test, and usage-analysis requests to the focused BuildBuddy skills bundled in this plugin.
 ---
 
 # BuildBuddy
@@ -38,6 +38,12 @@ Route by user intent:
   warnings, BES upload failures, confusing invocation IDs, or source-backed
   root-cause questions without a clean invocation URL:
   `../buildbuddy-log-root-cause/SKILL.md`
+- Source-backed questions spanning Bazel client behavior, BuildBuddy server,
+  executor or toolchain images, Helm chart settings, Bazelisk versions,
+  regressions, or large-repo history across `bazelbuild/bazel`,
+  `buildbuddy-io/buildbuddy`, `buildbuddy-io/buildbuddy-toolchains`, and
+  `buildbuddy-io/buildbuddy-helm`:
+  `../ask-buddy/SKILL.md`
 - Billing, usage, trends, heatmaps, drilldowns, cost anomalies, or projections:
   `../buildbuddy-usage-analysis/SKILL.md`
 

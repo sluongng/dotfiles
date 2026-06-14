@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ask Buddy"
+  short_description: "Research BuildBuddy+Bazel source issues"
+  default_prompt: "Use $ask-buddy to investigate this BuildBuddy and Bazel issue from source."
