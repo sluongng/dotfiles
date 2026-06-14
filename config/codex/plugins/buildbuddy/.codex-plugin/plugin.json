@@ -1,7 +1,7 @@
 {
   "name": "buildbuddy",
-  "version": "0.1.1+codex.20260608102531",
-  "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, diagnose log snippets, and analyze usage.",
+  "version": "0.1.1+codex.20260614075315",
+  "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, diagnose log snippets, analyze usage, and research BuildBuddy+Bazel source behavior.",
   "author": {
     "name": "Sluong Ng",
     "url": "https://github.com/sluongng"
@@ -18,13 +18,17 @@
     "flaky-tests",
     "logs",
     "bes",
-    "sidecar"
+    "sidecar",
+    "source-research",
+    "toolchains",
+    "helm",
+    "bazelisk"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "BuildBuddy",
-    "shortDescription": "Debug BuildBuddy invocations, logs, flakes, and usage",
-    "longDescription": "Use BuildBuddy to troubleshoot invocations, compare cache and action behavior, reproduce remote actions with bb execute, inspect recent flaky tests, diagnose BuildBuddy or bb CLI log snippets, and analyze billing or usage trends while protecting API keys.",
+    "shortDescription": "Debug BuildBuddy invocations, logs, flakes, usage, and source behavior",
+    "longDescription": "Use BuildBuddy to troubleshoot invocations, compare cache and action behavior, reproduce remote actions with bb execute, inspect recent flaky tests, diagnose BuildBuddy or bb CLI log snippets, analyze billing or usage trends, and research BuildBuddy+Bazel behavior across Bazel, BuildBuddy, toolchain, and Helm chart source while protecting API keys.",
     "developerName": "Sluong Ng",
     "category": "Coding",
     "capabilities": [
@@ -38,7 +42,8 @@
       "Compare these two BuildBuddy invocations",
       "Analyze BuildBuddy usage for this group",
       "Fetch recent flaky tests from BuildBuddy",
-      "Diagnose this BuildBuddy log snippet"
+      "Diagnose this BuildBuddy log snippet",
+      "Use ask-buddy to investigate this BuildBuddy+Bazel issue from source"
     ],
     "brandColor": "#2563EB",
     "screenshots": []

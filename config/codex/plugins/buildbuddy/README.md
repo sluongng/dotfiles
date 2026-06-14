@@ -8,6 +8,8 @@ dotfiles:
 - remote action replay command generation
 - flaky-test listing and triage from Test Analytics target stats
 - usage and billing trend analysis
+- source-backed BuildBuddy+Bazel research across Bazel, BuildBuddy,
+  BuildBuddy toolchains, and BuildBuddy Helm chart repos
 
 BuildBuddy also exposes an official MCP server at
 `https://<your-org>.buildbuddy.io/mcp`. Treat it as an optional convenience
