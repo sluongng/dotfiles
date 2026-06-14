@@ -155,6 +155,12 @@ fi
 # FZF
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
+# Sourcegraph local MCP token for Codex.
+if [[ -z "${SOURCEGRAPH_MCP_TOKEN:-}" && -r "$HOME/.local/share/sourcegraph/admin-credentials" ]]; then
+  SOURCEGRAPH_MCP_TOKEN="$(awk -F= '$1=="mcp_token"{print substr($0,index($0,$2)); exit}' "$HOME/.local/share/sourcegraph/admin-credentials")"
+  export SOURCEGRAPH_MCP_TOKEN
+fi
+
 
 ## Use sharkdp/fd for faster finding
 export FZF_DEFAULT_COMMAND='fd --type file'
