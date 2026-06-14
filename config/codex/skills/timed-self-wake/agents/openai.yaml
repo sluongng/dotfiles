@@ -1,0 +1,4 @@
+interface:
+  display_name: "Timed Self Wake"
+  short_description: "Schedule Codex wake-ups with systemd timers."
+  default_prompt: "Use $timed-self-wake to schedule a one-time Codex wake-up for a future time with preserved context and guardrails."
