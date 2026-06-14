@@ -1,0 +1,9 @@
+# Python bytecode from bundled skill/plugin scripts.
+__pycache__/
+*.pyc
+
+# Machine-local and development-only state stays out of dotfiles git.
+local/
+plugins/buildbuddy-dev/
+settings.local.json
+*.local.json
