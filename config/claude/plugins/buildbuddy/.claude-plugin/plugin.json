@@ -1,0 +1,25 @@
+{
+  "name": "buildbuddy",
+  "displayName": "BuildBuddy",
+  "version": "0.1.1",
+  "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, diagnose log snippets, and analyze usage.",
+  "author": {
+    "name": "Sluong Ng",
+    "url": "https://github.com/sluongng"
+  },
+  "homepage": "https://www.buildbuddy.io/",
+  "repository": "https://github.com/sluongng/dotfiles",
+  "keywords": [
+    "buildbuddy",
+    "bazel",
+    "remote-execution",
+    "invocations",
+    "usage",
+    "flakes",
+    "flaky-tests",
+    "logs",
+    "bes",
+    "sidecar"
+  ],
+  "skills": "./skills/"
+}

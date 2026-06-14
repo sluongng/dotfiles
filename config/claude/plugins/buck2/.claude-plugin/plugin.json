@@ -1,0 +1,23 @@
+{
+  "name": "buck2",
+  "displayName": "Buck2",
+  "version": "0.1.0",
+  "description": "Local Buck2 fork maintenance and adoption helpers for the BuildBuddy-backed patch stack.",
+  "author": {
+    "name": "Sluong Ng",
+    "url": "https://github.com/sluongng"
+  },
+  "homepage": "https://github.com/facebook/buck2",
+  "repository": "https://github.com/sluongng/dotfiles",
+  "keywords": [
+    "buck2",
+    "buildbuddy",
+    "fork",
+    "stack",
+    "bazel",
+    "bcr",
+    "workflows",
+    "release"
+  ],
+  "skills": "./skills/"
+}
