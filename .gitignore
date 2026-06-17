@@ -9,3 +9,6 @@ __pycache__
 # Generally we do not want to track the exact brew package
 # version but stick to latest is fine. So no need for pinning this
 Brewfile.lock.json
+
+# Keep local eToro plugin copies available without tracking updates.
+config/*/plugins/etoro-api/

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Portfolio Decision Tree"
-  short_description: "Build fee-aware trade decision trees"
-  default_prompt: "Use $portfolio-decision-tree to refresh my portfolio and produce a fee-aware trade or no-trade decision tree."
