@@ -11,7 +11,16 @@ XDG_RUNTIME_DIR
 DBUS_SESSION_BUS_ADDRESS
 "
 
+sourcegraph_credentials="$HOME/.local/share/sourcegraph/admin-credentials"
+if [ -z "${SOURCEGRAPH_MCP_TOKEN:-}" ] && [ -r "$sourcegraph_credentials" ]; then
+  SOURCEGRAPH_MCP_TOKEN="$(awk -F= '$1=="mcp_token"{print substr($0,index($0,$2)); exit}' "$sourcegraph_credentials")"
+  export SOURCEGRAPH_MCP_TOKEN
+fi
+
 systemctl --user import-environment $env_vars
+if [ -n "${SOURCEGRAPH_MCP_TOKEN:-}" ]; then
+  systemctl --user import-environment SOURCEGRAPH_MCP_TOKEN
+fi
 
 if command -v dbus-update-activation-environment >/dev/null 2>&1; then
   dbus-update-activation-environment --systemd $env_vars
@@ -32,5 +41,13 @@ if [ "$main_pid" != "0" ]; then
     grep -E '^(DISPLAY|WAYLAND_DISPLAY|HYPRLAND_INSTANCE_SIGNATURE|XDG_CURRENT_DESKTOP|XDG_SESSION_TYPE|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS)='
   then
     printf 'Unable to read /proc/%s/environ from this context.\n' "$main_pid"
+  fi
+
+  if tr '\0' '\n' <"/proc/$main_pid/environ" 2>/dev/null |
+    grep -q '^SOURCEGRAPH_MCP_TOKEN='
+  then
+    printf 'SOURCEGRAPH_MCP_TOKEN=<set>\n'
+  else
+    printf 'SOURCEGRAPH_MCP_TOKEN=<missing>\n'
   fi
 fi
