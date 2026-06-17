@@ -41,7 +41,7 @@
       "src": "https://github.com/hrsh7th/nvim-cmp"
     },
     "nvim-lspconfig": {
-      "rev": "07dff35e7c95288861200b788ef32d6103f107f0",
+      "rev": "a683e0ddf0cf64c6cd689e18ffb480ade3c162b7",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-metals": {
@@ -73,7 +73,7 @@
       "src": "https://github.com/nvim-lua/plenary.nvim"
     },
     "vim-airline": {
-      "rev": "f02ddb633868d0b1e83f2612b5b25ef1ecd210db",
+      "rev": "9e0beefd6e28c92d876559f07d8595f454c08cb7",
       "src": "https://github.com/vim-airline/vim-airline"
     },
     "vim-fugitive": {
