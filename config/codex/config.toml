@@ -31,13 +31,11 @@ code_mode = true
 code_mode_only = true
 default_mode_request_user_input = true
 enable_fanout = true
-external_migration = true
 goals = true
 local_thread_store_compression = true
 memories = true
 mentions_v2 = true
 prevent_idle_sleep = true
-realtime_conversation = true
 remote_compaction_v2 = true
 runtime_metrics = true
 # Use Codex's bundled zsh fork from the installed package; leave zsh_path unset
