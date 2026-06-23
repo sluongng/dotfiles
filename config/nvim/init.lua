@@ -35,8 +35,15 @@ vim.g.go_gopls_gofumpt = 0
 vim.filetype.add({
   extension = {
     bazelrc = 'bazelrc',
+    bxl = 'bzl',
     gotmpl = 'gotmpl',
     tmpl = 'gotmpl',
+  },
+  filename = {
+    BUCK = 'bzl',
+    ['BUCK.v2'] = 'bzl',
+    PACKAGE = 'bzl',
+    TARGETS = 'bzl',
   },
 })
 
@@ -1686,6 +1693,57 @@ local function enable_lsp_config(name, overrides)
   vim.lsp.enable(name)
 end
 
+local function buffer_search_path(bufnr)
+  local name = vim.api.nvim_buf_get_name(bufnr)
+  if name ~= '' then
+    return vim.fs.dirname(name)
+  end
+  return vim.fn.getcwd()
+end
+
+local function starlark_root(bufnr, markers)
+  local marker = vim.fs.find(markers, {
+    upward = true,
+    path = buffer_search_path(bufnr),
+  })[1]
+  return marker and vim.fs.dirname(marker) or nil
+end
+
+local bazel_starlark_markers = { 'WORKSPACE', 'WORKSPACE.bazel', 'MODULE.bazel' }
+local buck2_starlark_markers = { '.buckconfig', '.buckroot' }
+
+local function buck2_lsp_cmd(root_dir)
+  if vim.fn.executable('buck2') == 1 then
+    return { 'buck2', 'lsp' }
+  end
+
+  local repo_local_buck2 = vim.fs.joinpath(root_dir, 'bootstrap', 'buck2')
+  if vim.fn.executable(repo_local_buck2) == 1 then
+    return { repo_local_buck2, 'lsp' }
+  end
+
+  return nil
+end
+
+local function buck2_lsp_dispatchers(dispatchers)
+  local original_on_error = dispatchers.on_error
+  return vim.tbl_extend('force', dispatchers, {
+    on_error = function(errkind, err)
+      if errkind == vim.lsp.rpc.client_errors.INVALID_SERVER_MESSAGE
+          and type(err) == 'table'
+          and err.jsonrpc == '2.0'
+          and err.id ~= nil
+          and err.method == nil
+          and err.result == nil
+          and err.error == nil then
+        return
+      end
+
+      return original_on_error(errkind, err)
+    end,
+  })
+end
+
 enable_lsp_config('gopls', {
   settings = {
     gopls = {
@@ -1747,7 +1805,32 @@ enable_lsp_config('rust_analyzer', {
   },
 })
 
-enable_lsp_config('starpls')
+enable_lsp_config('starpls', {
+  root_dir = function(bufnr, on_dir)
+    if starlark_root(bufnr, buck2_starlark_markers) then
+      return
+    end
+
+    local root = starlark_root(bufnr, bazel_starlark_markers)
+    if root then
+      on_dir(root)
+    end
+  end,
+})
+
+enable_lsp_config('buck2', {
+  cmd = function(dispatchers, config)
+    return vim.lsp.rpc.start(buck2_lsp_cmd(config.root_dir), buck2_lsp_dispatchers(dispatchers), {
+      cwd = config.root_dir,
+    })
+  end,
+  root_dir = function(bufnr, on_dir)
+    local root = starlark_root(bufnr, buck2_starlark_markers)
+    if root and buck2_lsp_cmd(root) then
+      on_dir(root)
+    end
+  end,
+})
 enable_lsp_config('bazelrc_lsp')
 enable_lsp_config('protols')
 enable_lsp_config('ts_ls')
