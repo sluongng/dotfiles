@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agy Consult"
+  short_description: "Run agy as a fast read-only scout."
+  default_prompt: "Use $agy-consult to run a fast read-only Antigravity CLI scout on this repo and verify its findings before acting."
