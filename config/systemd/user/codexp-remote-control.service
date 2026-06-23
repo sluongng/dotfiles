@@ -1,0 +1,22 @@
+[Unit]
+Description=Codex Personal Remote Control
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/codex app-server --remote-control --listen unix://
+Restart=on-failure
+RestartSec=5s
+WorkingDirectory=/home/nb
+Environment=HOME=/home/nb
+Environment=CODEX_HOME=/home/nb/.codexp
+# Keep active remote Codex sessions from flooding journald, but retain the
+# transport details needed to diagnose ChatGPT iOS remote-control failures.
+Environment=RUST_LOG=warn,codex_app_server_transport::transport::remote_control=debug,codex_app_server_transport::transport::unix_socket=debug
+Environment=RUST_BACKTRACE=1
+SyslogIdentifier=codexp-remote-control
+LogRateLimitIntervalSec=0
+
+[Install]
+WantedBy=default.target
