@@ -236,6 +236,111 @@ alias cat=bat
 alias ls=eza # eza is not actively mantained
 # alias bazel=bazelisk
 
+# Use the stock Codex profile automatically for the stock-analysis checkout.
+_codex_uses_stock_profile() {
+  local target="$PWD"
+  local stock_root="$HOME/work/misc/stock"
+  local expect_cd_arg=0
+  local arg
+
+  stock_root="${stock_root:A}"
+  for arg in "$@"; do
+    if (( expect_cd_arg )); then
+      target="$arg"
+      expect_cd_arg=0
+      continue
+    fi
+
+    case "$arg" in
+      --profile|-p|--profile=*|-p?*)
+        return 1
+        ;;
+      --cd|-C)
+        expect_cd_arg=1
+        ;;
+      --cd=*)
+        target="${arg#--cd=}"
+        ;;
+      -C?*)
+        target="${arg#-C}"
+        ;;
+      --)
+        break
+        ;;
+    esac
+  done
+
+  target="${target:A}"
+  [[ "$target" == "$stock_root" || "$target" == "$stock_root/"* ]]
+}
+
+_codex_profile_supports_command() {
+  local expect_value=0
+  local arg
+  local -a positional
+
+  for arg in "$@"; do
+    if (( expect_value )); then
+      expect_value=0
+      continue
+    fi
+
+    case "$arg" in
+      --help|-h|--version|-V)
+        return 1
+        ;;
+      -c|--config|-i|--image|-m|--model|-p|--profile|-s|--sandbox|-C|--cd|--add-dir|-a|--ask-for-approval|--remote|--remote-auth-token-env|--local-provider)
+        expect_value=1
+        ;;
+      --config=*|--image=*|--model=*|--profile=*|--sandbox=*|--cd=*|--add-dir=*|--ask-for-approval=*|--remote=*|--remote-auth-token-env=*|--local-provider=*)
+        ;;
+      -[cipmsaC]?*)
+        ;;
+      --)
+        break
+        ;;
+      --*)
+        ;;
+      -*)
+        ;;
+      *)
+        positional+=("$arg")
+        ;;
+    esac
+  done
+
+  case "${positional[1]}" in
+    ""|exec|e|review|resume|archive|delete|unarchive|fork|mcp|sandbox)
+      return 0
+      ;;
+    debug)
+      [[ "${positional[2]}" == "prompt-input" ]]
+      return
+      ;;
+    login|logout|plugin|mcp-server|app-server|remote-control|completion|update|doctor|apply|a|cloud|exec-server|features|help)
+      return 1
+      ;;
+    *)
+      # Unknown first positional arguments are treated as interactive prompts.
+      return 0
+      ;;
+  esac
+}
+
+codex() {
+  local codex_home="${CODEX_HOME:-$HOME/.codex}"
+
+  if [[ "${CODEX_STOCK_PROFILE_AUTO:-1}" != 0 ]] &&
+     [[ "${codex_home:A}" == "${HOME}/.codex" ]] &&
+     _codex_profile_supports_command "$@" &&
+     _codex_uses_stock_profile "$@"; then
+    command codex --profile stock "$@"
+    return
+  fi
+
+  command codex "$@"
+}
+
 # Containers
 if command -v kubectl >/dev/null 2>&1; then
   alias kb=kubectl
