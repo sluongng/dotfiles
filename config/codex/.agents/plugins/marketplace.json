@@ -51,6 +51,18 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity"
+    },
+    {
+      "name": "codex-security-cloud",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-security-cloud"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
     }
   ]
 }

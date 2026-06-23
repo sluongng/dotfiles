@@ -1,0 +1,31 @@
+{
+  "name": "codex-security-cloud",
+  "version": "0.1.0",
+  "description": "Access Codex Security Cloud scan findings from local Codex credentials.",
+  "author": {
+    "name": "Personal"
+  },
+  "keywords": [
+    "codex",
+    "security",
+    "aardvark",
+    "findings"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Security Cloud",
+    "shortDescription": "List and inspect Codex Security Cloud findings.",
+    "longDescription": "Codex Security Cloud adds local workflows for querying ChatGPT-hosted Codex Security Cloud Aardvark findings through a logged-in Chrome context and local Codex ChatGPT credentials.",
+    "developerName": "Personal",
+    "category": "Productivity",
+    "capabilities": [
+      "Security",
+      "Browser"
+    ],
+    "defaultPrompt": [
+      "List Codex Security Cloud findings for this repo.",
+      "Show the latest Codex Security Cloud finding details.",
+      "Check which Codex Security Cloud repos are accessible."
+    ]
+  }
+}
