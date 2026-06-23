@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# Last reviewed for codex-cli v0.137.0 and current main on 2026-06-04.
+# Last reviewed for codex-cli v0.143.0-alpha.5 and current main on 2026-06-23.
 
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
@@ -22,14 +22,17 @@ project_doc_fallback_filenames = [
 
 suppress_unstable_features_warning = true
 personality = "pragmatic"
-service_tier = "fast"
+service_tier = "default"
+
+[tools.experimental_request_user_input]
+enabled = false
+
 [features]
 apply_patch_streaming_events = true
 auth_elicitation = true
-child_agents_md = true
-code_mode = true
-code_mode_only = true
-default_mode_request_user_input = true
+code_mode = false
+code_mode_only = false
+default_mode_request_user_input = false
 enable_fanout = true
 goals = true
 local_thread_store_compression = true
@@ -38,6 +41,7 @@ mentions_v2 = true
 prevent_idle_sleep = true
 remote_compaction_v2 = true
 runtime_metrics = true
+sleep_tool = true
 # Use Codex's bundled zsh fork from the installed package; leave zsh_path unset
 # so each installation can resolve its own packaged binary.
 shell_zsh_fork = true
