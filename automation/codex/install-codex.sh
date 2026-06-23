@@ -52,9 +52,16 @@ prune_stale_skill_links() {
 
   while IFS= read -r target_path; do
     current_target="$(readlink "${target_path}")"
-    if [[ "${current_target}" == "${SOURCE_DIR}/skills/"* ]] && [ ! -e "${current_target}" ]; then
+    if [[ "${current_target}" != "${SOURCE_DIR}/skills/"* ]]; then
+      continue
+    fi
+
+    if [ ! -e "${current_target}" ]; then
       rm "${target_path}"
       echo "Removed stale skill link ${target_path}"
+    elif [ ! -f "${current_target}/SKILL.md" ]; then
+      rm "${target_path}"
+      echo "Removed non-skill link ${target_path}"
     fi
   done < <(find "${TARGET_DIR}/skills" -mindepth 1 -maxdepth 1 -type l | sort)
 }
@@ -96,6 +103,9 @@ main() {
 
   while IFS= read -r source_path; do
     skill_name="$(basename "${source_path}")"
+    if [ ! -f "${source_path}/SKILL.md" ]; then
+      continue
+    fi
     ensure_symlink "${source_path}" "${TARGET_DIR}/skills/${skill_name}"
   done < <(find "${SOURCE_DIR}/skills" -mindepth 1 -maxdepth 1 -type d ! -name '.system' | sort)
 
