@@ -341,6 +341,9 @@ codex() {
   command codex "$@"
 }
 
+# Codex personal account. Uses the same codex binary with isolated state.
+alias codexp='CODEX_HOME="$HOME/.codexp" codex'
+
 # Containers
 if command -v kubectl >/dev/null 2>&1; then
   alias kb=kubectl

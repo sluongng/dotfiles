@@ -4,7 +4,7 @@ set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SOURCE_DIR="${DOTFILES_DIR}/config/codex"
-TARGET_DIR="${HOME}/.codex"
+TARGET_DIR="${CODEX_HOME:-${HOME}/.codex}"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 BACKUP_DIR="${TARGET_DIR}/backups/install-codex-${TIMESTAMP}"
 RENDER_CONFIG_SCRIPT="${DOTFILES_DIR}/automation/codex/render-config.py"
