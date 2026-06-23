@@ -1,15 +1,15 @@
 ---
 name: draft-commit-message
-description: "Draft, rewrite, and review Git commit messages using the Git project's MyFirstContribution guidance. Use when Codex needs to turn staged changes, a diff, or a rough summary into a commit message with a `component: subject` line, imperative mood, a 50-character-or-less subject, a blank line before the body, and a body that explains the why/context at roughly 72 columns."
+description: "Draft, rewrite, and review Git commit messages and pull-request title/body source text using the Git project's MyFirstContribution guidance. Use when Codex needs to turn staged changes, a diff, commit range, or rough summary into a `component: subject` line, imperative mood, a 50-character-or-less subject, a blank line before the body, and enough reviewer-facing context to explain and sell the change."
 ---
 
 # Draft Commit Message
 
 ## Goal
 
-Turn staged changes, diffs, or plain-English summaries into commit messages
-that follow the Git project's `MyFirstContribution` guidance without
-inventing missing rationale.
+Turn staged changes, diffs, commit ranges, or plain-English summaries into
+commit messages and PR title/body source text that follow the Git project's
+`MyFirstContribution` guidance without inventing missing rationale.
 
 ## Workflow
 
@@ -29,6 +29,17 @@ If nothing is staged, inspect the worktree diff instead:
 git diff --stat
 git diff
 ```
+
+When drafting PR title/body text, inspect the final commit range as well:
+
+```bash
+git log --reverse --format=fuller --stat <base>..HEAD
+git log --reverse -p <base>..HEAD
+```
+
+Also read the concrete prompt, issue, review thread, CI failure, reproducer, or
+user report when it explains why the change matters. Do not stop at the diff
+when reviewer context is available nearby.
 
 2. Infer the component prefix from the narrowest dominant area of change.
 
@@ -50,15 +61,20 @@ git log --format=%s -- path/to/area | head -n 20
   `fix`, `remove`, `refactor`.
 - Avoid repeating low-level implementation details that fit better in the
   body.
+- When used as a PR title, use this subject as the title unless repo-local PR
+  conventions clearly require a different shape.
 
 4. Draft the body to explain why and surrounding context.
 
 - Insert one blank line after the subject.
 - Put the bulk of the context in the body.
-- Explain motivation, user impact, tradeoffs, or constraints that are not
-  obvious from the diff.
-- Prefer 2-4 short, direct sentences over one dense paragraph when the first
-  draft starts chaining too many clauses together.
+- Explain motivation, user impact, tradeoffs, constraints, and review-relevant
+  evidence that are not obvious from the diff.
+- Use as much context as a reviewer needs to understand why this should merge.
+  Do not truncate the story to an artificially short body when the change
+  needs more detail to be convincing.
+- Keep that context disciplined: prefer several short direct paragraphs over a
+  dense wall of text, and remove trivia that does not affect review.
 - Start the first body paragraph with the concrete reason for the change when
   it is knowable from the task or diff, such as a user request, regression,
   missing support, broken workflow, or review feedback being addressed.
@@ -69,6 +85,12 @@ git log --format=%s -- path/to/area | head -n 20
 - If a reproducer command or short error excerpt is central to the why,
   include the real command or a brief concrete snippet. Do not leave
   placeholders such as `<probe>` or `<failure log>` in the final message.
+- Include the root cause, chosen approach, important alternatives rejected,
+  compatibility constraints, rollout concerns, and intentionally omitted work
+  whenever those points help reviewers trust the change.
+- Include validation or reproduction details when they are part of the
+  reviewer-facing argument. Keep routine validation out if repo or PR guidance
+  says CI/final response should carry it instead.
 - When citing upstream commits to explain when behavior changed, pair the hash
   with a stable release version when that gives the reader a better sense of
   time.
@@ -87,7 +109,8 @@ git log --format=%s -- path/to/area | head -n 20
 6. Handle single-patch submissions as self-contained units.
 
 - Make the commit message meaningful enough that a single-patch PR does not
-  need a repeated description.
+  need a repeated description. A reviewer should be able to understand the
+  problem, approach, and merge rationale from the message alone.
 - Keep the permanent commit message readable as plain text. If the user wants
   long logs, many links, or reviewer-only reference material, prefer a short
   appendix below `---` or move that material into the PR body.
@@ -98,12 +121,16 @@ git log --format=%s -- path/to/area | head -n 20
 
 - Return the final commit message in a fenced `text` block unless the user
   explicitly asks for a different format.
-- If the same change will also drive PR metadata, keep the technical story in
-  sync with the PR, but do not force GitHub Markdown conventions into the
-  permanent commit message unless the user explicitly asks for that.
+- If the same change will also drive PR metadata, use this draft as the source
+  of truth for the PR title and body. Keep the technical story synchronized,
+  but do not force GitHub Markdown conventions into the permanent commit
+  message unless the user explicitly asks for that.
 - If the commit and PR should match closely, draft the commit body first and
   treat it as the source text for the PR description rather than writing two
   separate narratives from scratch.
+- When asked specifically for PR metadata, return the PR title and body derived
+  from the same subject/body rules. Add GitHub Markdown only where it makes the
+  reviewer-facing story clearer.
 - When confidence is low, add one short sentence after the block describing
   the missing context.
 - When reviewing an existing message, list the concrete violations first and
@@ -117,8 +144,12 @@ git log --format=%s -- path/to/area | head -n 20
 - Line 2 is blank.
 - Body lines stay within 72 columns where practical.
 - Body adds why/context that is not obvious from the diff.
+- Body includes enough reviewer-facing context to sell the change without
+  padding it with irrelevant details.
 - Opening body paragraph names the regression, failure, or motivation when the
   change fixes a concrete problem.
+- Root cause, approach, tradeoffs, and intentionally omitted work are included
+  when they are material to review.
 - Body reads as plain prose, not a GitHub template.
 - Body uses short direct sentences when that makes the why easier to scan.
 - Any embedded commands or log excerpts are concrete and brief, not

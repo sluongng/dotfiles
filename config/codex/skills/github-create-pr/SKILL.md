@@ -1,6 +1,6 @@
 ---
 name: github-create-pr
-description: "Create GitHub pull requests from the current checkout after local commits are ready. Use when Codex needs to inspect the commit range, draft a PR title and body using the same `component: subject` and why/context rules as `draft-commit-message`, ask the user to review that text before opening the PR, then push the branch and create a draft or ready PR. Prefer this over generic publish workflows when PR wording review is required."
+description: "Create GitHub pull requests from the current checkout after local commits are ready. Use when Codex needs to inspect the commit range, use `draft-commit-message` as the source of truth for the PR title and body, ask the user to review that text before opening the PR, then push the branch and create a draft or ready PR. Prefer this over generic publish workflows when PR wording review is required."
 ---
 
 # GitHub Create PR
@@ -8,16 +8,18 @@ description: "Create GitHub pull requests from the current checkout after local 
 ## Overview
 
 Create a GitHub pull request from an existing local branch or commit range.
-Draft the PR title and description first, do not add a `[codex]` prefix to
-the title, and require explicit user review of the title and description
-before opening the PR. Default to commit-message-style PR metadata rather
-than canned GitHub template sections.
+Draft the PR title and description through `$draft-commit-message` first, do
+not add a `[codex]` prefix to the title, and require explicit user review of
+the title and description before opening the PR. Default to commit-message-style
+PR metadata rather than canned GitHub template sections.
 
 Assume the usual workflow is co-development between the user and Codex, followed
-by handoff to a second human reviewer while CI runs. Optimize the PR body for
-reviewer understanding: explain the problem, why the change is needed, the
-chosen approach, impact, tradeoffs, rollout constraints, and any intentionally
-omitted work. Do not use the PR body to prove that local validation happened.
+by handoff to a second human reviewer while CI runs. Use the draft-message
+guidance to optimize the PR body for reviewer understanding: explain the
+problem, why the change is needed, the chosen approach, impact, tradeoffs,
+rollout constraints, and any intentionally omitted work. Do not use the PR body
+to prove that local validation happened unless the user or repo guidance asks
+for validation in the body.
 
 ## Workflow
 
@@ -31,18 +33,16 @@ omitted work. Do not use the PR body to prove that local validation happened.
 
 2. Draft the PR title and description before any PR creation action.
    - Inspect the commits and diff that will be included.
-   - Draft the PR title using the same subject rules as
-     `draft-commit-message`: prefer `<component>: <imperative summary>`,
-     keep it honest, and keep it at 50 characters or fewer unless a clear
-     repo-local convention requires something else.
+   - Use `$draft-commit-message` to draft the PR title and body. Treat its
+     subject as the PR title and its body as the PR body unless a repo-local PR
+     convention clearly requires a small adaptation.
+   - Do not hand-roll a separate PR title/body using independent rules. If the
+     PR text seems weak, improve the draft-message output and keep the commit
+     and PR stories synchronized.
    - If the PR is effectively one finalized commit or one squashed change,
      start from that commit subject and body verbatim. Treat the commit
      message as the default PR title/body, then make only the smallest edits
      needed for reviewer context or Markdown links.
-   - Draft the PR body using the same body rules as
-     `draft-commit-message`: lead with the concrete why, explain surrounding
-     context that is not obvious from the diff, and do not invent missing
-     rationale.
    - If the change already has a strong commit message, keep the PR title and
      body synchronized with it. Adapt only what GitHub Markdown or
      reviewer-only context requires.
@@ -80,6 +80,8 @@ omitted work. Do not use the PR body to prove that local validation happened.
      after PR creation.
    - Before showing the draft, compare it against the final commit message(s).
      Remove any extra framing that does not add reviewer value.
+   - If the body does not yet explain why the change should merge, rerun the
+     `$draft-commit-message` reasoning with more context before showing it.
    - Show the proposed title and description to the user for review.
    - Treat explicit approval in the current thread as required before
      continuing. If approval is missing, stop here.
@@ -102,11 +104,17 @@ omitted work. Do not use the PR body to prove that local validation happened.
      where the connector path is awkward.
    - Use the user-approved title and description verbatim aside from trivial
      formatting cleanup.
+   - When using `gh`, pass multiline PR bodies through stdin or a file, not
+     through `--body` with a shell-escaped or JSON-escaped string. Prefer
+     `gh pr create --body-file - <<'EOF'` and
+     `gh pr edit --body-file - <<'EOF'` for multiline text. Do not use a
+     command shape that can preserve literal `\\n` or `\\r\\n` sequences
+     in the GitHub body.
    - Derive the base branch from the user request or the remote default
      branch when unspecified.
    - If commits were amended or squashed after the draft was first written,
-     refresh the PR title/body from the final commit text before opening or
-     editing the PR.
+     refresh the PR title/body through `$draft-commit-message` before opening
+     or editing the PR.
    - After creation, verify the PR head ref matches the branch that was pushed.
      If the local branch upstream points somewhere else, fix it with
      `git branch --set-upstream-to=<remote>/<branch>` so later `gh pr view`,
@@ -114,6 +122,10 @@ omitted work. Do not use the PR body to prove that local validation happened.
    - If the PR body uses custom anchors or other rendering-sensitive Markdown,
      verify the rendered body and fix broken links before considering the PR
      done.
+   - After creating or editing a PR body, inspect the stored body with
+     `gh pr view ... --json body --jq .body` or equivalent. If the output
+     contains literal `\\n` sequences where paragraph breaks should be, fix
+     the body immediately with `--body-file -`.
 
 5. Summarize the result.
    - Return the pushed branch, remote, base and head refs, PR URL, draft
@@ -131,14 +143,15 @@ omitted work. Do not use the PR body to prove that local validation happened.
   PR body unless explicitly requested or approved by the user.
 - Never decorate the first PR draft with extra issue refs, stack narration, or
   headings unless the user asked for them.
+- Never send multiline PR bodies through a shell/JSON-escaped `--body`
+  argument; use stdin or `--body-file -` so newlines remain real newlines.
 - Never stage, commit, or push unrelated user changes silently.
 - If repository identity, auth, or push permissions are unclear, stop and
   explain the blocker before acting.
 
 ## PR Checklist
 
-- title follows the same subject rules as `draft-commit-message`
-- body follows the same why/context rules as `draft-commit-message`
+- title and body were derived through `$draft-commit-message`
 - body helps a second human reviewer understand the problem, approach,
   tradeoffs, and rollout context
 - body avoids unnecessary template sections; `Testing` appears only when
@@ -150,6 +163,7 @@ omitted work. Do not use the PR body to prove that local validation happened.
 - body avoids unrequested issue-closing syntax and extra framing
 - debugging/incident PRs surface the failure quickly near the top
 - commands, logs, and links render correctly on GitHub
+- stored GitHub body has real paragraph breaks, not literal `\\n` escapes
 - base and head branches are correct
 - draft versus ready state matches the user's request
 
