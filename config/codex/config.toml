@@ -1,6 +1,6 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
-# automation/codex/install-codex.sh renders ~/.codex/config.toml from this file plus local overlays.
-# Do not add [projects] here; machine-local trust entries belong in ~/.codex/projects.local.toml.
+# automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
+# Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
 # Last reviewed for codex-cli v0.137.0 and current main on 2026-06-04.
 
 model = "gpt-5.5"
@@ -80,7 +80,7 @@ session_picker_view = "dense"
 # local config. Configured MCP servers start during every Codex conversation;
 # prefer the codex-chrome-linux skill and Chrome Extension native host bridge
 # for Linux Chrome control. For a deliberate Chrome DevTools MCP session,
-# temporarily enable the local ~/.codex/config.local.toml stanza.
+# temporarily enable the local ${CODEX_HOME:-~/.codex}/config.local.toml stanza.
 
 [plugins."gmail@openai-curated"]
 enabled = true
