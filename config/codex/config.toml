@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# Last reviewed for codex-cli v0.143.0-alpha.5 and current main on 2026-06-23.
+# Last reviewed for codex-cli v0.143.0-alpha.14 and current main on 2026-06-24.
 
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
