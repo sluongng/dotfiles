@@ -15,12 +15,11 @@
   "interface": {
     "displayName": "Codex Security Cloud",
     "shortDescription": "List and inspect Codex Security Cloud findings.",
-    "longDescription": "Codex Security Cloud adds local workflows for querying ChatGPT-hosted Codex Security Cloud Aardvark findings through a logged-in Chrome context and local Codex ChatGPT credentials.",
+    "longDescription": "Codex Security Cloud adds local workflows for querying ChatGPT-hosted Codex Security Cloud Aardvark findings directly with local Codex ChatGPT credentials.",
     "developerName": "Personal",
     "category": "Productivity",
     "capabilities": [
-      "Security",
-      "Browser"
+      "Security"
     ],
     "defaultPrompt": [
       "List Codex Security Cloud findings for this repo.",
