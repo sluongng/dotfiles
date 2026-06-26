@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# Last reviewed for codex-cli v0.143.0-alpha.14 and current main on 2026-06-24.
+# Last reviewed for codex-cli v0.143.0-alpha.25 and current main on 2026-06-26.
 
 model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
@@ -41,15 +41,20 @@ mentions_v2 = true
 prevent_idle_sleep = true
 remote_compaction_v2 = true
 runtime_metrics = true
-sleep_tool = true
 # Use Codex's bundled zsh fork from the installed package; leave zsh_path unset
 # so each installation can resolve its own packaged binary.
 shell_zsh_fork = true
 unified_exec = true
 unified_exec_zsh_fork = true
 
+[features.current_time_reminder]
+enabled = true
+clock_source = "system"
+delivery_mode = "after_user_or_tool_output"
+sleep_tool = true
+
 [features.multi_agent_v2]
-enabled = false
+enabled = true
 max_concurrent_threads_per_session = 13 # counts root; preserves 12 spawned agents
 
 [agents]
