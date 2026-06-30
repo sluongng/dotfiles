@@ -13,14 +13,21 @@ from pathlib import Path
 
 
 DEFAULT_WORKFLOW_HARNESS_PATHS = (
+    "BUCK",
+    "rust-toolchain",
     ".github/workflows/build-and-examples.yml",
     ".github/workflows/build-and-test.yml",
     ".github/workflows/upload_buck2.yml",
+    "bootstrap/buck2",
     "buildbuddy.yaml",
     ".buckconfig.buildbuddy",
     "buildbuddy/BUCK",
     "buildbuddy/defs.bzl",
     "buildbuddy/run_buck2_test_matrix.sh",
+    "buildbuddy/toolchains/BUCK",
+    "prelude/toolchains/go/defs.bzl",
+    "prelude/toolchains/go/releases.bzl",
+    "prelude/toolchains/go/remote_go_proto_toolchain.bzl",
     "shim/BUCK",
     "shim/git_fetch.bzl",
     "shim/rust-toolchain",
