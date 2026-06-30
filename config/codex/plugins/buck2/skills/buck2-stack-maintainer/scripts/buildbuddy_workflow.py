@@ -199,10 +199,16 @@ def poll_invocation(args: argparse.Namespace, api_key: str, invocation_id: str) 
             invocation = invocations[0]
             status = get_field(invocation, "invocationStatus", "invocation_status")
             success = invocation.get("success")
+            bazel_exit_code = get_field(invocation, "bazelExitCode", "bazel_exit_code")
             url = invocation.get("url") or f"https://sluongng.buildbuddy.io/invocation/{invocation_id}"
             execution = execution_status(args, api_key, invocation_id)
-            print(f"{invocation_id}: {status} success={success} {execution} {url}")
+            print(
+                f"{invocation_id}: {status} success={success} "
+                f"bazelExitCode={bazel_exit_code} {execution} {url}"
+            )
             if status == "COMPLETE_INVOCATION_STATUS" or status == 1:
+                if success is None:
+                    return bazel_exit_code == "Success"
                 return bool(success)
             if status == "DISCONNECTED_INVOCATION_STATUS" or status == 3:
                 # Workflow invocations can briefly report DISCONNECTED while the
