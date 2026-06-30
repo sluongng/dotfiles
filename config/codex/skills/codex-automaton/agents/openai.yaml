@@ -1,4 +1,0 @@
-interface:
-  display_name: "Codex Automaton"
-  short_description: "Manage local Codex CLI automations."
-  default_prompt: "Use codex-automaton to inspect, run, or update local systemd-backed Codex automations."

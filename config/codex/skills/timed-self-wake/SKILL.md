@@ -24,9 +24,9 @@ codex-automaton timer over a long sleeping shell.
 
 ## Workflow
 
-1. Read $codex-automaton if available. Use the installed codex-automaton CLI
-   and systemd user timers; do not hand-roll unit files unless the CLI is
-   unavailable.
+1. Read $automation-creator if available. Use its Linux Aton/systemd backend
+   with the installed codex-automaton CLI and systemd user timers; do not
+   hand-roll unit files unless the CLI is unavailable.
 2. Confirm local time and timezone with date -Is, plus the target market or
    event timezone when relevant.
 3. Inspect existing state with codex-automaton --json doctor,
