@@ -1893,6 +1893,30 @@ local function ensure_cmp()
   local cmp = require('cmp')
   local compare = require('cmp.config.compare')
 
+  local function cmp_has_source(name)
+    for _, source in ipairs(cmp.core:get_registered_sources()) do
+      if source.name == name then
+        return true
+      end
+    end
+    return false
+  end
+
+  if not cmp_has_source('buffer') then
+    cmp.register_source('buffer', require('cmp_buffer'))
+  end
+  if not cmp_has_source('path') then
+    cmp.register_source('path', require('cmp_path').new())
+  end
+
+  local ok_lsp, cmp_nvim_lsp = pcall(require, 'cmp_nvim_lsp')
+  if ok_lsp then
+    cmp_nvim_lsp.setup()
+    if type(cmp_nvim_lsp._on_insert_enter) == 'function' then
+      cmp_nvim_lsp._on_insert_enter()
+    end
+  end
+
   cmp.setup({
     -- Keep LSP preselect enabled, but sort so the highlighted item is more likely
     -- to be near the top (match LSP sortText before grouping by kind).
@@ -1975,6 +1999,8 @@ local function ensure_cmp()
       end, { "i", "s" }),
     }),
   })
+
+  cmp.core:prepare()
 
   cmp_ready = true
 end
