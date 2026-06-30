@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dev Review Loop"
+  short_description: "Iterate with clean-room reviews"
+  default_prompt: "Use $dev-review-loop to finish this development task with clean-room review rounds before committing."
