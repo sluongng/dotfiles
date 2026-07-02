@@ -153,10 +153,20 @@ pack_add_specs({
   'vim_helm',
 })
 
--- Neovim 0.12+ can pass a list of nodes for query captures, but the archived
--- nvim-treesitter master branch pinned in this config still assumes a single
--- TSNode for its custom predicates/directives.
-if vim.fn.has('nvim-0.12') == 1 then
+local treesitter_compat_ready = false
+local function ensure_treesitter_compat()
+  if treesitter_compat_ready then
+    return
+  end
+  treesitter_compat_ready = true
+
+  -- Neovim 0.12+ can pass a list of nodes for query captures, but the archived
+  -- nvim-treesitter master branch pinned in this config still assumes a single
+  -- TSNode for its custom predicates/directives.
+  if vim.fn.has('nvim-0.12') ~= 1 then
+    return
+  end
+
   local ok, query = pcall(require, 'vim.treesitter.query')
   if ok then
     local html_script_type_languages = {
@@ -1382,285 +1392,305 @@ do
     end
   end
 
-  local ok, metals = pcall(require, 'metals')
-  if not ok then
-    vim.notify('nvim-metals not available; skipping Metals setup', vim.log.levels.WARN)
-  else
-    local metals_java_home = find_supported_metals_java_home()
-    local metals_target_version = '2.0.0-M10'
-    local metals_version_marker = vim.fn.stdpath('cache') .. '/nvim-metals/version.txt'
-    local metals_config_lib = require('metals.config')
-    local metals_install = require('metals.install')
-    local metals_version_ready = false
+  local metals
+  local metals_config_lib
+  local metals_install
+  local metals_java_home
+  local metals_ready = false
+  local metals_target_version = '2.0.0-M10'
+  local metals_version_marker = vim.fn.stdpath('cache') .. '/nvim-metals/version.txt'
+  local metals_version_ready = false
 
-    local function read_metals_version_marker()
-      if vim.fn.filereadable(metals_version_marker) == 0 then
-        return nil
-      end
-
-      local lines = vim.fn.readfile(metals_version_marker)
-      return lines[1]
+  local function ensure_metals()
+    if metals_ready then
+      return true
     end
 
-    local function write_metals_version_marker(version)
-      vim.fn.mkdir(vim.fn.fnamemodify(metals_version_marker, ':h'), 'p')
-      vim.fn.writefile({ version }, metals_version_marker)
-    end
-
-    local function installed_metals_version(metals_bin)
-      if vim.fn.executable(metals_bin) == 0 then
-        return nil
-      end
-
-      local result = vim.system({ metals_bin, '-v' }, { text = true }):wait()
-      if result.code ~= 0 or not result.stdout then
-        return nil
-      end
-
-      return result.stdout:match('metals%s+([^\n]+)')
-    end
-
-    local function current_workspace_search_path()
-      local buffer_name = vim.api.nvim_buf_get_name(0)
-      return buffer_name ~= '' and vim.fn.fnamemodify(buffer_name, ':p:h') or vim.fn.getcwd()
-    end
-
-    local function find_workspace_marker(name, marker_type)
-      return vim.fs.find(name, {
-        upward = true,
-        path = current_workspace_search_path(),
-        type = marker_type,
-      })[1]
-    end
-
-    local function bazel_bsp_config_path()
-      local bsp_dir = find_workspace_marker('.bsp', 'directory')
-      local config_path = bsp_dir and (bsp_dir .. '/bazelbsp.json') or nil
-      if config_path and vim.fn.filereadable(config_path) == 1 then
-        return config_path
-      end
-
-      return nil
-    end
-
-    local function bazel_bsp_server_name()
-      local config_path = bazel_bsp_config_path()
-      if not config_path then
-        return nil
-      end
-
-      local ok, lines = pcall(vim.fn.readfile, config_path)
-      if not ok then
-        return 'bazelbsp'
-      end
-
-      local decode_ok, decoded = pcall(vim.json.decode, table.concat(lines, '\n'))
-      if decode_ok and type(decoded) == 'table' and type(decoded.name) == 'string' and decoded.name ~= '' then
-        return decoded.name
-      end
-
-      return 'bazelbsp'
-    end
-
-    local function is_bazel_mbt_workspace()
-      return find_workspace_marker('bazel.mbt.sh', 'file') ~= nil
-    end
-
-    local function proto_java_virtual_target(uri)
-      local proto_uri, class_name = uri:match('^(.*%.proto)%.metals%-proto%-java/([^/]+)%.java$')
-      if not proto_uri then
-        return nil
-      end
-
-      local proto_path = vim.uri_to_fname(proto_uri)
-      if vim.fn.filereadable(proto_path) == 0 then
-        return nil
-      end
-
-      return proto_path, class_name
-    end
-
-    local function proto_decl_range(proto_path, class_name)
-      local ok, lines = pcall(vim.fn.readfile, proto_path)
-      if not ok then
-        return nil
-      end
-
-      local escaped = vim.pesc(class_name)
-      for index, line in ipairs(lines) do
-        if line:find('^%s*message%s+' .. escaped .. '%f[%W]')
-            or line:find('^%s*enum%s+' .. escaped .. '%f[%W]')
-            or line:find('^%s*service%s+' .. escaped .. '%f[%W]') then
-          local start_col = line:find(class_name, 1, true) - 1
-          return {
-            start = { line = index - 1, character = start_col },
-            ['end'] = { line = index - 1, character = start_col + #class_name },
-          }
-        end
-      end
-
-      return nil
-    end
-
-    local function rewrite_proto_java_virtual_location(location)
-      local uri = location.uri or location.targetUri
-      if not uri then
-        return location
-      end
-
-      local proto_path, class_name = proto_java_virtual_target(uri)
-      if not proto_path then
-        return location
-      end
-
-      local range = proto_decl_range(proto_path, class_name)
-      if not range then
-        return location
-      end
-
-      local rewritten = vim.deepcopy(location)
-      local proto_uri = vim.uri_from_fname(proto_path)
-      if rewritten.uri then
-        rewritten.uri = proto_uri
-        rewritten.range = range
-      end
-      if rewritten.targetUri then
-        rewritten.targetUri = proto_uri
-        rewritten.targetRange = range
-        rewritten.targetSelectionRange = range
-      end
-      return rewritten
-    end
-
-    local function install_proto_java_location_rewriter()
-      if vim.g.my_proto_java_location_rewriter_installed then
-        return
-      end
-
-      vim.g.my_proto_java_location_rewriter_installed = true
-      local default_locations_to_items = vim.lsp.util.locations_to_items
-      vim.lsp.util.locations_to_items = function(locations, offset_encoding)
-        local rewritten = locations
-        if type(locations) == 'table' then
-          local is_list = vim.islist or vim.tbl_islist
-          if is_list(locations) then
-            rewritten = {}
-            for index, location in ipairs(locations) do
-              rewritten[index] = rewrite_proto_java_virtual_location(location)
-            end
-          else
-            rewritten = rewrite_proto_java_virtual_location(locations)
-          end
-        end
-
-        return default_locations_to_items(rewritten, offset_encoding)
-      end
-    end
-
-    install_proto_java_location_rewriter()
-
-    local function create_metals_config()
-      local metals_config = metals.bare_config()
-      local server_properties = {
-        "-Xmx4g",
-      }
-      local bazel_bsp_server = bazel_bsp_server_name()
-      local bazel_bsp_workspace = bazel_bsp_server ~= nil
-
-      if bazel_bsp_workspace then
-        table.insert(server_properties, "-Dmetals.auto-import-builds=all")
-        table.insert(server_properties, "-Dmetals.preferred-build-server=" .. bazel_bsp_server)
-        table.insert(server_properties, "-Dmetals.presentation-compiler-diagnostics=false")
-      elseif is_bazel_mbt_workspace() then
-        table.insert(server_properties, "-Dmetals.auto-import-builds=all")
-        table.insert(server_properties, "-Dmetals.preferred-build-server=MBT")
-        table.insert(server_properties, "-Dmetals.presentation-compiler-diagnostics=false")
-      end
-
-      if is_macos() then
-        table.insert(server_properties, "-Dmetals.macos-max-watch-roots=65536")
-      end
-
-      metals_config.capabilities = lsp_capabilities
-      metals_config.settings = {
-        serverVersion = metals_target_version,
-        serverProperties = server_properties,
-      }
-
-      if bazel_bsp_workspace then
-        metals_config.settings.defaultBspToBuildTool = true
-      end
-
-      if metals_java_home then
-        metals_config.settings.javaHome = metals_java_home
-        metals_config.cmd_env = vim.tbl_extend('force', metals_config.cmd_env or {}, {
-          JAVA_HOME = metals_java_home,
-        })
-      end
-
-      return metals_config
-    end
-
-    local function ensure_target_metals_version(metals_config)
-      if metals_version_ready then
-        return true
-      end
-
-      local metals_bin = metals_config_lib.metals_bin()
-      if vim.fn.executable(metals_bin) == 1 and read_metals_version_marker() == metals_target_version then
-        metals_version_ready = true
-        return true
-      end
-
-      local installed_version = installed_metals_version(metals_bin)
-      if installed_version == metals_target_version then
-        write_metals_version_marker(installed_version)
-        metals_version_ready = true
-        return true
-      end
-
-      local validated = metals_config_lib.validate_config(vim.deepcopy(metals_config), vim.api.nvim_get_current_buf())
-      if not validated and vim.fn.executable(metals_bin) == 1 then
-        return false
-      end
-
-      metals_install.install_or_update(true)
-
-      installed_version = installed_metals_version(metals_bin)
-      if installed_version == metals_target_version then
-        write_metals_version_marker(installed_version)
-        metals_version_ready = true
-        return true
-      end
-
-      vim.notify(
-        string.format(
-          'Expected Metals %s but found %s after install',
-          metals_target_version,
-          installed_version or 'no installed binary'
-        ),
-        vim.log.levels.ERROR
-      )
+    local ok
+    ok, metals = pcall(require, 'metals')
+    if not ok then
+      vim.notify('nvim-metals not available; skipping Metals setup', vim.log.levels.WARN)
       return false
     end
 
-    vim.api.nvim_create_autocmd('FileType', {
-      group = vim.api.nvim_create_augroup('my.metals', { clear = true }),
-      pattern = { 'scala', 'sbt', 'java' },
-      callback = function()
-        local metals_config = create_metals_config()
-        if not ensure_target_metals_version(metals_config) then
-          return
-        end
-
-        if metals_java_home then
-          vim.env.JAVA_HOME = metals_java_home
-        end
-
-        metals.initialize_or_attach(metals_config)
-      end,
-    })
+    metals_java_home = find_supported_metals_java_home()
+    metals_config_lib = require('metals.config')
+    metals_install = require('metals.install')
+    metals_ready = true
+    return true
   end
+
+  local function read_metals_version_marker()
+    if vim.fn.filereadable(metals_version_marker) == 0 then
+      return nil
+    end
+
+    local lines = vim.fn.readfile(metals_version_marker)
+    return lines[1]
+  end
+
+  local function write_metals_version_marker(version)
+    vim.fn.mkdir(vim.fn.fnamemodify(metals_version_marker, ':h'), 'p')
+    vim.fn.writefile({ version }, metals_version_marker)
+  end
+
+  local function installed_metals_version(metals_bin)
+    if vim.fn.executable(metals_bin) == 0 then
+      return nil
+    end
+
+    local result = vim.system({ metals_bin, '-v' }, { text = true }):wait()
+    if result.code ~= 0 or not result.stdout then
+      return nil
+    end
+
+    return result.stdout:match('metals%s+([^\n]+)')
+  end
+
+  local function current_workspace_search_path()
+    local buffer_name = vim.api.nvim_buf_get_name(0)
+    return buffer_name ~= '' and vim.fn.fnamemodify(buffer_name, ':p:h') or vim.fn.getcwd()
+  end
+
+  local function find_workspace_marker(name, marker_type)
+    return vim.fs.find(name, {
+      upward = true,
+      path = current_workspace_search_path(),
+      type = marker_type,
+    })[1]
+  end
+
+  local function bazel_bsp_config_path()
+    local bsp_dir = find_workspace_marker('.bsp', 'directory')
+    local config_path = bsp_dir and (bsp_dir .. '/bazelbsp.json') or nil
+    if config_path and vim.fn.filereadable(config_path) == 1 then
+      return config_path
+    end
+
+    return nil
+  end
+
+  local function bazel_bsp_server_name()
+    local config_path = bazel_bsp_config_path()
+    if not config_path then
+      return nil
+    end
+
+    local ok, lines = pcall(vim.fn.readfile, config_path)
+    if not ok then
+      return 'bazelbsp'
+    end
+
+    local decode_ok, decoded = pcall(vim.json.decode, table.concat(lines, '\n'))
+    if decode_ok and type(decoded) == 'table' and type(decoded.name) == 'string' and decoded.name ~= '' then
+      return decoded.name
+    end
+
+    return 'bazelbsp'
+  end
+
+  local function is_bazel_mbt_workspace()
+    return find_workspace_marker('bazel.mbt.sh', 'file') ~= nil
+  end
+
+  local function proto_java_virtual_target(uri)
+    local proto_uri, class_name = uri:match('^(.*%.proto)%.metals%-proto%-java/([^/]+)%.java$')
+    if not proto_uri then
+      return nil
+    end
+
+    local proto_path = vim.uri_to_fname(proto_uri)
+    if vim.fn.filereadable(proto_path) == 0 then
+      return nil
+    end
+
+    return proto_path, class_name
+  end
+
+  local function proto_decl_range(proto_path, class_name)
+    local ok, lines = pcall(vim.fn.readfile, proto_path)
+    if not ok then
+      return nil
+    end
+
+    local escaped = vim.pesc(class_name)
+    for index, line in ipairs(lines) do
+      if line:find('^%s*message%s+' .. escaped .. '%f[%W]')
+          or line:find('^%s*enum%s+' .. escaped .. '%f[%W]')
+          or line:find('^%s*service%s+' .. escaped .. '%f[%W]') then
+        local start_col = line:find(class_name, 1, true) - 1
+        return {
+          start = { line = index - 1, character = start_col },
+          ['end'] = { line = index - 1, character = start_col + #class_name },
+        }
+      end
+    end
+
+    return nil
+  end
+
+  local function rewrite_proto_java_virtual_location(location)
+    local uri = location.uri or location.targetUri
+    if not uri then
+      return location
+    end
+
+    local proto_path, class_name = proto_java_virtual_target(uri)
+    if not proto_path then
+      return location
+    end
+
+    local range = proto_decl_range(proto_path, class_name)
+    if not range then
+      return location
+    end
+
+    local rewritten = vim.deepcopy(location)
+    local proto_uri = vim.uri_from_fname(proto_path)
+    if rewritten.uri then
+      rewritten.uri = proto_uri
+      rewritten.range = range
+    end
+    if rewritten.targetUri then
+      rewritten.targetUri = proto_uri
+      rewritten.targetRange = range
+      rewritten.targetSelectionRange = range
+    end
+    return rewritten
+  end
+
+  local function install_proto_java_location_rewriter()
+    if vim.g.my_proto_java_location_rewriter_installed then
+      return
+    end
+
+    vim.g.my_proto_java_location_rewriter_installed = true
+    local default_locations_to_items = vim.lsp.util.locations_to_items
+    vim.lsp.util.locations_to_items = function(locations, offset_encoding)
+      local rewritten = locations
+      if type(locations) == 'table' then
+        local is_list = vim.islist or vim.tbl_islist
+        if is_list(locations) then
+          rewritten = {}
+          for index, location in ipairs(locations) do
+            rewritten[index] = rewrite_proto_java_virtual_location(location)
+          end
+        else
+          rewritten = rewrite_proto_java_virtual_location(locations)
+        end
+      end
+
+      return default_locations_to_items(rewritten, offset_encoding)
+    end
+  end
+
+  local function create_metals_config()
+    local metals_config = metals.bare_config()
+    local server_properties = {
+      "-Xmx4g",
+    }
+    local bazel_bsp_server = bazel_bsp_server_name()
+    local bazel_bsp_workspace = bazel_bsp_server ~= nil
+
+    if bazel_bsp_workspace then
+      table.insert(server_properties, "-Dmetals.auto-import-builds=all")
+      table.insert(server_properties, "-Dmetals.preferred-build-server=" .. bazel_bsp_server)
+      table.insert(server_properties, "-Dmetals.presentation-compiler-diagnostics=false")
+    elseif is_bazel_mbt_workspace() then
+      table.insert(server_properties, "-Dmetals.auto-import-builds=all")
+      table.insert(server_properties, "-Dmetals.preferred-build-server=MBT")
+      table.insert(server_properties, "-Dmetals.presentation-compiler-diagnostics=false")
+    end
+
+    if is_macos() then
+      table.insert(server_properties, "-Dmetals.macos-max-watch-roots=65536")
+    end
+
+    metals_config.capabilities = lsp_capabilities
+    metals_config.settings = {
+      serverVersion = metals_target_version,
+      serverProperties = server_properties,
+    }
+
+    if bazel_bsp_workspace then
+      metals_config.settings.defaultBspToBuildTool = true
+    end
+
+    if metals_java_home then
+      metals_config.settings.javaHome = metals_java_home
+      metals_config.cmd_env = vim.tbl_extend('force', metals_config.cmd_env or {}, {
+        JAVA_HOME = metals_java_home,
+      })
+    end
+
+    return metals_config
+  end
+
+  local function ensure_target_metals_version(metals_config)
+    if metals_version_ready then
+      return true
+    end
+
+    local metals_bin = metals_config_lib.metals_bin()
+    if vim.fn.executable(metals_bin) == 1 and read_metals_version_marker() == metals_target_version then
+      metals_version_ready = true
+      return true
+    end
+
+    local installed_version = installed_metals_version(metals_bin)
+    if installed_version == metals_target_version then
+      write_metals_version_marker(installed_version)
+      metals_version_ready = true
+      return true
+    end
+
+    local validated = metals_config_lib.validate_config(vim.deepcopy(metals_config), vim.api.nvim_get_current_buf())
+    if not validated and vim.fn.executable(metals_bin) == 1 then
+      return false
+    end
+
+    metals_install.install_or_update(true)
+
+    installed_version = installed_metals_version(metals_bin)
+    if installed_version == metals_target_version then
+      write_metals_version_marker(installed_version)
+      metals_version_ready = true
+      return true
+    end
+
+    vim.notify(
+      string.format(
+        'Expected Metals %s but found %s after install',
+        metals_target_version,
+        installed_version or 'no installed binary'
+      ),
+      vim.log.levels.ERROR
+    )
+    return false
+  end
+
+  vim.api.nvim_create_autocmd('FileType', {
+    group = vim.api.nvim_create_augroup('my.metals', { clear = true }),
+    pattern = { 'scala', 'sbt', 'java' },
+    callback = function()
+      if not ensure_metals() then
+        return
+      end
+
+      install_proto_java_location_rewriter()
+
+      local metals_config = create_metals_config()
+      if not ensure_target_metals_version(metals_config) then
+        return
+      end
+
+      if metals_java_home then
+        vim.env.JAVA_HOME = metals_java_home
+      end
+
+      metals.initialize_or_attach(metals_config)
+    end,
+  })
 end
 
 local function enable_lsp_config(name, overrides)
@@ -2113,6 +2143,7 @@ local function ensure_treesitter()
   end
 
   pack_add_once('treesitter', { 'nvim_treesitter', 'playground' })
+  ensure_treesitter_compat()
 
   local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
   parser_config.bazelrc = {
