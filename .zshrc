@@ -16,13 +16,13 @@ _path_append() {
 
 ZSH_THEME="sunaku"
 
-# Disable tmux auto-start/auto-quit when connected over SSH to avoid nesting
-if [[ -n "$SSH_CONNECTION" || -n "$SSH_TTY" || -n "$SSH_CLIENT" ]]; then
-  ZSH_TMUX_AUTOSTART=false
-  ZSH_TMUX_AUTOQUIT=false
-else
+# Only auto-start tmux for local top-level terminal shells.
+if [[ -t 1 && -z "$TMUX" && -z "$SSH_CONNECTION" && -z "$SSH_TTY" && -z "$SSH_CLIENT" ]]; then
   ZSH_TMUX_AUTOSTART=true
   ZSH_TMUX_AUTOQUIT=true
+else
+  ZSH_TMUX_AUTOSTART=false
+  ZSH_TMUX_AUTOQUIT=false
 fi
 
 SHOW_AWS_PROMPT=false
@@ -44,7 +44,6 @@ fi
 plugins=(
   # Shell QoL
   sudo
-  zsh-autosuggestions
   web-search
 
   # CachyOS
@@ -70,8 +69,6 @@ plugins=(
   rust
 
   # Tools
-  tmux
-  fzf
 
   # Cloud
   aws
@@ -79,6 +76,14 @@ plugins=(
   # Editor / IDE
   vscode
 )
+
+if [[ -t 1 ]]; then
+  plugins+=(
+    zsh-autosuggestions
+    tmux
+    fzf
+  )
+fi
 
 if type brew &>/dev/null
 then
@@ -138,7 +143,9 @@ setopt HIST_FIND_NO_DUPS
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> End oh-my-zsh
 
 # Git
-export GPG_TTY=$(tty)
+if [[ -t 0 ]]; then
+  export GPG_TTY=$(tty)
+fi
 export GIT_EDITOR=nvim
 
 # JQ
@@ -153,7 +160,7 @@ if [ -f "$HOME/.ripgreprc" ]; then
 fi
 
 # FZF
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+[[ -t 1 && -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
 
 # Sourcegraph local MCP token for Codex.
 if [[ -z "${SOURCEGRAPH_MCP_TOKEN:-}" && -r "$HOME/.local/share/sourcegraph/admin-credentials" ]]; then
@@ -180,7 +187,7 @@ export FZF_TMUX_OPTS='-p 70%'
 export FZF_TMUX_HEIGHT=50%
 
 # FZF + GIT
-[ -f ~/.dotfiles/.fzfrc ] && source ~/.dotfiles/.fzfrc
+[[ -t 1 && -f ~/.dotfiles/.fzfrc ]] && source ~/.dotfiles/.fzfrc
 
 # ENV variables
 export VISUAL=nvim
