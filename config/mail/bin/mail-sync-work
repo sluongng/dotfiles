@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export SASL_PATH="${SASL_PATH:-${HOME}/.local/lib/sasl2}"
+config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
+mbsyncrc="${config_home}/isync/mbsyncrc"
+
+for cmd in mbsync notmuch oama; do
+  if ! command -v "${cmd}" >/dev/null 2>&1; then
+    printf 'missing required command: %s\n' "${cmd}" >&2
+    exit 127
+  fi
+done
+
+if ! grep -q '^Channel work$' "${mbsyncrc}"; then
+  printf 'work mail sync is not configured; edit %s first\n' "${mbsyncrc}" >&2
+  exit 78
+fi
+
+mbsync -c "${mbsyncrc}" work
+NOTMUCH_PROFILE=work notmuch new

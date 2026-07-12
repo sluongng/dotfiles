@@ -1,0 +1,8 @@
+encryption:
+  tag: KEYRING
+
+services:
+  google:
+    client_id: REPLACE_WITH_GOOGLE_DESKTOP_CLIENT_ID
+    client_secret: REPLACE_WITH_GOOGLE_DESKTOP_CLIENT_SECRET
+    auth_scope: https://mail.google.com/

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+notmuch tag +inbox -- 'folder:INBOX'
+notmuch tag +sent -- 'folder:"[Gmail]/Sent Mail"'
+notmuch tag +draft -- 'folder:"[Gmail]/Drafts"'
+notmuch tag +spam -- 'folder:"[Gmail]/Spam"'
+notmuch tag +deleted -- 'folder:"[Gmail]/Trash"'

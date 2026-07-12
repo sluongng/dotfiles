@@ -1,0 +1,7 @@
+# Account identities and authentication configuration stay local.
+aerc/accounts.conf
+isync/mbsyncrc
+msmtp/config
+notmuch/personal/config
+notmuch/work/config
+oama/config.yaml

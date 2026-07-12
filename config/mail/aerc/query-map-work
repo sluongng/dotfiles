@@ -1,0 +1,6 @@
+inbox=tag:inbox and not tag:deleted and not tag:spam
+unread=tag:unread and not tag:deleted and not tag:spam
+flagged=tag:flagged and not tag:deleted and not tag:spam
+sent=tag:sent and not tag:deleted
+drafts=tag:draft and not tag:deleted
+all=not tag:deleted and not tag:spam

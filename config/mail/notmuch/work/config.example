@@ -1,0 +1,21 @@
+[database]
+mail_root=/home/USER/.local/share/mail/work
+path=/home/USER/.local/share/notmuch/work
+
+[user]
+name=Your Name
+primary_email=work@example.com
+other_email=
+
+[new]
+tags=unread;inbox;
+ignore=.mbsyncstate;.mbsyncstate.journal;.uidvalidity
+
+[search]
+exclude_tags=deleted;spam;
+
+[maildir]
+synchronize_flags=true
+
+[index]
+decrypt=auto

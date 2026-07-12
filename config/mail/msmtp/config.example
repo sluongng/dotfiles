@@ -1,0 +1,20 @@
+defaults
+syslog LOG_MAIL
+auto_from off
+tls on
+tls_starttls on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+
+account personal
+from personal@example.com
+user personal@example.com
+auth oauthbearer
+passwordeval oama access personal@example.com
+host smtp.gmail.com
+port 587
+
+# Keep this example inactive until SMTP is explicitly enabled. To enable it,
+# copy this file to ~/.config/msmtp/config and point aerc's outgoing setting
+# at /usr/bin/msmtp.
+#
+# account default: personal

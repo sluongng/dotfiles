@@ -1,0 +1,19 @@
+[personal]
+source=notmuch://~/.local/share/notmuch/personal
+from=Your Name <personal@example.com>
+default=inbox
+query-map=/home/USER/.config/aerc/query-map-personal
+check-mail=0
+check-mail-cmd=/home/USER/.local/bin/mail-sync-personal
+check-mail-timeout=10m
+outgoing=/home/USER/.local/bin/mail-send-disabled
+
+[work]
+source=notmuch://~/.local/share/notmuch/work
+from=Your Name <work@example.com>
+default=inbox
+query-map=/home/USER/.config/aerc/query-map-work
+check-mail=0
+check-mail-cmd=/home/USER/.local/bin/mail-sync-work
+check-mail-timeout=10m
+outgoing=/home/USER/.local/bin/mail-send-disabled

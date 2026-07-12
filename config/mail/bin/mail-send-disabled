@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cat >/dev/null
+printf 'mail sending is disabled in aerc until SMTP is explicitly enabled\n' >&2
+exit 78

@@ -1,0 +1,55 @@
+IMAPAccount personal
+Host imap.gmail.com
+User personal@example.com
+PassCmd "oama access personal@example.com"
+AuthMechs XOAUTH2
+TLSType IMAPS
+
+IMAPStore personal-remote
+Account personal
+
+MaildirStore personal-local
+SubFolders Verbatim
+Path ~/.local/share/mail/personal/
+Inbox ~/.local/share/mail/personal/INBOX
+
+Channel personal
+Far :personal-remote:
+Near :personal-local:
+Patterns "INBOX" "[Gmail]/Sent Mail" "[Gmail]/Drafts"
+MaxMessages 1000
+ExpireUnread yes
+ExpireSide Near
+Create Near
+Remove None
+Expunge None
+Sync Pull
+SyncState *
+
+IMAPAccount work
+Host imap.gmail.com
+User work@example.com
+PassCmd "oama access work@example.com"
+AuthMechs XOAUTH2
+TLSType IMAPS
+
+IMAPStore work-remote
+Account work
+
+MaildirStore work-local
+SubFolders Verbatim
+Path ~/.local/share/mail/work/
+Inbox ~/.local/share/mail/work/INBOX
+
+Channel work
+Far :work-remote:
+Near :work-local:
+Patterns "INBOX" "[Gmail]/Sent Mail" "[Gmail]/Drafts"
+MaxMessages 1000
+ExpireUnread yes
+ExpireSide Near
+Create Near
+Remove None
+Expunge None
+Sync Pull
+SyncState *

@@ -116,6 +116,9 @@ echo 'Linked .tmux.conf from dotfiles'
 bash "${DIR_DOTFILE}/automation/codex/install-codex.sh"
 echo 'Linked Codex config from dotfiles'
 
+bash "${DIR_DOTFILE}/automation/mail/install-mail.sh"
+echo 'Linked mail client config from dotfiles'
+
 ln -sfn ${DIR_DOTFILE}/config/libinput-gestures.conf ${DIR_CONFIG}/libinput-gestures.conf
 echo 'Linked libinput-gestures config from dotfiles'
 
