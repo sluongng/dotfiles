@@ -172,6 +172,9 @@ fi
 ## Use sharkdp/fd for faster finding
 export FZF_DEFAULT_COMMAND='fd --type file'
 export FZF_DEFAULT_OPTS='--layout=reverse'
+# Pin fzf to the terminal's One Dark palette instead of relying on
+# fzf/tmux popup defaults, which can drift across package upgrades.
+FZF_DEFAULT_OPTS+=' --color=dark,bg:#282c34,bg+:#3e4452,fg:#aab2bf,fg+:#abb2bf,hl:#61afef,hl+:#61afef,info:#e5c07b,prompt:#98c379,pointer:#e06c75,marker:#e06c75,spinner:#61afef,header:#5c6370,border:#5c6370'
 
 ## Preview file with sharkdp/bat
 export FZF_CTRL_T_COMMAND="${FZF_DEFAULT_COMMAND}"
