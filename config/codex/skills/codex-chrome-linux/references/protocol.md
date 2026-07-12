@@ -8,7 +8,10 @@
 - Native messaging host name: `com.openai.codexextension`
 - Extension ID: `hehggadaopoacecdllhhajmbjkdcmajg`
 - Manifest path: `~/.config/google-chrome/NativeMessagingHosts/com.openai.codexextension.json`
-- Local socket: `/tmp/codex-browser-use/com.openai.codexextension.sock`
+- Legacy/default local socket: `/tmp/codex-browser-use/com.openai.codexextension.sock`
+- Additional Chrome profile sockets:
+  `/tmp/codex-browser-use/com.openai.codexextension.<pid>.sock`
+- Active bridge registry: `/tmp/codex-browser-use/bridges/*.json`
 - Native framing: 4-byte little-endian length followed by a JSON message
 - Local protocol: JSON-RPC 2.0 over the same length-prefixed framing
 
@@ -27,11 +30,18 @@
 `bridge-socket-ping` can be true while `extension-ping` is false when the host
 is running but Chrome has not connected the extension yet.
 
+Multiple Chrome profiles can run their own native-host instances. The first
+instance uses the legacy/default socket. Later instances fall back to per-PID
+sockets and write registry entries so CLI callers can discover them with
+`profiles`.
+
 ## Command Mapping
 
 - `request <method> --params <json>`: raw extension JSON-RPC method.
 - `ping`: extension `ping`.
 - `info`: extension `getInfo`.
+- `profiles`: list active Chrome profile bridge instances, their sockets, and
+  extension metadata when available.
 - `tabs`: extension `getUserTabs`.
 - `history`: extension `getUserHistory`.
 - `create-tab`: extension `createTab`.
@@ -49,6 +59,11 @@ is running but Chrome has not connected the extension yet.
 Most commands inject `session_id` and `turn_id` into params. Defaults come from
 `CODEX_CHROME_SESSION_ID` and `CODEX_CHROME_TURN_ID`, then fall back to
 `codex-linux-extension-host` and `manual`.
+
+Most commands accept `--socket-path PATH` for exact socket selection or
+`--profile SELECTOR` for active bridge selection. `--profile` selectors can be
+`default`, a bridge PID, a socket basename, or an `extensionInstanceId`/prefix
+shown by `profiles`.
 
 ## Troubleshooting
 
@@ -88,3 +103,11 @@ That command should keep listening until interrupted. If it prints
 
 If `extension-ping` is false but `bridge-socket-ping` is true, the local host is
 alive but it is not connected to the Chrome extension side.
+
+If more than one Chrome profile is open, discover the active bridge instances:
+
+```bash
+codex-linux-extension-host --json profiles --include-tabs
+codex-linux-extension-host --json tabs --profile default
+codex-linux-extension-host --json tabs --profile 5261faf0
+```

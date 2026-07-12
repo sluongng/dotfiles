@@ -47,9 +47,15 @@ export CODEX_CHROME_TURN_ID="manual"
 
 ```bash
 codex-linux-extension-host --json info
+codex-linux-extension-host --json profiles --include-tabs
 codex-linux-extension-host --json tabs
 codex-linux-extension-host --json history --limit 10
 ```
+
+When multiple Chrome profiles may have the Codex extension enabled, run
+`profiles` first and pass `--profile <selector>` to later commands. The
+selector may be `default`, a bridge PID, a socket basename, or an
+`extensionInstanceId`/prefix from `profiles`.
 
 6. Use browser-control commands only when requested: `create-tab`,
 `claim-tab`, `navigate`, `attach`, `cdp`, `detach`, `name-session`,
@@ -69,6 +75,7 @@ List tabs:
 
 ```bash
 codex-linux-extension-host --json tabs --session codex-manual --turn inspect
+codex-linux-extension-host --json tabs --profile default --session codex-manual --turn inspect
 ```
 
 Navigate with a session tab:
