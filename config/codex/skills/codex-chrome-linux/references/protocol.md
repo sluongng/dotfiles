@@ -49,8 +49,9 @@ sockets and write registry entries so CLI callers can discover them with
 - `attach --tab-id <id>`: extension `attach`.
 - `detach --tab-id <id>`: extension `detach`.
 - `cdp --tab-id <id> <method> --params <json>`: extension `executeCdp`.
-- `navigate <url> [--tab-id <id>]`: create or use a tab, attach, and run CDP
-  `Page.navigate`.
+- `navigate <url> [--tab-id <id>]`: attach and run CDP `Page.navigate`.
+  When `--tab-id` is omitted, this creates a new session tab; it does not look
+  for an existing tab with the same URL or origin.
 - `name-session <name>`: extension `nameSession`.
 - `finalize-tabs [--keep <tab-id>[:handoff|deliverable]]...`: extension
   `finalizeTabs`.
@@ -64,6 +65,29 @@ Most commands accept `--socket-path PATH` for exact socket selection or
 `--profile SELECTOR` for active bridge selection. `--profile` selectors can be
 `default`, a bridge PID, a socket basename, or an `extensionInstanceId`/prefix
 shown by `profiles`.
+
+## Tab Reuse
+
+The CLI does not automatically reuse existing Chrome tabs. To avoid opening a
+new Codex tab group, inspect tabs first, choose a tab ID, then pass that ID to
+`claim-tab`, `navigate`, `attach`, or `cdp`:
+
+```bash
+codex-linux-extension-host --json profiles --include-tabs
+codex-linux-extension-host --json claim-tab --tab-id 123 --session codex-manual --turn nav
+codex-linux-extension-host --json navigate https://example.com --tab-id 123 --session codex-manual --turn nav
+```
+
+At the end of a turn, keep reusable tabs as handoff tabs:
+
+```bash
+codex-linux-extension-host --json finalize-tabs --session codex-manual --turn nav --keep 123:handoff
+codex-linux-extension-host --json turn-ended --session codex-manual --turn nav
+```
+
+Tabs kept as `deliverable` are intended for user inspection, not session reuse.
+Tabs kept as `handoff` are the right choice when a later Codex turn should
+continue controlling or navigating the same browser tab.
 
 ## Troubleshooting
 

@@ -57,16 +57,24 @@ When multiple Chrome profiles may have the Codex extension enabled, run
 selector may be `default`, a bridge PID, a socket basename, or an
 `extensionInstanceId`/prefix from `profiles`.
 
+Before opening a URL, look for an existing tab to reuse. `navigate <url>`
+without `--tab-id` creates a new session tab and can create a new Codex tab
+group. If a suitable tab already exists, use `navigate <url> --tab-id <id>`.
+If the tab is visible but not yet in the session, claim it first with
+`claim-tab --tab-id <id>`.
+
 6. Use browser-control commands only when requested: `create-tab`,
 `claim-tab`, `navigate`, `attach`, `cdp`, `detach`, `name-session`,
 `finalize-tabs`, and `turn-ended`.
 
 7. Finalize session tabs after browser work, keeping only deliverable or
-   handoff tabs. Then release controls for the turn:
+   handoff tabs. Use `handoff` for tabs that future turns should reuse; use
+   `deliverable` only for tabs that should remain for user inspection but do
+   not need browser-session reuse. Then release controls for the turn:
 
 ```bash
-codex-linux-extension-host --json finalize-tabs
-codex-linux-extension-host --json turn-ended
+codex-linux-extension-host --json finalize-tabs --session codex-manual --turn nav --keep 123:handoff
+codex-linux-extension-host --json turn-ended --session codex-manual --turn nav
 ```
 
 ## Examples
@@ -78,7 +86,14 @@ codex-linux-extension-host --json tabs --session codex-manual --turn inspect
 codex-linux-extension-host --json tabs --profile default --session codex-manual --turn inspect
 ```
 
-Navigate with a session tab:
+Reuse an existing tab when navigating:
+
+```bash
+codex-linux-extension-host --json claim-tab --tab-id 123 --session codex-manual --turn nav
+codex-linux-extension-host --json navigate https://example.com --tab-id 123 --session codex-manual --turn nav
+```
+
+Create a new tab only when there is no suitable tab to reuse:
 
 ```bash
 codex-linux-extension-host --json navigate https://example.com --session codex-manual --turn nav
@@ -88,6 +103,7 @@ Finalize the session, keeping a tab for handoff:
 
 ```bash
 codex-linux-extension-host --json finalize-tabs --session codex-manual --turn nav --keep 123:handoff
+codex-linux-extension-host --json turn-ended --session codex-manual --turn nav
 ```
 
 Evaluate JavaScript after claiming, creating, or navigating a tab:
