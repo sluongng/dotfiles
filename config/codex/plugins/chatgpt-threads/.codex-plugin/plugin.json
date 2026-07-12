@@ -1,0 +1,22 @@
+{
+  "name": "chatgpt-threads",
+  "version": "0.1.0+codex.20260712091210",
+  "description": "Inspect logged-in ChatGPT threads through the local Chrome Bridge with explicit tab/profile selection.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ChatGPT Threads",
+    "shortDescription": "Read ChatGPT thread lists and messages from selected logged-in Chrome tabs.",
+    "longDescription": "ChatGPT Threads uses the local Chrome Bridge to inspect chatgpt.com in a selected Chrome tab/profile. It searches Chrome history, lists visible ChatGPT tabs, reads visible sidebar threads, and extracts messages from the current or requested ChatGPT thread without reading cookies, local storage, or browser profile databases.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Local Chrome Bridge",
+      "ChatGPT thread inspection",
+      "Explicit tab/profile selection"
+    ],
+    "defaultPrompt": "Use the ChatGPT Threads helper to inspect my logged-in ChatGPT threads through Chrome Bridge."
+  }
+}

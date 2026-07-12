@@ -84,3 +84,23 @@ enabled = true
 
 [plugins."github@openai-curated"]
 enabled = true
+
+# Keep desired state for tracked personal plugins here so regenerating the live
+# config cannot discard installs made from the machine-local marketplace path.
+[plugins."buildbuddy@sluongng-dotfiles"]
+enabled = true
+
+[plugins."buck2@sluongng-dotfiles"]
+enabled = true
+
+[plugins."etoro-api@sluongng-dotfiles"]
+enabled = false
+
+[plugins."codex-security-cloud@sluongng-dotfiles"]
+enabled = true
+
+[plugins."chatgpt-threads@sluongng-dotfiles"]
+enabled = true
+
+[plugins."tinytree-dev@sluongng-dotfiles"]
+enabled = false

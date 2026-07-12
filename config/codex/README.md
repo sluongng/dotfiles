@@ -32,6 +32,11 @@ Enable those marketplaces from `${CODEX_HOME:-~/.codex}/config.local.toml`
 with a local absolute `source` path. Keep development-only plugins under
 `${CODEX_HOME:-~/.codex}/local` so they stay outside dotfiles git.
 
+Keep desired `[plugins."<name>@<marketplace>"]` enabled state for tracked
+personal plugins in `config.toml`. The marketplace location is machine-local,
+but the desired plugin state must be part of the rendered source of truth so a
+later deploy does not silently discard an install made by `codex plugin add`.
+
 Codex materializes enabled marketplace plugins into
 `${CODEX_HOME:-~/.codex}/plugins/cache`; bump the plugin manifest version when
 changing tracked plugin contents, or clear the matching cache entry to force a
