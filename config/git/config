@@ -61,3 +61,5 @@
 	insteadOf = git@github.com:
 [pack]
 	usePathWalk = true
+[credential "https://gitee.com"]
+	provider = generic
