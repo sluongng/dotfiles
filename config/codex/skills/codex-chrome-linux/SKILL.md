@@ -112,6 +112,35 @@ Evaluate JavaScript after claiming, creating, or navigating a tab:
 codex-linux-extension-host --json cdp --tab-id 123 Runtime.evaluate --params '{"expression":"document.title","returnByValue":true}' --session codex-manual --turn inspect
 ```
 
+### Construct CDP parameters safely
+
+Do not hand-embed nontrivial JavaScript inside shell-quoted `--params` JSON.
+Selectors and scripts commonly contain single quotes, dollar signs, backticks,
+or newlines that the shell can reinterpret before the CLI receives them.
+
+When orchestrating through `functions.exec`, serialize the parameter object and
+shell-quote the completed JSON value:
+
+```javascript
+const expression = `document.querySelector(
+  "button[aria-label^='Time range selected:']"
+)?.click()`;
+const params = JSON.stringify({ expression, returnByValue: true });
+const shellQuote = (value) =>
+  "'" + value.replaceAll("'", "'\\''") + "'";
+
+const result = await tools.exec_command({
+  cmd: `codex-linux-extension-host --json cdp --tab-id 123 Runtime.evaluate --params ${shellQuote(params)} --session codex-manual --turn inspect`,
+});
+text(result);
+```
+
+Use the short inline `--params '{...}'` form only for simple expressions that
+contain no conflicting shell syntax. If the CLI prints its own usage followed
+by `unexpected argument '<word>'`, and that word came from the JavaScript, treat
+it as shell tokenization rather than a missing CDP feature. Rebuild the command
+with programmatic JSON serialization and quoting.
+
 ## Safety
 
 Do not inspect cookies, passwords, local storage, or arbitrary Chrome profile

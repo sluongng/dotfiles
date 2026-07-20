@@ -66,6 +66,26 @@ Most commands accept `--socket-path PATH` for exact socket selection or
 `default`, a bridge PID, a socket basename, or an `extensionInstanceId`/prefix
 shown by `profiles`.
 
+## CDP Parameter Quoting
+
+The shell parses `--params` before `codex-linux-extension-host` parses its JSON.
+Do not manually nest nontrivial JavaScript inside a single-quoted JSON literal.
+Serialize the complete parameter object first, then pass that serialized value
+as one shell-quoted argument. The canonical `functions.exec` pattern is in
+`SKILL.md` under "Construct CDP parameters safely."
+
+An error such as this is a local shell-tokenization failure:
+
+```text
+error: unexpected argument 'range' found
+Usage: codex-linux-extension-host cdp ...
+```
+
+The CLI never reached JSON parsing or Chrome in this case. This often happens
+when an expression such as a CSS selector contains a single quote that closes
+the surrounding shell quote. A missing or unsupported CDP method instead
+produces a JSON-RPC or Chrome debugger error after the CLI accepts the command.
+
 ## Tab Reuse
 
 The CLI does not automatically reuse existing Chrome tabs. To avoid opening a
