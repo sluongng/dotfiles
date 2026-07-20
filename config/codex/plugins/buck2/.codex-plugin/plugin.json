@@ -1,6 +1,6 @@
 {
   "name": "buck2",
-  "version": "0.1.0+codex.20260608102531",
+  "version": "0.1.0+codex.20260713072659",
   "description": "Local Buck2 fork maintenance and adoption helpers for the BuildBuddy-backed patch stack.",
   "author": {
     "name": "Sluong Ng",
@@ -33,8 +33,7 @@
     "defaultPrompt": [
       "Use $buck2-stack-maintainer to refresh the Buck2 fork stack.",
       "Validate the Buck2 stack with BuildBuddy Workflows.",
-      "Check that fork/main has origin/main as its first parent.",
-      "Use $buck2-adoption-research to compare Buck2 with Bazel ecosystem workflows."
+      "Check that fork/main has origin/main as its first parent."
     ],
     "brandColor": "#2563EB",
     "screenshots": []

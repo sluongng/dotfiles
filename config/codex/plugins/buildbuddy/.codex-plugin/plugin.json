@@ -1,6 +1,6 @@
 {
   "name": "buildbuddy",
-  "version": "0.1.1+codex.20260614075315",
+  "version": "0.1.1+codex.20260713072659",
   "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, diagnose log snippets, analyze usage, and research BuildBuddy+Bazel source behavior.",
   "author": {
     "name": "Sluong Ng",
@@ -40,10 +40,7 @@
     "defaultPrompt": [
       "Troubleshoot this BuildBuddy invocation",
       "Compare these two BuildBuddy invocations",
-      "Analyze BuildBuddy usage for this group",
-      "Fetch recent flaky tests from BuildBuddy",
-      "Diagnose this BuildBuddy log snippet",
-      "Use ask-buddy to investigate this BuildBuddy+Bazel issue from source"
+      "Analyze BuildBuddy usage for this group"
     ],
     "brandColor": "#2563EB",
     "screenshots": []
