@@ -1,17 +1,23 @@
 ---
 name: github-create-pr
-description: "Create GitHub pull requests from the current checkout after local commits are ready. Use when Codex needs to inspect the commit range, use `draft-commit-message` as the source of truth for the PR title and body, ask the user to review that text before opening the PR, then push the branch and create a draft or ready PR. Prefer this over generic publish workflows when PR wording review is required."
+description: "Create GitHub pull requests from the current checkout, including combined commit-and-PR requests. Use when Codex needs to inspect the change, use `draft-commit-message` as the source of truth for the commit message and PR title/body, then push and create a draft or ready PR without a separate wording approval when the user already requested PR creation."
 ---
 
 # GitHub Create PR
 
 ## Overview
 
-Create a GitHub pull request from an existing local branch or commit range.
-Draft the PR title and description through `$draft-commit-message` first, do
-not add a `[codex]` prefix to the title, and require explicit user review of
-the title and description before opening the PR. Default to commit-message-style
-PR metadata rather than canned GitHub template sections.
+Create a GitHub pull request from an existing local branch, commit range, or
+coherent uncommitted change when the user requested a combined commit-and-PR
+workflow. Use `$draft-commit-message` as the source of truth for the commit
+message and PR title/body, and do not add a `[codex]` prefix to the title.
+
+When the user has explicitly requested creating, opening, or sending the PR,
+and the metadata is derived through `$draft-commit-message`, continue through
+commit, push, and PR creation without asking for separate wording approval.
+Pause for title/body review only when the user explicitly requests a review-first
+workflow. Default to commit-message-style PR metadata rather than canned GitHub
+template sections.
 
 Assume the usual workflow is co-development between the user and Codex, followed
 by handoff to a second human reviewer while CI runs. Use the draft-message
@@ -25,9 +31,13 @@ for validation in the body.
 
 1. Confirm the PR scope.
    - Run `git status -sb` and inspect the commit range that will be sent.
-   - If there are uncommitted or unrelated changes, stop and clarify scope.
-   - If there is no coherent commit range yet, stop and ask the user to
-     finish the commit workflow first.
+   - If there are unrelated or ambiguous uncommitted changes, stop and clarify
+     scope.
+   - If the user requested a combined commit-and-PR workflow and the intended
+     uncommitted change is coherent, use `$draft-commit-message` for the commit
+     subject and body, create the commit, and continue.
+   - If there is no coherent commit range and the user did not authorize a
+     commit workflow, stop and ask the user to finish the commit first.
    - Check repo-local guidance such as `AGENTS.md` before choosing branch,
      remote, or base branch behavior.
 
@@ -78,20 +88,24 @@ for validation in the body.
    - Prefer direct links or descriptive links over brittle intra-body anchor
      schemes. If you must use custom anchors, plan to verify the rendered body
      after PR creation.
-   - Before showing the draft, compare it against the final commit message(s).
+   - Before using the draft, compare it against the final commit message(s).
      Remove any extra framing that does not add reviewer value.
    - If the body does not yet explain why the change should merge, rerun the
-     `$draft-commit-message` reasoning with more context before showing it.
-   - Show the proposed title and description to the user for review.
-   - Treat explicit approval in the current thread as required before
-     continuing. If approval is missing, stop here.
+     `$draft-commit-message` reasoning with more context before using it.
+   - If the user already requested creating, opening, or sending the PR,
+     continue without a separate title/body approval prompt.
+   - If the user explicitly requested to review the title/body before PR
+     creation, show the proposal and stop until they approve it.
+   - If the user asked only to draft PR metadata, do not treat that request as
+     authorization to push or create a PR.
 
 3. Prepare the branch for review.
    - If the current branch does not match repo-local PR branch conventions,
      create or rename it only when needed and only after understanding the
      repository's expectations.
-   - Push the branch to the appropriate remote after the user has approved
-     the PR title and description.
+   - Push the branch to the appropriate remote once the user's request
+     authorizes PR creation. Do not ask again solely to approve text derived
+     through `$draft-commit-message`.
    - Prefer repo-local remote conventions over generic defaults.
    - Record the exact remote head ref used for the PR, especially for fork
      workflows where the pushed branch name may differ from the local upstream.
@@ -102,8 +116,9 @@ for validation in the body.
      pushed.
    - Use `gh` for auth checks, repo metadata, or cross-repo `head` cases
      where the connector path is awkward.
-   - Use the user-approved title and description verbatim aside from trivial
-     formatting cleanup.
+   - Use the `$draft-commit-message`-derived title and description verbatim
+     aside from trivial formatting cleanup, or use explicitly approved text
+     in a review-first workflow.
    - When using `gh`, pass multiline PR bodies through stdin or a file, not
      through `--body` with a shell-escaped or JSON-escaped string. Prefer
      `gh pr create --body-file - <<'EOF'` and
@@ -133,8 +148,11 @@ for validation in the body.
 
 ## Safety Rules
 
-- Never open a PR before the user has reviewed and approved the PR title and
-  description in the current thread.
+- Never create or push a PR unless the user requested that publication action.
+  When they did, and `$draft-commit-message` produced the commit and PR text,
+  do not require an additional title/body approval.
+- Honor explicit review-first requests by stopping after presenting the title
+  and body until the user approves them.
 - Never add `[codex]` or similar tool prefixes to the PR title unless the
   user explicitly asks for one.
 - Never force template headings, especially `Testing`, when the same context
@@ -152,6 +170,9 @@ for validation in the body.
 ## PR Checklist
 
 - title and body were derived through `$draft-commit-message`
+- commit subject/body were also derived through `$draft-commit-message` when
+  the workflow included creating or amending a commit
+- PR creation was explicitly requested, or review-first approval was received
 - body helps a second human reviewer understand the problem, approach,
   tradeoffs, and rollout context
 - body avoids unnecessary template sections; `Testing` appears only when
@@ -170,5 +191,6 @@ for validation in the body.
 ## Example Triggers
 
 - "Create a draft PR for this branch."
+- "Commit this change with `$draft-commit-message`, then push it and create a PR."
 - "Draft the PR title and description, let me review them, then open the PR."
 - "Push these commits and create a PR after I approve the body."

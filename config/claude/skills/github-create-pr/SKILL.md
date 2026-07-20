@@ -1,17 +1,23 @@
 ---
 name: github-create-pr
-description: "Create GitHub pull requests from the current checkout after local commits are ready. Use when Claude needs to inspect the commit range, draft a PR title and body using the same `component: subject` and why/context rules as `draft-commit-message`, ask the user to review that text before opening the PR, then push the branch and create a draft or ready PR. Prefer this over generic publish workflows when PR wording review is required."
+description: "Create GitHub pull requests from the current checkout, including combined commit-and-PR requests. Use when Claude needs to inspect the change, use `draft-commit-message` as the source of truth for the commit message and PR title/body, then push and create a draft or ready PR without a separate wording approval when the user already requested PR creation."
 ---
 
 # GitHub Create PR
 
 ## Overview
 
-Create a GitHub pull request from an existing local branch or commit range.
-Draft the PR title and description first, do not add a `[claude]` prefix to
-the title, and require explicit user review of the title and description
-before opening the PR. Default to commit-message-style PR metadata rather
-than canned GitHub template sections.
+Create a GitHub pull request from an existing local branch, commit range, or
+coherent uncommitted change when the user requested a combined commit-and-PR
+workflow. Use `$draft-commit-message` as the source of truth for the commit
+message and PR title/body, and do not add a `[claude]` prefix to the title.
+
+When the user has explicitly requested creating, opening, or sending the PR,
+and the metadata is derived through `$draft-commit-message`, continue through
+commit, push, and PR creation without asking for separate wording approval.
+Pause for title/body review only when the user explicitly requests a review-first
+workflow. Default to commit-message-style PR metadata rather than canned GitHub
+template sections.
 
 Assume the usual workflow is co-development between the user and Claude, followed
 by handoff to a second human reviewer while CI runs. Optimize the PR body for
@@ -23,26 +29,28 @@ omitted work. Do not use the PR body to prove that local validation happened.
 
 1. Confirm the PR scope.
    - Run `git status -sb` and inspect the commit range that will be sent.
-   - If there are uncommitted or unrelated changes, stop and clarify scope.
-   - If there is no coherent commit range yet, stop and ask the user to
-     finish the commit workflow first.
+   - If there are unrelated or ambiguous uncommitted changes, stop and clarify
+     scope.
+   - If the user requested a combined commit-and-PR workflow and the intended
+     uncommitted change is coherent, use `$draft-commit-message` for the commit
+     subject and body, create the commit, and continue.
+   - If there is no coherent commit range and the user did not authorize a
+     commit workflow, stop and ask the user to finish the commit first.
    - Check repo-local guidance such as `AGENTS.md` before choosing branch,
      remote, or base branch behavior.
 
 2. Draft the PR title and description before any PR creation action.
    - Inspect the commits and diff that will be included.
-   - Draft the PR title using the same subject rules as
-     `draft-commit-message`: prefer `<component>: <imperative summary>`,
-     keep it honest, and keep it at 50 characters or fewer unless a clear
-     repo-local convention requires something else.
+   - Use `$draft-commit-message` to draft the PR title and body. Treat its
+     subject as the PR title and its body as the PR body unless a repo-local PR
+     convention clearly requires a small adaptation.
    - If the PR is effectively one finalized commit or one squashed change,
      start from that commit subject and body verbatim. Treat the commit
      message as the default PR title/body, then make only the smallest edits
      needed for reviewer context or Markdown links.
-   - Draft the PR body using the same body rules as
-     `draft-commit-message`: lead with the concrete why, explain surrounding
-     context that is not obvious from the diff, and do not invent missing
-     rationale.
+   - Do not hand-roll a separate PR title/body using independent rules. If the
+     PR text seems weak, improve the draft-message output and keep the commit
+     and PR stories synchronized.
    - If the change already has a strong commit message, keep the PR title and
      body synchronized with it. Adapt only what GitHub Markdown or
      reviewer-only context requires.
@@ -78,18 +86,24 @@ omitted work. Do not use the PR body to prove that local validation happened.
    - Prefer direct links or descriptive links over brittle intra-body anchor
      schemes. If you must use custom anchors, plan to verify the rendered body
      after PR creation.
-   - Before showing the draft, compare it against the final commit message(s).
+   - Before using the draft, compare it against the final commit message(s).
      Remove any extra framing that does not add reviewer value.
-   - Show the proposed title and description to the user for review.
-   - Treat explicit approval in the current thread as required before
-     continuing. If approval is missing, stop here.
+   - If the body does not yet explain why the change should merge, rerun the
+     `$draft-commit-message` reasoning with more context before using it.
+   - If the user already requested creating, opening, or sending the PR,
+     continue without a separate title/body approval prompt.
+   - If the user explicitly requested to review the title/body before PR
+     creation, show the proposal and stop until they approve it.
+   - If the user asked only to draft PR metadata, do not treat that request as
+     authorization to push or create a PR.
 
 3. Prepare the branch for review.
    - If the current branch does not match repo-local PR branch conventions,
      create or rename it only when needed and only after understanding the
      repository's expectations.
-   - Push the branch to the appropriate remote after the user has approved
-     the PR title and description.
+   - Push the branch to the appropriate remote once the user's request
+     authorizes PR creation. Do not ask again solely to approve text derived
+     through `$draft-commit-message`.
    - Prefer repo-local remote conventions over generic defaults.
    - Record the exact remote head ref used for the PR, especially for fork
      workflows where the pushed branch name may differ from the local upstream.
@@ -100,13 +114,14 @@ omitted work. Do not use the PR body to prove that local validation happened.
      pushed.
    - Use `gh` for auth checks, repo metadata, or cross-repo `head` cases
      where the connector path is awkward.
-   - Use the user-approved title and description verbatim aside from trivial
-     formatting cleanup.
+   - Use the `$draft-commit-message`-derived title and description verbatim
+     aside from trivial formatting cleanup, or use explicitly approved text
+     in a review-first workflow.
    - Derive the base branch from the user request or the remote default
      branch when unspecified.
    - If commits were amended or squashed after the draft was first written,
-     refresh the PR title/body from the final commit text before opening or
-     editing the PR.
+     refresh the PR title/body through `$draft-commit-message` before opening
+     or editing the PR.
    - After creation, verify the PR head ref matches the branch that was pushed.
      If the local branch upstream points somewhere else, fix it with
      `git branch --set-upstream-to=<remote>/<branch>` so later `gh pr view`,
@@ -121,8 +136,11 @@ omitted work. Do not use the PR body to prove that local validation happened.
 
 ## Safety Rules
 
-- Never open a PR before the user has reviewed and approved the PR title and
-  description in the current thread.
+- Never create or push a PR unless the user requested that publication action.
+  When they did, and `$draft-commit-message` produced the commit and PR text,
+  do not require an additional title/body approval.
+- Honor explicit review-first requests by stopping after presenting the title
+  and body until the user approves them.
 - Never add `[claude]` or similar tool prefixes to the PR title unless the
   user explicitly asks for one.
 - Never force template headings, especially `Testing`, when the same context
@@ -137,8 +155,10 @@ omitted work. Do not use the PR body to prove that local validation happened.
 
 ## PR Checklist
 
-- title follows the same subject rules as `draft-commit-message`
-- body follows the same why/context rules as `draft-commit-message`
+- title and body were derived through `$draft-commit-message`
+- commit subject/body were also derived through `$draft-commit-message` when
+  the workflow included creating or amending a commit
+- PR creation was explicitly requested, or review-first approval was received
 - body helps a second human reviewer understand the problem, approach,
   tradeoffs, and rollout context
 - body avoids unnecessary template sections; `Testing` appears only when
@@ -156,5 +176,6 @@ omitted work. Do not use the PR body to prove that local validation happened.
 ## Example Triggers
 
 - "Create a draft PR for this branch."
+- "Commit this change with `$draft-commit-message`, then push it and create a PR."
 - "Draft the PR title and description, let me review them, then open the PR."
 - "Push these commits and create a PR after I approve the body."

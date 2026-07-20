@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub Create PR"
   short_description: "Open PRs using draft-message text"
-  default_prompt: "Use $github-create-pr to derive a PR title and body through $draft-commit-message, let me review them, then open the PR."
+  default_prompt: "Use $github-create-pr to derive the commit message and PR title/body through $draft-commit-message, then push and open the PR."
