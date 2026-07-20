@@ -1,4 +1,4 @@
 interface:
   display_name: "Linux Computer Use"
-  short_description: "Inspect and control Hyprland desktop apps."
-  default_prompt: "Use $linux-computer-use to inspect and safely interact with the local desktop state."
+  short_description: "Use Sky-compatible tools on Wayland and Hyprland."
+  default_prompt: "Use $linux-computer-use to inspect and safely interact with a running Hyprland app through the Sky-compatible contract."
