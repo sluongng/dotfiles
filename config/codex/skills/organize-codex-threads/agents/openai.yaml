@@ -1,0 +1,4 @@
+interface:
+  display_name: "Organize Codex Threads"
+  short_description: "Rename active threads from recent dialogue"
+  default_prompt: "Use $organize-codex-threads to rename recent user-interacted Codex threads with concise titles."
