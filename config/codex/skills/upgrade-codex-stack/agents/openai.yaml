@@ -1,0 +1,4 @@
+interface:
+  display_name: "Upgrade Codex Stack"
+  short_description: "Upgrade CLI, desktop app, config, and feature radar"
+  default_prompt: "Use $upgrade-codex-stack to update my Codex CLI packaging and Linux desktop app, audit my dotfiles, and report new features."
