@@ -34,9 +34,10 @@ evidence.
 
 - Dotfile-managed Hyprland config lives under
   `${DOTFILES_DIR:-$HOME/.dotfiles}/config/hypr`.
-- Autostart belongs in `config/hypr/config/autostart.conf`.
-- User placement and focus overrides belong in
-  `config/hypr/config/user-overrides.conf`.
+- Hyprland's compositor entrypoint is `config/hypr/hyprland.lua`.
+- Autostart belongs in `config/hypr/config/autostart.lua`.
+- Window placement and focus rules belong in
+  `config/hypr/config/windowrules.lua`.
 - Existing durable placement preferences include Ghostty on ws1, Chrome on ws2,
   Slack on ws3, Discord on ws4, and Steam on ws6 unless the user changes them.
 

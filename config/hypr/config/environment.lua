@@ -1,0 +1,6 @@
+hl.env("HYPRCURSOR_SIZE", "24")
+hl.env("XCURSOR_SIZE", "24")
+hl.env("QT_CURSOR_SIZE", "24")
+hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
+hl.env("XDG_MENU_PREFIX", "arch-")
+hl.env("XMODIFIERS", "@im=fcitx")
