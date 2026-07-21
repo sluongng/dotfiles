@@ -108,7 +108,7 @@ bind(main_mod .. " + F1", hl.dsp.workspace.toggle_special("scratchpad"), "Toggle
 bind(main_mod .. " + ALT + SHIFT + F1", hl.dsp.window.move({ workspace = "special:scratchpad", follow = false }), "Move the active window silently to the scratchpad")
 
 exec("ALT + SPACE", "fcitx5-remote -t", "Toggle Vietnamese IME")
-exec(main_mod .. " + CTRL + O", [[hyprctl --batch "keyword monitor desc:Samsung Electric Company Odyssey G70B H1AK500000,3840x2160@60,0x0,1; dispatch dpms on HDMI-A-1; reload"]], "Recover the monitor")
+exec(main_mod .. " + CTRL + O", [[hyprctl --batch "keyword monitor desc:Samsung Electric Company Odyssey G70B H1AK500000,3840x2160@120,0x0,1; dispatch dpms on HDMI-A-1; reload"]], "Recover the monitor")
 exec(main_mod .. " + CTRL + M", "~/.config/hypr/scripts/mx-ergo-recover recover", "Reconnect MX Ergo")
 exec(main_mod .. " + CTRL + S", "~/.config/hypr/scripts/steamlink-host-mode on", "Enable Steam Link host mode")
 exec(main_mod .. " + CTRL + SHIFT + S", "~/.config/hypr/scripts/steamlink-host-mode off", "Disable Steam Link host mode")
