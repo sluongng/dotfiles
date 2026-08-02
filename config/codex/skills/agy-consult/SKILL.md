@@ -1,9 +1,13 @@
 ---
 name: agy-consult
-description: Run the Antigravity CLI `agy` as a fast, advisory, read-only scout from Codex. Use when Codex should delegate bounded codebase reconnaissance, first-pass review, hypothesis generation, or evidence extraction to Gemini 3.5 Flash through `agy --print`, while keeping final judgment, edits, and validation in the main Codex thread.
+description: Run the Antigravity CLI `agy` as a fast, advisory, read-only Linux scout from Codex. Use on Linux hosts with `agy` and bubblewrap when Codex should delegate bounded codebase reconnaissance, first-pass review, hypothesis generation, or evidence extraction to Gemini 3.5 Flash through `agy --print`.
 ---
 
 # Agy Consult
+
+This workflow is Linux-only because its fail-closed containment boundary is
+bubblewrap. On macOS, do not attempt an uncontained fallback; use a normal Codex
+subagent or another read-only research path instead.
 
 Use this skill to get a fast second pass from Antigravity CLI without handing it
 authority over the task. Treat results as advisory. Codex must verify any claim

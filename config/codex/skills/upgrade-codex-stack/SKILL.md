@@ -1,9 +1,13 @@
 ---
 name: upgrade-codex-stack
-description: Upgrade and audit the local Codex stack across the Arch Linux CLI package, the Linux Codex App repackager, live and dotfiles-managed configuration, system skills and plugins, background services, and current feature maturity. Use when the user asks to upgrade Codex, refresh the latest alpha, update codex-app, audit dotfiles after a release, reconcile runtime or version drift, or produce a report covering stable, experimental, under-development, deprecated, and removed Codex features.
+description: On the Arch Linux workstation, upgrade and audit the local Codex CLI package, Linux Codex App repackager, configuration, skills, plugins, services, and feature maturity. Do not use this Linux packaging workflow for macOS Codex upgrades.
 ---
 
 # Upgrade Codex Stack
+
+This is the Arch Linux workstation upgrade workflow. If `uname -s` is not
+`Linux`, stop before using any `/home/nb`, pacman, systemd, or Linux Codex App
+steps and use the platform's normal Codex distribution/update path instead.
 
 Upgrade the complete local Codex stack and finish with a current-state report. Treat the CLI package, Codex App, desktop runtime, rendered configuration, plugins, system skills, and services as one system while preserving the boundary between their responsibilities.
 

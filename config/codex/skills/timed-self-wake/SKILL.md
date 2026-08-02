@@ -1,9 +1,13 @@
 ---
 name: timed-self-wake
-description: Create, inspect, or cancel one-time Codex wake-up automations backed by systemd user timers, especially when Codex must re-evaluate time-sensitive state in the future, preserve prior context or approvals, resume a known thread, or install a guarded future action through local codex-automaton.
+description: On Linux, create, inspect, or cancel one-time Codex wake-up automations backed by systemd user timers. Use for guarded future actions through local codex-automaton; on macOS, route scheduling through automation-creator and the Codex App backend instead.
 ---
 
 # Timed Self Wake
+
+This skill's timer implementation is Linux-only. On macOS, stop here and use
+`$automation-creator`, which selects the Codex App automation backend; do not
+try to install or emulate systemd user units.
 
 Use this skill when a task should pause until a future clock time, market open,
 deadline, release window, or scheduled review. Prefer a one-time

@@ -8,6 +8,7 @@ TARGET_DIR="${CODEX_HOME:-${HOME}/.codex}"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 BACKUP_DIR="${TARGET_DIR}/backups/install-codex-${TIMESTAMP}"
 RENDER_CONFIG_SCRIPT="${DOTFILES_DIR}/automation/codex/render-config.py"
+MARKETPLACE_NAME="sluongng-dotfiles"
 
 backup_path() {
   local path="$1"
@@ -119,6 +120,51 @@ sync_tracked_plugin_caches() {
   done < <(find "${SOURCE_DIR}/plugins" -mindepth 3 -maxdepth 3 -path '*/.codex-plugin/plugin.json' -type f | sort)
 }
 
+detect_nested_feature_tables() {
+  local override="${CODEX_NESTED_FEATURE_TABLES:-}"
+  local probe_home=""
+
+  case "${override}" in
+    true | false)
+      printf '%s\n' "${override}"
+      return 0
+      ;;
+    "") ;;
+    *)
+      echo "CODEX_NESTED_FEATURE_TABLES must be true or false" >&2
+      exit 1
+      ;;
+  esac
+
+  if ! command -v codex >/dev/null 2>&1; then
+    printf '%s\n' false
+    return 0
+  fi
+
+  probe_home="$(mktemp -d "${TMPDIR:-/tmp}/codex-config-probe.XXXXXX")"
+  mkdir -p "${probe_home}"
+  cat > "${probe_home}/config.toml" <<'EOF'
+[features.current_time_reminder]
+enabled = true
+clock_source = "system"
+delivery_mode = "after_user_or_tool_output"
+sleep_tool = true
+
+[features.multi_agent_v2]
+enabled = true
+
+[agents]
+max_concurrent_threads_per_session = 12
+max_depth = 2
+EOF
+  if CODEX_HOME="${probe_home}" codex features list >/dev/null 2>&1; then
+    printf '%s\n' true
+  else
+    printf '%s\n' false
+  fi
+  rm -rf "${probe_home}"
+}
+
 main() {
   local relative_path=""
   local skill_name=""
@@ -126,6 +172,8 @@ main() {
   local target_config_path="${TARGET_DIR}/config.toml"
   local local_config_path="${TARGET_DIR}/config.local.toml"
   local projects_local_path="${TARGET_DIR}/projects.local.toml"
+  local platform=""
+  local nested_feature_tables=""
 
   if [ ! -d "${SOURCE_DIR}" ]; then
     echo "Missing source directory: ${SOURCE_DIR}" >&2
@@ -139,11 +187,28 @@ main() {
 
   mkdir -p "${TARGET_DIR}" "${TARGET_DIR}/agents" "${TARGET_DIR}/skills"
 
+  platform="${CODEX_CONFIG_PLATFORM:-$(uname -s)}"
+  case "${platform}" in
+    Darwin | Linux) ;;
+    *)
+      echo "Unsupported Codex config platform: ${platform}" >&2
+      exit 1
+      ;;
+  esac
+  nested_feature_tables="$(detect_nested_feature_tables)"
+
   python3 "${RENDER_CONFIG_SCRIPT}" \
     --shared "${SOURCE_DIR}/config.toml" \
     --local "${local_config_path}" \
     --projects "${projects_local_path}" \
-    --target "${target_config_path}"
+    --target "${target_config_path}" \
+    --platform "${platform}" \
+    --nested-feature-tables "${nested_feature_tables}" \
+    --marketplace-name "${MARKETPLACE_NAME}" \
+    --marketplace-source "${SOURCE_DIR}"
+
+  echo "Codex packaged zsh fork backends disabled (${platform})"
+  echo "Codex nested feature tables supported: ${nested_feature_tables}"
 
   if [ -f "${SOURCE_DIR}/AGENTS.md" ]; then
     ensure_symlink "${SOURCE_DIR}/AGENTS.md" "${TARGET_DIR}/AGENTS.md"

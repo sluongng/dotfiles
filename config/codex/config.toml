@@ -42,12 +42,12 @@ mentions_v2 = true
 prevent_idle_sleep = true
 remote_compaction_v2 = true
 runtime_metrics = true
-# The Homebrew cask should install Codex's package layout, including
-# codex-resources/zsh/bin/zsh for the forked-zsh shell backend. Leave zsh_path
-# unset so each installation can resolve its own packaged binary.
-shell_zsh_fork = true
+# Keep these disabled on macOS and Linux. The CLI and Desktop share config but
+# may ship different resource layouts, so packaged-fork support is not a safe
+# cross-runtime assumption.
+shell_zsh_fork = false
 unified_exec = true
-unified_exec_zsh_fork = true
+unified_exec_zsh_fork = false
 
 [features.current_time_reminder]
 enabled = true
@@ -94,9 +94,6 @@ enabled = true
 
 [plugins."buck2@sluongng-dotfiles"]
 enabled = true
-
-[plugins."etoro-api@sluongng-dotfiles"]
-enabled = false
 
 [plugins."codex-security-cloud@sluongng-dotfiles"]
 enabled = true

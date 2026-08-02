@@ -45,6 +45,18 @@ Bump the plugin manifest version when changing tracked plugin contents so fresh
 Codex sessions pick up the new cache entry, or clear the matching cache entry
 to force a local refresh.
 
+The rendered config is platform-aware:
+
+- forked-zsh backends stay disabled on both macOS and Linux because the CLI and
+  Desktop share config but may ship different resource layouts;
+- it probes whether the installed CLI accepts nested feature configuration and
+  emits the compatible legacy boolean form for older Codex releases;
+- it disables the Linux Chrome Bridge-only `chatgpt-threads` plugin on macOS;
+- it generates the tracked marketplace source from this checkout when a
+  machine-local marketplace entry is not already present;
+- redundant local plugin tables that exactly match tracked desired state are
+  ignored, while conflicting overrides fail before replacing the live config.
+
 It intentionally leaves `auth.json`, histories, logs, memories, SQLite state,
 and Codex-managed system skills as local machine state inside the selected
 Codex home.
