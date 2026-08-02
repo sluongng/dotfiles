@@ -42,3 +42,19 @@ CODEX_HOME=/path/to/codex-home ./init.sh
 
 Local secrets, Codex state, Git credentials, and machine-specific project trust
 entries are intentionally kept outside this repository.
+
+## Neovim
+
+The shared Neovim configuration uses `vim.pack` and the current
+`nvim-treesitter` `main` branch on both macOS and Linux. It requires Neovim
+0.12 or newer, Git, `curl`, `tar`, a C compiler, and `tree-sitter` CLI 0.26.1
+or newer. The Brewfile supplies the macOS dependencies; Linux packages remain
+host-managed.
+
+Run `:PackUpdate!` to update plugins and synchronize all configured Tree-sitter
+parsers. The optional local Tree-sitter grammar checkout does not affect the
+portable plugin lockfile:
+
+```sh
+export NVIM_TREE_SITTER_BAZELRC_PATH=~/work/misc/tree-sitter-bazelrc
+```

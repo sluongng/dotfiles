@@ -62,9 +62,6 @@ vim.g.airline_extensions_tabline_buffer_idx_mode = 1
 vim.g.airline_extensions_nvimlsp_enabled = 1
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Plugins >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-local neotest_bazel_dir = vim.fs.normalize(vim.fn.expand('~/work/misc/neotest-bazel'))
-local neotest_bazel_src = vim.uv.fs_stat(neotest_bazel_dir) and neotest_bazel_dir or 'https://github.com/sluongng/neotest-bazel'
-
 local pack_specs = {
   -- Utilities
   fileline = 'https://github.com/lewis6991/fileline.nvim',
@@ -83,8 +80,10 @@ local pack_specs = {
   vim_gitgutter = 'https://github.com/airblade/vim-gitgutter',
 
   -- TreeSitter
-  nvim_treesitter = 'https://github.com/nvim-treesitter/nvim-treesitter',
-  playground = 'https://github.com/nvim-treesitter/playground',
+  nvim_treesitter = {
+    src = 'https://github.com/nvim-treesitter/nvim-treesitter',
+    version = 'main',
+  },
 
   -- LSP Client
   cmp_buffer = 'https://github.com/hrsh7th/cmp-buffer',
@@ -107,7 +106,7 @@ local pack_specs = {
   plenary = 'https://github.com/nvim-lua/plenary.nvim',
   nvim_nio = 'https://github.com/nvim-neotest/nvim-nio',
   neotest = 'https://github.com/nvim-neotest/neotest',
-  neotest_bazel = neotest_bazel_src,
+  neotest_bazel = 'https://github.com/sluongng/neotest-bazel',
 
   -- Coloring
   onedark = 'https://github.com/joshdick/onedark.vim',
@@ -144,6 +143,7 @@ pack_add_specs({
   'indent_blankline',
   'vim_airline',
   'vim_gitgutter',
+  'nvim_treesitter',
   'cmp_nvim_lsp',
   'nvim_lspconfig',
   'nvim_metals',
@@ -152,173 +152,6 @@ pack_add_specs({
   'onedark',
   'vim_helm',
 })
-
-local treesitter_compat_ready = false
-local function ensure_treesitter_compat()
-  if treesitter_compat_ready then
-    return
-  end
-  treesitter_compat_ready = true
-
-  -- Neovim 0.12+ can pass a list of nodes for query captures, but the archived
-  -- nvim-treesitter master branch pinned in this config still assumes a single
-  -- TSNode for its custom predicates/directives.
-  if vim.fn.has('nvim-0.12') ~= 1 then
-    return
-  end
-
-  local ok, query = pcall(require, 'vim.treesitter.query')
-  if ok then
-    local html_script_type_languages = {
-      ["importmap"] = "json",
-      ["module"] = "javascript",
-      ["application/ecmascript"] = "javascript",
-      ["text/ecmascript"] = "javascript",
-    }
-    local non_filetype_match_injection_language_aliases = {
-      ex = "elixir",
-      pl = "perl",
-      sh = "bash",
-      uxn = "uxntal",
-      ts = "typescript",
-    }
-    local opts = { force = true, all = false }
-
-    local function normalize_tsnode(node)
-      if type(node) ~= "table" or node.range ~= nil then
-        return node
-      end
-
-      local first = rawget(node, 1)
-      if first == nil then
-        return node
-      end
-
-      if pcall(function()
-        return first:range(true)
-      end) then
-        return first
-      end
-
-      return node
-    end
-
-    local original_get_range = vim.treesitter.get_range
-    vim.treesitter.get_range = function(node, source, metadata)
-      return original_get_range(normalize_tsnode(node), source, metadata)
-    end
-
-    local original_get_node_text = vim.treesitter.get_node_text
-    vim.treesitter.get_node_text = function(node, source, opts)
-      return original_get_node_text(normalize_tsnode(node), source, opts)
-    end
-
-    local function capture_node(match, id)
-      return normalize_tsnode(match[id])
-    end
-
-    local function get_parser_from_markdown_info_string(injection_alias)
-      local match = vim.filetype.match({ filename = "a." .. injection_alias })
-      return match or non_filetype_match_injection_language_aliases[injection_alias] or injection_alias
-    end
-
-    local function valid_args(name, pred, count, strict_count)
-      local arg_count = #pred - 1
-      if strict_count then
-        return arg_count == count
-      end
-      return arg_count >= count
-    end
-
-    query.add_predicate("nth?", function(match, _pattern, _bufnr, pred)
-      if not valid_args("nth?", pred, 2, true) then
-        return
-      end
-
-      local node = capture_node(match, pred[2])
-      local n = tonumber(pred[3])
-      if node and n and node:parent() and node:parent():named_child_count() > n then
-        return node:parent():named_child(n) == node
-      end
-
-      return false
-    end, opts)
-
-    query.add_predicate("is?", function(match, _pattern, bufnr, pred)
-      if not valid_args("is?", pred, 2) then
-        return
-      end
-
-      local locals = require('nvim-treesitter.locals')
-      local node = capture_node(match, pred[2])
-      local types = { unpack(pred, 3) }
-
-      if not node then
-        return true
-      end
-
-      local _, _, kind = locals.find_definition(node, bufnr)
-      return vim.tbl_contains(types, kind)
-    end, opts)
-
-    query.add_predicate("kind-eq?", function(match, _pattern, _bufnr, pred)
-      if not valid_args(pred[1], pred, 2) then
-        return
-      end
-
-      local node = capture_node(match, pred[2])
-      local types = { unpack(pred, 3) }
-
-      if not node then
-        return true
-      end
-
-      return vim.tbl_contains(types, node:type())
-    end, opts)
-
-    query.add_directive("set-lang-from-mimetype!", function(match, _, bufnr, pred, metadata)
-      local node = capture_node(match, pred[2])
-      if not node then
-        return
-      end
-
-      local type_attr_value = vim.treesitter.get_node_text(node, bufnr)
-      local configured = html_script_type_languages[type_attr_value]
-      if configured then
-        metadata["injection.language"] = configured
-      else
-        local parts = vim.split(type_attr_value, "/", {})
-        metadata["injection.language"] = parts[#parts]
-      end
-    end, opts)
-
-    query.add_directive("set-lang-from-info-string!", function(match, _, bufnr, pred, metadata)
-      local node = capture_node(match, pred[2])
-      if not node then
-        return
-      end
-
-      local injection_alias = vim.treesitter.get_node_text(node, bufnr):lower()
-      metadata["injection.language"] = get_parser_from_markdown_info_string(injection_alias)
-    end, opts)
-
-    query.add_directive("make-range!", function() end, opts)
-
-    query.add_directive("downcase!", function(match, _, bufnr, pred, metadata)
-      local id = pred[2]
-      local node = capture_node(match, id)
-      if not node then
-        return
-      end
-
-      local text = vim.treesitter.get_node_text(node, bufnr, { metadata = metadata[id] }) or ""
-      if not metadata[id] then
-        metadata[id] = {}
-      end
-      metadata[id].text = string.lower(text)
-    end, opts)
-  end
-end
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Editor Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -473,6 +306,16 @@ local function pack_plugin_name_complete(arg_lead, _cmd_line, _)
   table.sort(plugins)
   return plugins
 end
+
+local pack_post_update_hooks = {}
+local pack_update_in_progress = false
+
+local function run_pack_post_update_hooks(names)
+  for _, hook in ipairs(pack_post_update_hooks) do
+    hook(names)
+  end
+end
+
 vim.api.nvim_create_user_command('PackUpdate', function(opts)
   local names
   if opts.args ~= '' then
@@ -483,7 +326,16 @@ vim.api.nvim_create_user_command('PackUpdate', function(opts)
     end
   end
 
-  vim.pack.update(names, { force = opts.bang })
+  pack_update_in_progress = true
+  local ok, err = pcall(vim.pack.update, names, { force = opts.bang })
+  pack_update_in_progress = false
+  if not ok then
+    error(err)
+  end
+
+  if opts.bang then
+    run_pack_post_update_hooks(names)
+  end
 end, {
   bang = true,
   nargs = '*',
@@ -2135,126 +1987,160 @@ vim.api.nvim_set_keymap('n', '<leader>-', '<Plug>AirlineSelectPrevTab<CR>', opts
 vim.api.nvim_set_keymap('n', '<leader>+', '<Plug>AirlineSelectNextTab<CR>', opts)
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> TreeSitter >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-local treesitter_ready = false
-local function ensure_treesitter()
-  if treesitter_ready then
+local treesitter_parsers = {
+  'bash',
+  'bazelrc',
+  'c',
+  'cpp',
+  'css',
+  'diff',
+  'dockerfile',
+  'git_config',
+  'git_rebase',
+  'gitattributes',
+  'gitcommit',
+  'gitignore',
+  'go',
+  'gomod',
+  'gosum',
+  'gotmpl',
+  'helm',
+  'html',
+  'hyprlang',
+  'java',
+  'javascript',
+  'jq',
+  'json',
+  'lua',
+  'make',
+  'markdown',
+  'markdown_inline',
+  'proto',
+  'python',
+  'query',
+  'regex',
+  'rust',
+  'scala',
+  'sql',
+  'starlark',
+  'terraform',
+  'toml',
+  'tsx',
+  'typescript',
+  'vim',
+  'vimdoc',
+  'xml',
+  'yaml',
+}
+
+local function configure_bazelrc_parser()
+  local parser_config = require('nvim-treesitter.parsers')
+  local local_path = vim.env.NVIM_TREE_SITTER_BAZELRC_PATH
+  if local_path and local_path ~= '' then
+    parser_config.bazelrc = {
+      install_info = { path = vim.fs.normalize(vim.fn.expand(local_path)) },
+    }
+  else
+    parser_config.bazelrc = {
+      install_info = {
+        url = 'https://github.com/zaucy/tree-sitter-bazelrc',
+        branch = 'main',
+      },
+    }
+  end
+end
+
+local treesitter_group = vim.api.nvim_create_augroup('Treesitter', { clear = true })
+vim.api.nvim_create_autocmd('User', {
+  group = treesitter_group,
+  pattern = 'TSUpdate',
+  callback = configure_bazelrc_parser,
+})
+
+local nvim_treesitter = require('nvim-treesitter')
+nvim_treesitter.setup({})
+configure_bazelrc_parser()
+
+local function missing_treesitter_parsers(treesitter)
+  local installed = {}
+  for _, name in ipairs(treesitter.get_installed()) do
+    installed[name] = true
+  end
+
+  return vim.tbl_filter(function(name)
+    return not installed[name]
+  end, treesitter_parsers)
+end
+
+local missing_parsers = missing_treesitter_parsers(nvim_treesitter)
+if #missing_parsers > 0 then
+  if vim.fn.executable('tree-sitter') == 1 then
+    nvim_treesitter.install(missing_parsers)
+  else
+    vim.schedule(function()
+      vim.notify(
+        ('Install tree-sitter CLI 0.26.1+ to build %d missing parsers'):format(#missing_parsers),
+        vim.log.levels.WARN
+      )
+    end)
+  end
+end
+
+local function update_treesitter_parsers()
+  if vim.fn.executable('tree-sitter') ~= 1 then
+    vim.notify('Install tree-sitter CLI 0.26.1+ before updating parsers', vim.log.levels.ERROR)
     return
   end
 
-  pack_add_once('treesitter', { 'nvim_treesitter', 'playground' })
-  ensure_treesitter_compat()
+  -- Reload the plugin modules after vim.pack replaces the checkout so parser
+  -- metadata and queries come from the newly installed plugin revision.
+  for name in pairs(package.loaded) do
+    if name == 'nvim-treesitter' or name:match('^nvim%-treesitter%.') then
+      package.loaded[name] = nil
+    end
+  end
 
-  local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
-  parser_config.bazelrc = {
-    install_info = {
-      url = vim.fs.normalize(vim.fn.expand("~/work/misc/tree-sitter-bazelrc")),
-      files = { "src/parser.c" },
-      branch = "main",                        -- default branch in case of git repo if different from master
-      generate_requires_npm = false,          -- if stand-alone parser without npm dependencies
-      requires_generate_from_grammar = false, -- if folder contains pre-generated src/parser.c
-    },
-    filetype = "bazelrc",
-  }
-  require 'nvim-treesitter.configs'.setup {
-    ensure_installed = {
-      'bash',
-      'bazelrc',
-      'c',
-      'cpp',
-      'css',
-      'diff',
-      'dockerfile',
-      'git_config',
-      'git_rebase',
-      'gitattributes',
-      'gitcommit',
-      'gitignore',
-      'go',
-      'gomod',
-      'gosum',
-      'gotmpl',
-      'helm',
-      'html',
-      'hyprlang',
-      'java',
-      'javascript',
-      'jq',
-      'json',
-      'jsonc',
-      'lua',
-      'make',
-      'markdown',
-      'markdown_inline',
-      'proto',
-      'python',
-      'query',
-      'regex',
-      'rust',
-      'scala',
-      'sql',
-      'starlark',
-      'terraform',
-      'toml',
-      'tsx',
-      'typescript',
-      'vim',
-      'vimdoc',
-      'xml',
-      'yaml',
-    },
-    -- Install parsers synchronously (only applied to `ensure_installed`)
-    sync_install = false,
-    highlight = {
-      enable = true, -- false will disable the whole extension
-    },
-    ignore_install = { "ipkg" },
-    incremental_selection = {
-      enable = true,
-      keymaps = {
-        init_selection = "<A-J>", -- set to `false` to disable one of the mappings
-        scope_incremental = false,
-        node_incremental = "<A-J>",
-        node_decremental = "<A-K>",
-      },
-    },
-    playground = {
-      enable = true,
-      disable = {},
-      updatetime = 25,         -- Debounced time for highlighting nodes in the playground from source code
-      persist_queries = false, -- Whether the query persists across vim sessions
-      keybindings = {
-        toggle_query_editor = 'o',
-        toggle_hl_groups = 'i',
-        toggle_injected_languages = 't',
-        toggle_anonymous_nodes = 'a',
-        toggle_language_display = 'I',
-        focus_language = 'f',
-        unfocus_language = 'F',
-        update = 'R',
-        goto_node = '<cr>',
-        show_help = '?',
-      },
-    },
-    query_linter = {
-      enable = true,
-      use_virtual_text = true,
-      lint_events = { "BufWrite", "CursorHold" },
-    }
-  }
-
-  treesitter_ready = true
+  local updated_treesitter = require('nvim-treesitter')
+  updated_treesitter.setup({})
+  configure_bazelrc_parser()
+  updated_treesitter.update(treesitter_parsers):wait(300000)
 end
 
-local treesitter_group = vim.api.nvim_create_augroup('LazyTreesitter', { clear = true })
+table.insert(pack_post_update_hooks, function(names)
+  if names == nil or vim.tbl_contains(names, 'nvim-treesitter') then
+    update_treesitter_parsers()
+  end
+end)
+
+vim.api.nvim_create_autocmd('PackChanged', {
+  group = treesitter_group,
+  callback = function(args)
+    local data = args.data or {}
+    local spec = data.spec or {}
+    if data.kind == 'update' and spec.name == 'nvim-treesitter' and not pack_update_in_progress then
+      vim.schedule(update_treesitter_parsers)
+    end
+  end,
+})
+
+-- Highlighting is provided by Neovim itself in the current nvim-treesitter API.
 vim.api.nvim_create_autocmd('FileType', {
   group = treesitter_group,
-  callback = ensure_treesitter,
+  callback = function(args)
+    pcall(vim.treesitter.start, args.buf)
+  end,
 })
-vim.api.nvim_create_autocmd('CmdUndefined', {
-  group = treesitter_group,
-  pattern = 'TS*',
-  callback = ensure_treesitter,
-})
+
+map({ 'n', 'x' }, '<A-J>', function()
+  vim.treesitter.select('parent', vim.v.count1)
+end, { desc = 'Select parent Tree-sitter node' })
+map('x', '<A-K>', function()
+  vim.treesitter.select('child', vim.v.count1)
+end, { desc = 'Select child Tree-sitter node' })
+map('n', '<leader>I', '<Cmd>InspectTree<CR>', { desc = 'Inspect Tree-sitter tree' })
+map('n', '<leader>Q', '<Cmd>EditQuery<CR>', { desc = 'Edit Tree-sitter query' })
+
+vim.g.query_lint_on = { 'BufEnter', 'BufWrite' }
 
 
 -- >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Language Settings >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
