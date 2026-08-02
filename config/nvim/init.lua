@@ -1778,7 +1778,6 @@ enable_lsp_config('gopls', {
   settings = {
     gopls = {
       usePlaceholders = true,
-      buildFlags = { "-tags=linux,amd64" },
       -- ["local"] = "github.com/buildbuddy-io/buildbuddy",
       staticcheck = true,
       analyses = {

@@ -5,6 +5,7 @@
 export ZSH="$HOME/.oh-my-zsh"
 
 typeset -gU path
+DOTFILES_OS="$(uname -s 2>/dev/null)"
 
 _path_prepend() {
   [[ -d "$1" ]] && path=("$1" "${path[@]}")
@@ -29,12 +30,12 @@ SHOW_AWS_PROMPT=false
 
 # M1 Mac
 # Brew switched to /opt/homebrew
-if [[ `uname -m` == 'arm64' && `uname` == 'Darwin' ]]; then
+if [[ "$(uname -m)" == 'arm64' && "$DOTFILES_OS" == 'Darwin' ]]; then
   _path_prepend /opt/homebrew/sbin
   _path_prepend /opt/homebrew/bin
   _path_prepend /usr/local/bin
-  export LIB=/opt/homebrew/lib:$LIB
-  export INCLUDE=/opt/homebrew/include:$INCLUDE
+  export LIB="/opt/homebrew/lib${LIB:+:${LIB}}"
+  export INCLUDE="/opt/homebrew/include${INCLUDE:+:${INCLUDE}}"
 
   # Need to compile git
   export C_INCLUDE_PATH=$INCLUDE
@@ -45,9 +46,6 @@ plugins=(
   # Shell QoL
   sudo
   web-search
-
-  # CachyOS
-  archlinux
 
   # Git
   git
@@ -85,24 +83,22 @@ if [[ -t 1 ]]; then
   )
 fi
 
-if type brew &>/dev/null
-then
+if command -v brew >/dev/null 2>&1; then
   FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
 fi
 
-# Check if Linux or MacOS
-if [ "$(uname 2> /dev/null)" != "Linux" ]; then
-  # Load MacOS specific plugins
+# Keep distro-specific oh-my-zsh plugins off the other operating system.
+if [[ "$DOTFILES_OS" == "Darwin" ]]; then
   plugins+=(
     macos
-    brew
   )
-else
-  # Load Ubuntu specific plugins
-  plugins+=(
-    ubuntu
-    command-not-found
-  )
+  command -v brew >/dev/null 2>&1 && plugins+=(brew)
+elif [[ "$DOTFILES_OS" == "Linux" ]]; then
+  if command -v pacman >/dev/null 2>&1; then
+    plugins+=(archlinux)
+  elif command -v apt >/dev/null 2>&1; then
+    plugins+=(ubuntu command-not-found)
+  fi
 
   # Fix environment for Wayland + zsh + snapd
   if [ -r /etc/profile.d/apps-bin-path.sh ]; then
@@ -114,7 +110,11 @@ fi
 # Doc: https://stackoverflow.com/questions/25614613/how-to-disable-zsh-substitution-autocomplete-with-url-and-backslashes
 DISABLE_MAGIC_FUNCTIONS=true
 
-source $ZSH/oh-my-zsh.sh
+if [[ -r "$ZSH/oh-my-zsh.sh" ]]; then
+  source "$ZSH/oh-my-zsh.sh"
+else
+  print -u2 "dotfiles: oh-my-zsh is not installed at $ZSH; continuing without it"
+fi
 
 # Enhanced zsh history
 
@@ -146,7 +146,11 @@ setopt HIST_FIND_NO_DUPS
 if [[ -t 0 ]]; then
   export GPG_TTY=$(tty)
 fi
-export GIT_EDITOR=nvim
+if command -v nvim >/dev/null 2>&1; then
+  export GIT_EDITOR=nvim
+else
+  export GIT_EDITOR=vi
+fi
 
 # JQ
 #
@@ -169,8 +173,14 @@ if [[ -z "${SOURCEGRAPH_MCP_TOKEN:-}" && -r "$HOME/.local/share/sourcegraph/admi
 fi
 
 
-## Use sharkdp/fd for faster finding
-export FZF_DEFAULT_COMMAND='fd --type file'
+## Use sharkdp/fd for faster finding when it is installed.
+if command -v fd >/dev/null 2>&1; then
+  export FZF_DEFAULT_COMMAND='fd --type file'
+  export FZF_ALT_C_COMMAND='fd --type directory'
+else
+  export FZF_DEFAULT_COMMAND='find . -type f'
+  export FZF_ALT_C_COMMAND='find . -type d'
+fi
 export FZF_DEFAULT_OPTS='--layout=reverse'
 # Pin fzf to the terminal's One Dark palette instead of relying on
 # fzf/tmux popup defaults, which can drift across package upgrades.
@@ -178,10 +188,11 @@ FZF_DEFAULT_OPTS+=' --color=dark,bg:#282c34,bg+:#3e4452,fg:#aab2bf,fg+:#abb2bf,h
 
 ## Preview file with sharkdp/bat
 export FZF_CTRL_T_COMMAND="${FZF_DEFAULT_COMMAND}"
-export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {} 2> /dev/null | head -100'"
+if command -v bat >/dev/null 2>&1; then
+  export FZF_CTRL_T_OPTS="--preview 'bat --style=numbers --color=always {} 2> /dev/null | head -100'"
+fi
 
 ## Navigate to dir
-export FZF_ALT_C_COMMAND='fd --type directory'
 export FZF_ALT_C_OPTS="--preview 'lsd -l {}'"
 
 ## Use Tmux for FZF panel
@@ -193,14 +204,18 @@ export FZF_TMUX_HEIGHT=50%
 [[ -t 1 && -f ~/.dotfiles/.fzfrc ]] && source ~/.dotfiles/.fzfrc
 
 # ENV variables
-export VISUAL=nvim
+if command -v nvim >/dev/null 2>&1; then
+  export VISUAL=nvim
+else
+  export VISUAL=vi
+fi
 export EDITOR="${VISUAL}"
 
 # Ubuntu Snap (this is a problem for Wayland, not for X11)
-_path_append /snap/bin
+[[ "$DOTFILES_OS" == "Linux" ]] && _path_append /snap/bin
 
 # JAVA
-case "$(uname)" in
+case "$DOTFILES_OS" in
   Darwin)
     if [[ -d /opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home ]]; then
       export JAVA_HOME="/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home"
@@ -225,9 +240,9 @@ _path_append "$HOME/.cargo/bin"
 
 # Git
 _path_prepend "$HOME/bin"
-if [[ `uname` == 'Darwin' ]]; then
+if [[ "$DOTFILES_OS" == 'Darwin' && -n "${commands[brew]:-}" ]]; then
   export XML_CATALOG_FILES="$(brew --prefix)/etc/xml/catalog"
-  export MANPATH=$HOME/share/man:$MANPATH
+  export MANPATH="$HOME/share/man${MANPATH:+:${MANPATH}}"
 fi
 
 # rvm
@@ -241,9 +256,9 @@ if [[ -f ~/secret.sh ]]; then
 fi
 
 # Toolings
-alias cat=bat
+command -v bat >/dev/null 2>&1 && alias cat=bat
 # alias ls=lsd
-alias ls=eza # eza is not actively mantained
+command -v eza >/dev/null 2>&1 && alias ls=eza
 # alias bazel=bazelisk
 
 # Use the stock Codex profile automatically for the stock-analysis checkout.
@@ -382,9 +397,9 @@ export KUBE_CONFIG_PATH=~/.kube/config
 
 # Enable core dumps to debug Bazel JVM issue
 # https://github.com/bazelbuild/bazel/issues/23497
-ulimit -c unlimited
-ulimit -n 10240
-if [[ `uname` == 'Darwin' ]]; then
+ulimit -c unlimited 2>/dev/null || true
+ulimit -n 10240 2>/dev/null || true
+if [[ "$DOTFILES_OS" == 'Darwin' ]]; then
   _path_append /opt/homebrew/opt/binutils/bin
   _path_prepend /opt/homebrew/opt/curl/bin
   _path_prepend /opt/homebrew/opt/bison/bin
@@ -412,3 +427,4 @@ unset _gsutil_python _gsutil_python_cache
 _path_prepend "$HOME/.local/bin"
 
 unset -f _path_prepend _path_append
+unset DOTFILES_OS

@@ -1,0 +1,5 @@
+# macOS loads this after the shared XDG config, so keep only Mac overrides here.
+# Translate common command-key motions to their terminal Alt sequences.
+keybind = super+b=text:\x1bb
+keybind = super+d=text:\x1bd
+keybind = super+f=text:\x1bf

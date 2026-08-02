@@ -40,9 +40,8 @@
 [fetch]
 	prune = true
 	pruneTags = true
-[credential]
-	helper = /usr/bin/git-credential-manager
-	credentialStore = plaintext
+[include]
+	path = ~/.config/git/config.local
 [mergetool]
 	keepBackup = false
 [column]

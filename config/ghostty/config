@@ -2,13 +2,6 @@ font-size = 12
 theme = Atom One Dark
 mouse-scroll-multiplier = 1
 
-# cmd+b as alt+b
-keybind = super+b=text:\x1bb
-# cmd+d as alt+d
-keybind = super+d=text:\x1bd
-# cmd+f as alt+f
-keybind = super+f=text:\x1bf
-
 window-padding-y = 8
 
 window-decoration = auto

@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export SASL_PATH="${SASL_PATH:-${HOME}/.local/lib/sasl2}"
+if [ -z "${SASL_PATH:-}" ]; then
+  if [ -d "${HOME}/.local/lib/sasl2" ]; then
+    export SASL_PATH="${HOME}/.local/lib/sasl2"
+  elif command -v brew >/dev/null 2>&1; then
+    brew_sasl_path="$(brew --prefix cyrus-sasl 2>/dev/null || true)/lib/sasl2"
+    [ -d "${brew_sasl_path}" ] && export SASL_PATH="${brew_sasl_path}"
+  fi
+fi
 config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
 
 for cmd in mbsync notmuch oama; do

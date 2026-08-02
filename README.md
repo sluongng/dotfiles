@@ -1,80 +1,44 @@
-# DotFiles
+# Dotfiles
 
-Son Luong's configuration files for a Linux(Ubuntu 19.04) environment
+Shared configuration for macOS and Linux development machines.
 
-**This project is a WIP**
+## Install
 
-## Installation
+On a new machine:
 
-Using [init.sh](./init.sh) is a quick way to get all the config files cloned and bootstrapped
-```shell
-curl -s https://raw.githubusercontent.com/sluongng/dotfiles/master/init.sh | sh
+```sh
+curl -fsSL https://raw.githubusercontent.com/sluongng/dotfiles/master/init.sh | bash
 ```
 
+From an existing checkout:
 
-One quick way to check content of this project after
-```shell
-# Navigate to cloned folder
-cd ~/.dotfiles
-
-# Run tree with (show all files) and (ignoring .git folder)
-tree -I .git -a
+```sh
+./init.sh
 ```
 
-## Goals
+The bootstrap is safe to rerun. It links common shell, terminal, editor, Git,
+and Codex configuration, then installs every tracked Codex skill. Files that
+would be replaced are moved under `~/.dotfiles-backups/<timestamp>/`.
 
-- [X] Backup most dotfiles
+The platform-specific split is deliberate:
 
-- [X] Security sanitization
+- macOS installs Karabiner configuration.
+- Linux installs Hyprland, Waybar, Mako, systemd user, and libinput gesture
+  configuration.
+- Package installation is not performed by default. Set
+  `DOTFILES_INSTALL_PACKAGES=1` to run the macOS Brewfile; Linux packages remain
+  host-managed.
+- Mail configuration is opt-in with `DOTFILES_INSTALL_MAIL=1`.
+- Existing checkouts are not pulled implicitly. Set `DOTFILES_UPDATE=1` to use
+  `git pull --ff-only` before provisioning.
 
-- [X] Create migration script(bash or make) to apply these dotfiles quickly
+Useful overrides:
 
-- [ ] Create Dockerfile to host remote dev environment
+```sh
+DOTFILES_DIR=/path/to/checkout ./init.sh
+XDG_CONFIG_HOME=/path/to/config ./init.sh
+CODEX_HOME=/path/to/codex-home ./init.sh
+```
 
-## Components
-
-- Automation:
-
-  - Telegram: installation script and desktop file (for Ubuntu)
-
-- ZSH shell:
-
-  - Replace GNU with Rust/Golang tools
-
-  - Language specific settings
-
-- Tmux config
-
-  - Selection with Vim mode
-
-- NeoVim
-
-  - Editor Settings
-
-  - VimPlug
-
-    - fugitive
-
-    - surround
-
-    - vim-gitgutter
-
-    - AirLine
-
-    - FZF
-
-    - NERDTree
-
-    - Vim-Go
-
-    - Coc.nvim
-
-      - Language servers
-
-      - Extensions
-
-- IdeaVim: vimrc for JetBrains' IDEs (IntelliJ, GoLand,...)
-
-- LibInput Gesture: Touch Pad swipe detection for laptop running Ubuntu
-
-- Alacritty: Alacritty terminal emulator configuration
+Local secrets, Codex state, Git credentials, and machine-specific project trust
+entries are intentionally kept outside this repository.
