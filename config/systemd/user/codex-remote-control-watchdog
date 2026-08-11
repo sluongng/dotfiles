@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+set -u
+
+readonly target_unit="codex-remote-control.service"
+readonly failure_threshold=2
+readonly state_file="${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is not set}/codex-remote-control-watchdog.failures"
+
+# Respect an intentional stop. Restart=always handles unexpected process exits;
+# this probe is only for a process that systemd still considers active.
+if ! systemctl --user is-active --quiet "${target_unit}"; then
+  rm -f "${state_file}"
+  exit 0
+fi
+
+# The daemon version command performs a WebSocket upgrade and JSON-RPC
+# initialize request against app-server-control.sock. It has its own two-second
+# response timeout; the outer timeout also bounds startup/config-loading bugs.
+if /usr/bin/timeout --kill-after=2s 8s /usr/bin/env codex app-server daemon version \
+  >/dev/null 2>&1; then
+  if [[ -e "${state_file}" ]]; then
+    echo "Codex remote-control app-server probe recovered."
+    rm -f "${state_file}"
+  fi
+  exit 0
+fi
+
+failures=0
+if [[ -r "${state_file}" ]]; then
+  read -r failures <"${state_file}" || failures=0
+fi
+if [[ ! "${failures}" =~ ^[0-9]+$ ]]; then
+  failures=0
+fi
+((failures += 1))
+printf '%s\n' "${failures}" >"${state_file}"
+
+if ((failures < failure_threshold)); then
+  echo "Codex remote-control app-server probe failed (${failures}/${failure_threshold}); will retry."
+  exit 0
+fi
+
+echo "Codex remote-control app-server probe failed ${failures} consecutive times; restarting ${target_unit}."
+rm -f "${state_file}"
+systemctl --user restart "${target_unit}"

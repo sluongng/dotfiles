@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 ExecStart=/usr/bin/env codex app-server --remote-control --listen unix://
-Restart=on-failure
+Restart=always
 RestartSec=5s
 WorkingDirectory=%h
 Environment=HOME=%h

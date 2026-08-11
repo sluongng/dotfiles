@@ -1,0 +1,10 @@
+[Unit]
+Description=Probe Codex Remote Control and restart it when wedged
+After=codex-remote-control.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.dotfiles/config/systemd/user/codex-remote-control-watchdog
+Environment=HOME=%h
+Environment=CODEX_HOME=%h/.codex
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin
