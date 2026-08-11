@@ -26,7 +26,7 @@ local rules = {
     { name = "firefox-no-blur", match = { class = [[^(org.mozilla.firefox)$]] }, no_blur = true },
     { name = "floating-workspace-decoration", match = { float = true, workspace = "w[fv1-10]" }, border_size = 2, border_color = colors.light_blue, rounding = 8 },
     { name = "tiled-workspace-decoration", match = { float = false, workspace = "f[1-10]" }, border_size = 3, rounding = 4 },
-    { name = "app-workspace-ghostty", match = { class = [[^com\.mitchellh\.ghostty$]] }, workspace = "1", focus_on_activate = true },
+    { name = "app-workspace-ghostty", match = { class = [[^com\.mitchellh\.ghostty$]] }, workspace = "1 silent", no_initial_focus = true, suppress_event = "activate activatefocus" },
     { name = "app-workspace-chrome", match = { class = [[^google-chrome$]] }, workspace = "2 silent", no_initial_focus = true, focus_on_activate = true },
     { name = "app-workspace-slack", match = { class = [[^slack$]] }, workspace = "3 silent", fullscreen = true, no_initial_focus = true, suppress_event = "activate activatefocus" },
     { name = "app-workspace-discord", match = { class = [[^discord$]] }, workspace = "4 silent", no_initial_focus = true, suppress_event = "activate activatefocus" },
