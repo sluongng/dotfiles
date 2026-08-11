@@ -10,6 +10,7 @@ import re
 
 TRAILER_RE = re.compile(r"^[A-Za-z0-9-]+: .+")
 TRAILER_CONTINUATION_RE = re.compile(r"^[ \t].+")
+FENCE_RE = re.compile(r"^(?:```|~~~)")
 
 
 def read_message(path: str) -> str:
@@ -23,6 +24,11 @@ def strip_comment_lines(lines: list[str]) -> list[str]:
 
 
 def body_without_trailers(lines: list[str]) -> list[str]:
+    for index, line in enumerate(lines):
+        if line == "---":
+            lines = lines[:index]
+            break
+
     end = len(lines)
     while end > 0 and lines[end - 1] == "":
         end -= 1
@@ -77,8 +83,17 @@ def validate(lines: list[str], max_subject: int) -> tuple[list[str], list[str]]:
         warnings.append("Message body is missing; add context and explain why.")
         return errors, warnings
 
+    in_fence = False
     for index, line in enumerate(body_lines, start=3):
-        if not line or line.startswith("> "):
+        if FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if (
+            in_fence
+            or not line
+            or line.startswith(">")
+            or line[:1].isspace()
+        ):
             continue
         if len(line) > 72:
             errors.append(

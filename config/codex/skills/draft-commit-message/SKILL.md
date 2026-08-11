@@ -94,7 +94,9 @@ git log --format=%s -- path/to/area | head -n 20
 - When citing upstream commits to explain when behavior changed, pair the hash
   with a stable release version when that gives the reader a better sense of
   time.
-- Wrap prose to 72 columns where practical.
+- Wrap prose to 72 columns. Before finalizing a permanent commit message, use
+  `scripts/format_commit_message.py` instead of manually reflowing long
+  paragraphs.
 - If the repository context does not reveal the why, say that explicitly
   instead of fabricating a justification.
 - Do not turn the commit body into a PR template. Avoid Markdown headings such
@@ -142,7 +144,7 @@ git log --format=%s -- path/to/area | head -n 20
 - Subject starts with a repo-appropriate component prefix.
 - Subject uses imperative mood.
 - Line 2 is blank.
-- Body lines stay within 72 columns where practical.
+- Body prose stays within 72 columns; structured text remains unchanged.
 - Body adds why/context that is not obvious from the diff.
 - Body includes enough reviewer-facing context to sell the change without
   padding it with irrelevant details.
@@ -164,6 +166,10 @@ git log --format=%s -- path/to/area | head -n 20
 
 - Read [git-my-first-contribution.md](references/git-my-first-contribution.md)
   for the distilled guidance that this skill follows.
+- Run `scripts/format_commit_message.py` after drafting a commit message and
+  before validation. It uses `fmt` for prose while preserving the subject,
+  trailers, comments, quotes, indented text, fenced blocks, and reviewer-only
+  text below `---`.
 - Run `scripts/validate_commit_message.py` when the user asks to validate an
   existing commit message, when drafting a final message for commit/squash
   workflows, or when a draft is close to the line-length limits.
@@ -172,6 +178,10 @@ git log --format=%s -- path/to/area | head -n 20
   a more direct motivation sentence and re-check.
 
 ```bash
+python3 scripts/format_commit_message.py --write .git/COMMIT_EDITMSG
 python3 scripts/validate_commit_message.py .git/COMMIT_EDITMSG
-printf '%s\n' "$message" | python3 scripts/validate_commit_message.py -
+formatted_message="$(printf '%s\n' "$message" \
+  | python3 scripts/format_commit_message.py -)"
+printf '%s\n' "$formatted_message" \
+  | python3 scripts/validate_commit_message.py -
 ```
