@@ -4,7 +4,9 @@ set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SOURCE_DIR="${DOTFILES_DIR}/config/codex"
+SOURCE_SCRIPTS_DIR="${DOTFILES_DIR}/config/scripts"
 TARGET_DIR="${CODEX_HOME:-${HOME}/.codex}"
+TARGET_BIN_DIR="${CODEX_BIN_HOME:-${HOME}/.local/bin}"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 BACKUP_DIR="${TARGET_DIR}/backups/install-codex-${TIMESTAMP}"
 RENDER_CONFIG_SCRIPT="${DOTFILES_DIR}/automation/codex/render-config.py"
@@ -12,12 +14,24 @@ MARKETPLACE_NAME="sluongng-dotfiles"
 
 backup_path() {
   local path="$1"
-  local relative_path="${path#"${TARGET_DIR}/"}"
-  local backup_path="${BACKUP_DIR}/${relative_path}"
+  local relative_path=""
+  local backup_path=""
 
   if [ ! -e "${path}" ] && [ ! -L "${path}" ]; then
     return 0
   fi
+
+  if [[ "${path}" == "${TARGET_DIR}/"* ]]; then
+    relative_path="${path#"${TARGET_DIR}/"}"
+  elif [[ "${path}" == "${TARGET_BIN_DIR}/"* ]]; then
+    relative_path="user-bin/${path#"${TARGET_BIN_DIR}/"}"
+  elif [[ "${path}" == "${HOME}/"* ]]; then
+    relative_path="home/${path#"${HOME}/"}"
+  else
+    echo "Refusing to back up path outside configured user paths: ${path}" >&2
+    return 1
+  fi
+  backup_path="${BACKUP_DIR}/${relative_path}"
 
   mkdir -p "$(dirname "${backup_path}")"
   mv "${path}" "${backup_path}"
@@ -185,7 +199,7 @@ main() {
     exit 1
   fi
 
-  mkdir -p "${TARGET_DIR}" "${TARGET_DIR}/agents" "${TARGET_DIR}/skills"
+  mkdir -p "${TARGET_DIR}" "${TARGET_DIR}/agents" "${TARGET_DIR}/skills" "${TARGET_BIN_DIR}"
 
   platform="${CODEX_CONFIG_PLATFORM:-$(uname -s)}"
   case "${platform}" in
@@ -228,6 +242,12 @@ main() {
     fi
     ensure_symlink "${source_path}" "${TARGET_DIR}/skills/${skill_name}"
   done < <(find "${SOURCE_DIR}/skills" -mindepth 1 -maxdepth 1 -type d ! -name '.system' | sort)
+
+  if [ -d "${SOURCE_SCRIPTS_DIR}" ]; then
+    while IFS= read -r source_path; do
+      ensure_symlink "${source_path}" "${TARGET_BIN_DIR}/$(basename "${source_path}")"
+    done < <(find "${SOURCE_SCRIPTS_DIR}" -mindepth 1 -maxdepth 1 -type f -perm -u+x | sort)
+  fi
 
   prune_stale_skill_links
   sync_tracked_plugin_caches

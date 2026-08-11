@@ -1,114 +1,86 @@
 ---
 name: prepare-worktree
-description: Prepare or audit Git worktrees for Claude automation, scheduled/background agents, long-running tasks, or isolated branch work. Use when Claude needs to create a worktree, refresh a worktree, make a worktree ready for unattended execution, or replicate local-only context such as AGENTS.md, user.bazelrc, .bazelrc.user, .buckconfig.local, credentials-backed build config, editor/tooling config, or repo-specific ignored files from a primary checkout.
+description: Prepare or audit Git worktrees for Claude automation, scheduled or background agents, long-running tasks, and isolated branch work. Use when Claude needs to create or reuse a manual worktree, inspect its readiness, or carry local-only context declared by .worktreeinclude or known names such as AGENTS.md, user.bazelrc, .bazelrc.user, or .buckconfig.local into it. For Codex App-created worktrees, use this skill to distinguish repository .worktreeinclude copies from Local Environment setup commands.
 ---
 
 # Prepare Worktree
 
-Use this skill to make a Git worktree behave like the normal checkout before
-starting automation or background agent work. A Git worktree shares Git object
-state, but it does not automatically bring along untracked or ignored local files.
+Keep the primary checkout's unrelated changes untouched. Treat worktree creation,
+local-context propagation, and task-specific setup as separate operations.
 
-## Workflow
+## Codex App Worktrees
 
-1. Identify the primary checkout and target worktree.
-   - Use this command to find existing worktrees:
+Use a tracked `.worktreeinclude` in a repository when every Codex App-created
+worktree for that repository needs stable ignored files. The App
+copies those files without overwriting destinations before it runs the Local
+Environment `[setup]` script.
 
-         git -C <repo> worktree list --porcelain
+The file is repository-scoped. Add it once to each repository that needs this
+copy behavior; repositories without required local-only files do not need one.
 
-   - Treat the normal checkout as the source of local-only context unless the
-     user names a different source.
-   - Keep unrelated dirty changes in the primary checkout untouched.
+Use `[setup]` for actual post-creation commands such as dependency bootstrap,
+code generation, or repository-specific initialization. The script receives:
 
-2. Create or refresh the worktree.
-   - Prefer this command for new worktrees:
+- `CODEX_SOURCE_TREE_PATH`: the source checkout selected by the App.
+- `CODEX_WORKTREE_PATH`: the newly created worktree.
 
-         git worktree add <path> <branch-or-ref>
+Do not invoke `prepare-worktree-context` from `[setup]` merely to recopy files
+already named by `.worktreeinclude`.
 
-   - If reusing an existing worktree, inspect git status --short there before
-     changing it.
-   - Keep automation work on an explicit branch or detached ref that matches the
-     requested task.
+## Manual and Headless Worktrees
 
-3. Audit local-only files in the primary checkout before running automation.
-   - Run:
+The headless app-server does not apply `.worktreeinclude` itself. The caller that
+runs `git worktree add` must invoke `prepare-worktree-context` immediately after
+creation and before starting work in the new checkout.
 
-         git -C <primary> status --porcelain=v1 --untracked-files=all
+1. Resolve and inspect both checkouts:
 
-   - Also inspect ignored-but-important files with targeted checks, for example:
+       git -C <repo> worktree list --porcelain
+       git -C <primary> status --short --branch
+       git -C <worktree> status --short --branch
 
-         git -C <primary> ls-files --others --ignored --exclude-standard -- user.bazelrc .bazelrc.user .buckconfig.local AGENTS.md
+2. Create the worktree when needed:
 
-   - Search for nested agent context files with:
+       git -C <primary> worktree add <path> <branch-or-ref>
 
-         find <primary> -name AGENTS.md -type f
+3. Audit the declared and known local-only context without changing the target:
 
-   - Decide which untracked or ignored files are required for the target worktree.
+       prepare-worktree-context \
+         --primary <primary> \
+         --worktree <worktree> \
+         --dry-run
 
-4. Link required local files into the worktree.
-   - For a dry-run audit or repeatable automation setup, use the bundled helper:
+4. Copy missing declared and known context after reviewing the audit:
 
-         python3 <skill>/scripts/link_local_context.py --primary <primary> --worktree <worktree> --dry-run
-         python3 <skill>/scripts/link_local_context.py --primary <primary> --worktree <worktree> --apply
+       prepare-worktree-context \
+         --primary <primary> \
+         --worktree <worktree> \
+         --apply
 
-   - Prefer hardlinks for regular files on the same filesystem:
+   The executable uses Git's ignore-pattern engine to copy ignored regular files
+   matched by the primary checkout's `.worktreeinclude`. It also discovers
+   untracked or ignored files named `user.bazelrc`, `.bazelrc.user`,
+   `.buckconfig.local`, and `AGENTS.md`. It preserves metadata, never prints
+   contents, never follows source or destination symlinks, and never overwrites
+   an existing destination. It also accepts the App environment variables
+   instead of explicit path arguments.
 
-         ln <primary-relative-file> <worktree-relative-file>
+5. Inspect repo-specific ignored files not covered by `.worktreeinclude` or the
+   known-name list.
+   Copy only what the task needs, never print credential contents, and never
+   overwrite tracked target files without explicit user direction.
 
-   - Fall back to symlinks when hardlinks fail or when linking directories:
+6. Run a narrow readiness check such as `bazel info`, `buck2 root`, or
+   `git status --short`, then report copied and intentionally skipped files.
 
-         ln -s <source> <dest>
+## Safety
 
-   - Prefer links over copies so API key or token rotations in one checkout are
-     visible to other worktrees.
-   - Create missing parent directories first.
-   - Do not print credential file contents.
-
-5. Give special treatment to build and agent-context files.
-   - Link Bazel local config such as user.bazelrc and .bazelrc.user by default
-     when present in the primary checkout; these often enable Remote Build
-     Execution or remote cache credentials.
-   - Link Buck2 local config such as .buckconfig.local by default when present in
-     the primary checkout; it may contain remote execution, authentication, or
-     local platform settings.
-   - Link untracked or ignored AGENTS.md files by default when present in the
-     primary checkout; they provide task-critical context for agents operating
-     below that directory.
-   - Do not overwrite a tracked file in the target worktree unless the user
-     explicitly asks. If a tracked AGENTS.md already exists there, leave it and
-     only add missing local-only context files.
-
-6. Validate readiness.
-   - Use ls -li <source> <dest> to confirm hardlinks share an inode.
-   - Use readlink <dest> or readlink -f <dest> to confirm symlinks.
-   - Run a narrow repo-appropriate sanity check when practical, such as bazel
-     info, buck2 root, or git status --short.
-   - Report the linked files and any intentionally skipped local files.
-
-## Link Selection
-
-Prefer hardlinks for secret-bearing regular files because they avoid path
-fragility and keep changes synchronized by inode. Use symlinks when hardlinks are
-impossible across filesystems, when the source is a directory, or when the target
-should always point at the primary checkout current path.
-
-Avoid linking generated outputs, caches, logs, editor swap files, or task-specific
-scratch files unless the user explicitly requests them.
-
-## Automation Notes
-
-Prepare worktrees conservatively for unattended runs:
-
-- Verify credentials-backed local config exists before scheduling background work.
-- Preserve the primary checkout untracked files; replicate only what the target
-  worktree needs.
-- Prefer idempotent linking commands that detect existing destinations and compare
-  them before replacement.
-- Record assumptions in the final response so future scheduled agents know which
-  checkout supplied the local context.
-
-## Resources
-
-- scripts/link_local_context.py: discover special local-only files in a primary
-  checkout, then dry-run or create hardlinks/symlinks into a target worktree
-  without printing file contents.
+- Prefer copies over hardlinks for credentials-backed configuration. Editing a
+  worktree copy must not mutate the primary checkout by inode.
+- Treat `CODEX_SOURCE_TREE_PATH` as the App-selected source, not necessarily the
+  repository's canonical primary checkout.
+- Do not copy caches, build outputs, logs, editor state, or task scratch files
+  unless the user explicitly requests them.
+- Keep this skill for source selection, worktree lifecycle, extra-file judgment,
+  and validation; the executable only handles deterministic declared- and
+  known-file copying.

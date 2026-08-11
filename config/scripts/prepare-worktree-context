@@ -1,0 +1,203 @@
+#!/usr/bin/env python3
+"""Copy declared and known local-only context into a Git worktree safely."""
+
+import argparse
+import filecmp
+import os
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+
+SPECIAL_NAMES = {"user.bazelrc", ".bazelrc.user", ".buckconfig.local", "AGENTS.md"}
+
+
+@dataclass(frozen=True)
+class Candidate:
+    rel: Path
+    reason: str
+
+
+def git(repo: Path, args: list[str], check: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(repo), *args],
+        check=check,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+
+def repo_root(path: Path) -> Path:
+    result = git(path, ["rev-parse", "--show-toplevel"])
+    return Path(result.stdout.strip()).resolve()
+
+
+def git_common_dir(repo: Path) -> Path:
+    result = git(repo, ["rev-parse", "--path-format=absolute", "--git-common-dir"])
+    return Path(result.stdout.strip()).resolve()
+
+
+def tracked(repo: Path, rel: Path) -> bool:
+    result = git(repo, ["ls-files", "--error-unmatch", "--", rel.as_posix()], check=False)
+    return result.returncode == 0
+
+
+def git_paths(repo: Path, args: list[str]) -> set[Path]:
+    result = subprocess.run(
+        ["git", "-C", str(repo), *args],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    return {
+        Path(os.fsdecode(raw_path))
+        for raw_path in result.stdout.split(b"\0")
+        if raw_path
+    }
+
+
+def worktreeinclude_paths(primary: Path) -> set[Path]:
+    include_file = primary / ".worktreeinclude"
+    if not include_file.is_file() or include_file.is_symlink():
+        return set()
+
+    ignored = git_paths(
+        primary,
+        ["ls-files", "--others", "--ignored", "--exclude-standard", "-z"],
+    )
+    included = git_paths(
+        primary,
+        [
+            "ls-files",
+            "--others",
+            "--ignored",
+            "--exclude-from=.worktreeinclude",
+            "-z",
+        ],
+    )
+    return ignored.intersection(included)
+
+
+def discover(primary: Path) -> list[Candidate]:
+    candidates: dict[Path, Candidate] = {}
+    for root, dirs, files in os.walk(primary):
+        dirs[:] = [directory for directory in dirs if directory != ".git"]
+        for name in sorted(SPECIAL_NAMES.intersection(files)):
+            rel = Path(root, name).relative_to(primary)
+            if not tracked(primary, rel):
+                candidates[rel] = Candidate(rel, "special local context")
+
+    for rel in worktreeinclude_paths(primary):
+        candidates[rel] = Candidate(rel, "matched .worktreeinclude")
+
+    return sorted(candidates.values(), key=lambda candidate: candidate.rel)
+
+
+def existing_copy_ok(src: Path, dest: Path) -> bool:
+    if dest.is_symlink():
+        return False
+    if not dest.is_file():
+        return False
+    try:
+        return filecmp.cmp(src, dest, shallow=False)
+    except OSError:
+        return False
+
+
+def destination_parent_status(worktree: Path, dest: Path, apply: bool) -> str | None:
+    current = worktree
+    for part in dest.relative_to(worktree).parts[:-1]:
+        current /= part
+        if current.is_symlink():
+            return "skipped-destination-symlink-parent"
+        if current.exists():
+            if not current.is_dir():
+                return "skipped-destination-nondirectory-parent"
+        elif apply:
+            current.mkdir()
+    return None
+
+
+def copy_one(src: Path, worktree: Path, rel: Path, apply: bool) -> str:
+    if src.is_symlink():
+        return "skipped-source-symlink"
+    if not src.is_file():
+        return "skipped-non-regular-source"
+
+    dest = worktree / rel
+    if existing_copy_ok(src, dest):
+        return "already-present"
+    if dest.exists() or dest.is_symlink():
+        return "skipped-existing-destination"
+
+    parent_status = destination_parent_status(worktree, dest, apply)
+    if parent_status is not None:
+        return parent_status
+    if not apply:
+        return "would-copy"
+
+    try:
+        with src.open("rb") as source, dest.open("xb") as destination:
+            shutil.copyfileobj(source, destination)
+    except FileExistsError:
+        return "skipped-existing-destination"
+    shutil.copystat(src, dest, follow_symlinks=False)
+    return "copied"
+
+
+def path_argument(value: Path | None, environment_name: str) -> Path:
+    if value is not None:
+        return value
+    environment_value = os.environ.get(environment_name)
+    if environment_value:
+        return Path(environment_value)
+    raise ValueError(f"pass the path explicitly or set {environment_name}")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--primary",
+        type=Path,
+        help="Primary checkout path; defaults to CODEX_SOURCE_TREE_PATH",
+    )
+    parser.add_argument(
+        "--worktree",
+        type=Path,
+        help="Target worktree path; defaults to CODEX_WORKTREE_PATH",
+    )
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--dry-run", action="store_true", help="Report planned copies")
+    mode.add_argument("--apply", action="store_true", help="Copy missing context files")
+    args = parser.parse_args()
+
+    try:
+        primary = repo_root(path_argument(args.primary, "CODEX_SOURCE_TREE_PATH"))
+        worktree = repo_root(path_argument(args.worktree, "CODEX_WORKTREE_PATH"))
+    except (ValueError, subprocess.CalledProcessError) as error:
+        print(error, file=sys.stderr)
+        return 2
+
+    if primary == worktree:
+        print("primary and worktree resolve to the same checkout", file=sys.stderr)
+        return 2
+    if git_common_dir(primary) != git_common_dir(worktree):
+        print("primary and worktree do not belong to the same Git repository", file=sys.stderr)
+        return 2
+
+    candidates = discover(primary)
+    for candidate in candidates:
+        src = primary / candidate.rel
+        status = copy_one(src, worktree, candidate.rel, apply=args.apply)
+        print(f"{status}\t{candidate.rel.as_posix()}\t{candidate.reason}")
+
+    if not candidates:
+        print("no declared or known local context files found")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
