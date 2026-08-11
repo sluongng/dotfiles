@@ -4,9 +4,12 @@ StreamController 1.5 plugin for the 15-key Stream Deck MK.2.
 
 Layout:
 
-- Top row: live launchers for up to five Codex tmux panes.
-- Middle row: up to five completed Codex turns. Keys pulse until pressed, then
-  select the exact originating tmux pane and focus Ghostty.
+- Top and middle rows: one deterministic list of up to ten Codex tmux panes,
+  ordered by tmux session, window, and pane index. Focus and completion state
+  never reorder the keys. Unacknowledged completed turns pulse in place until
+  pressed; pressing any key selects its exact tmux pane and focuses Ghostty.
+  `WORKING` reflects a real Codex active-turn inhibitor; the selected tmux pane
+  is indicated by color instead of a potentially misleading text status.
 - Bottom row: volume down/up, output mute, microphone mute, and a manual
   AirPods connect/disconnect toggle.
 
@@ -17,6 +20,11 @@ also posts a passive desktop notification without an action that focuses
 Ghostty.
 
 The AirPods control calls BlueZ over D-Bus. It does not enable auto-connect.
+
+New Codex sessions use the native `notify` callback. A live tmux-pane watcher
+also records a durable attention event whenever an existing Codex process goes
+from an active turn to waiting, so sessions started before the callback was
+configured still pulse when they need attention.
 
 The actions self-assign StreamController's image, label, and background control
 fields when a hand-authored page omits them. This keeps generated pages from

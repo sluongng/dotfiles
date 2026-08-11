@@ -1,5 +1,6 @@
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -21,6 +22,13 @@ class ManagerTest(unittest.TestCase):
         self.assertEqual(manager.project_name("/home/nb/work/misc/codex"), "codex")
         self.assertEqual(manager.project_name("/"), "/")
 
+    def test_ancestor_root_finds_owning_tmux_pane(self):
+        parents = {30: 20, 20: 10, 10: 1}
+        self.assertEqual(
+            manager.ancestor_root(30, {10, 11}, parents.get),
+            10,
+        )
+
     def test_resolve_event_pane_from_terminal_title(self):
         thread_id = "019fefbd-482d-7490-96e3-9bf043d73dd2"
         panes = (
@@ -30,6 +38,50 @@ class ManagerTest(unittest.TestCase):
             manager.resolve_event_pane({"thread-id": thread_id, "tmux-pane": None}, panes),
             "%7",
         )
+
+    def test_order_panes_is_deterministic_by_tmux_location(self):
+        panes = (
+            manager.Pane("%3", "work", "3", True, "three", "three"),
+            manager.Pane("%4", "work", "1", False, "one", "one"),
+            manager.Pane("%5", "work", "2", False, "two", "two"),
+        )
+        ordered = manager.order_panes(panes)
+        self.assertEqual([pane.pane_id for pane in ordered], ["%4", "%5", "%3"])
+
+    def test_busy_to_idle_transition_requests_attention(self):
+        panes = (
+            manager.Pane("%3", "work", "1", False, "one", "one", busy=False),
+            manager.Pane("%4", "work", "2", False, "two", "two", busy=True),
+        )
+        transitioned = manager.attention_transitions({"%3": True, "%4": True}, panes)
+        self.assertEqual([pane.pane_id for pane in transitioned], ["%3"])
+
+    def test_attention_event_persists_until_acknowledged(self):
+        pane = manager.Pane("%3", "work", "1", False, "one", "one")
+        with tempfile.TemporaryDirectory() as directory:
+            state_dir = Path(directory)
+            with (
+                mock.patch.object(manager, "STATE_DIR", state_dir),
+                mock.patch.object(manager, "EVENTS_PATH", state_dir / "events.jsonl"),
+                mock.patch.object(manager, "ACK_PATH", state_dir / "acknowledged.json"),
+            ):
+                manager.record_attention(pane, timestamp=50)
+                pending = manager.load_pending((pane,))
+                self.assertEqual(len(pending), 1)
+                manager.acknowledge(pane.pane_id, pending[0].turn_id)
+                self.assertEqual(manager.load_pending((pane,)), ())
+
+    def test_pane_press_acknowledges_its_pending_completion(self):
+        state = manager.DeckStateManager()
+        pane = manager.Pane("%7", "work", "2", False, "codex", "thread title")
+        pending = manager.Pending("%7", "turn-1", "codex", 50)
+        state.snapshot = manager.Snapshot(pending=(pending,), panes=(pane,))
+        with (
+            mock.patch.object(manager, "switch_to_pane", return_value=True),
+            mock.patch.object(manager, "acknowledge") as acknowledge,
+        ):
+            state._handle("pane", 0)
+        acknowledge.assert_called_once_with("%7", "turn-1")
 
     def test_switch_to_exact_pane_and_focus_ghostty(self):
         pane = manager.Pane("%7", "work", "2", False, "codex", "thread title")
@@ -45,8 +97,13 @@ class ManagerTest(unittest.TestCase):
                 mock.call(["tmux", "list-clients", "-F", "#{client_tty}\t#{client_activity}"]),
                 mock.call(["tmux", "switch-client", "-c", "/dev/pts/8", "-t", "work"], check=True),
                 mock.call(
-                    ["hyprctl", "dispatch", "focuswindow", "class:^(com.mitchellh.ghostty)$"],
+                    [
+                        "hyprctl",
+                        "eval",
+                        'return hl.dispatch(hl.dsp.focus({window = "class:^(com.mitchellh.ghostty)$"}))',
+                    ],
                     timeout=3,
+                    check=True,
                 ),
             ],
         )

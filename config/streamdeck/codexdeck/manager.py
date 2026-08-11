@@ -30,6 +30,8 @@ class Pane:
     active: bool
     project: str
     title: str
+    busy: bool = False
+    pane_index: str = "0"
 
 
 @dataclass(frozen=True)
@@ -72,28 +74,123 @@ def _run(argv: list[str], timeout: float = 5.0, check: bool = False) -> str:
     return result.stdout.strip()
 
 
+def _parent_pid(pid: int) -> int | None:
+    try:
+        for line in Path(f"/proc/{pid}/status").read_text().splitlines():
+            if line.startswith("PPid:"):
+                return int(line.split()[1])
+    except (OSError, ValueError, IndexError):
+        pass
+    return None
+
+
+def ancestor_root(pid: int, roots: set[int], parent_of=_parent_pid) -> int | None:
+    seen = set()
+    while pid > 1 and pid not in seen:
+        if pid in roots:
+            return pid
+        seen.add(pid)
+        parent = parent_of(pid)
+        if parent is None:
+            return None
+        pid = parent
+    return None
+
+
+def busy_pane_ids(pane_roots: dict[int, str]) -> set[str]:
+    try:
+        candidates = _run(
+            ["pgrep", "-f", "^systemd-inhibit .*Codex is running an active turn"]
+        )
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    busy = set()
+    roots = set(pane_roots)
+    for value in candidates.splitlines():
+        try:
+            root = ancestor_root(int(value), roots)
+        except ValueError:
+            continue
+        if root is not None:
+            busy.add(pane_roots[root])
+    return busy
+
+
 def list_codex_panes() -> tuple[Pane, ...]:
-    fmt = "#{pane_id}\t#{session_name}\t#{window_index}\t#{pane_active}\t#{pane_current_command}\t#{pane_current_path}\t#{pane_title}"
+    fmt = "#{pane_id}\t#{session_name}\t#{window_index}\t#{window_active}\t#{pane_index}\t#{pane_pid}\t#{pane_current_command}\t#{pane_current_path}\t#{pane_title}"
     try:
         output = _run(["tmux", "list-panes", "-a", "-F", fmt])
     except (OSError, subprocess.SubprocessError):
         return ()
-    panes = []
+    rows = []
     for line in output.splitlines():
         fields = line.split("\t")
-        if len(fields) != 7 or fields[4] != "codex":
+        if len(fields) != 9 or fields[6] != "codex":
             continue
+        rows.append(fields)
+    pane_roots = {int(fields[5]): fields[0] for fields in rows}
+    busy = busy_pane_ids(pane_roots)
+    panes = []
+    for fields in rows:
         panes.append(
             Pane(
                 pane_id=fields[0],
                 session=fields[1],
                 window=fields[2],
                 active=fields[3] == "1",
-                project=project_name(fields[5]),
-                title=fields[6],
+                project=project_name(fields[7]),
+                title=fields[8],
+                busy=fields[0] in busy,
+                pane_index=fields[4],
             )
         )
-    return tuple(sorted(panes, key=lambda pane: int(pane.pane_id[1:])))
+    return tuple(panes)
+
+
+def natural_key(value: str):
+    return tuple(
+        (0, int(part)) if part.isdigit() else (1, part.casefold())
+        for part in re.split(r"(\d+)", value)
+        if part
+    )
+
+
+def order_panes(panes: tuple[Pane, ...]) -> tuple[Pane, ...]:
+    """Keep slots deterministic regardless of focus or completion state."""
+    return tuple(
+        sorted(
+            panes,
+            key=lambda pane: (
+                natural_key(pane.session),
+                natural_key(pane.window),
+                natural_key(pane.pane_index),
+                int(pane.pane_id[1:]),
+            ),
+        )
+    )
+
+
+def attention_transitions(
+    previous_busy: dict[str, bool], panes: tuple[Pane, ...]
+) -> tuple[Pane, ...]:
+    return tuple(
+        pane for pane in panes if previous_busy.get(pane.pane_id) is True and not pane.busy
+    )
+
+
+def record_attention(pane: Pane, timestamp: float | None = None) -> None:
+    timestamp = time.time() if timestamp is None else timestamp
+    event = {
+        "type": "agent-attention",
+        "thread-id": None,
+        "turn-id": f"tmux-{pane.pane_id[1:]}-{int(timestamp * 1_000_000)}",
+        "cwd": pane.project,
+        "tmux-pane": pane.pane_id,
+        "timestamp": timestamp,
+    }
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    with EVENTS_PATH.open("a") as output:
+        output.write(json.dumps(event, separators=(",", ":")) + "\n")
 
 
 def load_acknowledged() -> dict[str, str]:
@@ -121,15 +218,21 @@ def load_pending(panes: tuple[Pane, ...]) -> tuple[Pending, ...]:
         turn_id = event.get("turn-id")
         if pane_id not in pane_map or not isinstance(turn_id, str):
             continue
-        if acknowledged.get(pane_id) == turn_id:
-            continue
-        latest[pane_id] = Pending(
+        candidate = Pending(
             pane_id=pane_id,
             turn_id=turn_id,
             project=project_name(event.get("cwd", "")),
             timestamp=float(event.get("timestamp", 0)),
         )
-    return tuple(sorted(latest.values(), key=lambda item: item.timestamp, reverse=True))
+        current = latest.get(pane_id)
+        if current is None or candidate.timestamp >= current.timestamp:
+            latest[pane_id] = candidate
+    unacknowledged = (
+        item
+        for item in latest.values()
+        if acknowledged.get(item.pane_id) != item.turn_id
+    )
+    return tuple(sorted(unacknowledged, key=lambda item: item.timestamp, reverse=True))
 
 
 def resolve_event_pane(event: dict, panes: tuple[Pane, ...]) -> str | None:
@@ -185,8 +288,13 @@ def switch_to_pane(pane: Pane) -> bool:
             client_tty = max(clients, key=lambda row: int(row.split("\t")[1])).split("\t")[0]
             _run(["tmux", "switch-client", "-c", client_tty, "-t", pane.session], check=True)
         _run(
-            ["hyprctl", "dispatch", "focuswindow", "class:^(com.mitchellh.ghostty)$"],
+            [
+                "hyprctl",
+                "eval",
+                'return hl.dispatch(hl.dsp.focus({window = "class:^(com.mitchellh.ghostty)$"}))',
+            ],
             timeout=3,
+            check=True,
         )
         return True
     except (OSError, subprocess.SubprocessError, ValueError) as error:
@@ -209,6 +317,7 @@ class DeckStateManager:
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread = None
+        self._busy: dict[str, bool] = {}
         self.snapshot = Snapshot()
 
     def start(self):
@@ -243,9 +352,14 @@ class DeckStateManager:
     def _watch(self):
         while not self._stop.wait(0.75):
             panes = list_codex_panes()
+            for pane in attention_transitions(self._busy, panes):
+                record_attention(pane)
+            self._busy = {pane.pane_id: pane.busy for pane in panes}
+            pending = load_pending(panes)
+            panes = order_panes(panes)
             volume, output_muted, mic_muted = audio_state()
             snapshot = Snapshot(
-                pending=load_pending(panes),
+                pending=pending,
                 panes=panes,
                 volume=volume,
                 output_muted=output_muted,
@@ -262,13 +376,15 @@ class DeckStateManager:
         ).start()
 
     def _handle(self, kind: str, slot: int):
-        if kind == "completion" and slot < len(self.snapshot.pending):
-            pending = self.snapshot.pending[slot]
-            pane = next((p for p in self.snapshot.panes if p.pane_id == pending.pane_id), None)
-            if pane is not None and switch_to_pane(pane):
-                acknowledge(pending.pane_id, pending.turn_id)
-        elif kind == "pane" and slot < len(self.snapshot.panes):
-            switch_to_pane(self.snapshot.panes[slot])
+        if kind == "pane" and slot < len(self.snapshot.panes):
+            pane = self.snapshot.panes[slot]
+            if switch_to_pane(pane):
+                pending = next(
+                    (item for item in self.snapshot.pending if item.pane_id == pane.pane_id),
+                    None,
+                )
+                if pending is not None:
+                    acknowledge(pending.pane_id, pending.turn_id)
         elif kind == "volume_down":
             _run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
         elif kind == "volume_up":

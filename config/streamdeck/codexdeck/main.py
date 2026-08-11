@@ -5,7 +5,6 @@ from src.backend.PluginManager.PluginBase import PluginBase
 
 from .actions import AirPodsAction
 from .actions import CodexPaneAction
-from .actions import CompletionSlotAction
 from .actions import MicMuteAction
 from .actions import OutputMuteAction
 from .actions import VolumeDownAction
@@ -28,7 +27,6 @@ class CodexDeckPlugin(PluginBase):
 
         self.manager = DeckStateManager()
         for suffix, name, action in (
-            ("CompletionSlot", "Finished Codex thread", CompletionSlotAction),
             ("CodexPane", "Codex pane", CodexPaneAction),
             ("VolumeDown", "Volume down", VolumeDownAction),
             ("VolumeUp", "Volume up", VolumeUpAction),

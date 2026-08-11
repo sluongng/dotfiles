@@ -8,6 +8,16 @@ from src.backend.PluginManager.EventAssigner import EventAssigner
 ASSETS = Path(__file__).with_name("assets")
 
 
+def fitted_label(text, max_chars=16):
+    text = str(text or "")
+    if len(text) > max_chars:
+        text = text[: max_chars - 1] + "…"
+    # A 72px key has roughly 64px of usable label width. At the default font,
+    # an average glyph is about 0.6em wide, so scale longer names accordingly.
+    font_size = max(7, min(14, 100 // max(1, len(text))))
+    return text, font_size
+
+
 class ManagedKeyAction(ActionCore):
     kind = ""
 
@@ -60,8 +70,9 @@ class ManagedKeyAction(ActionCore):
         )
 
     def _labels(self, top="", center="", bottom=""):
+        center, center_size = fitted_label(center)
         self.set_label(top, "top", font_size=9, update=False)
-        self.set_label(center, "center", font_size=14, update=False)
+        self.set_label(center, "center", font_size=center_size, update=False)
         self.set_label(bottom, "bottom", font_size=9, update=True)
 
 
@@ -90,10 +101,18 @@ class CodexPaneAction(ManagedKeyAction):
             self.set_background_color([3, 8, 14, 255], update=False)
             self._labels()
             return
+        pending = next(
+            (item for item in snapshot.pending if item.pane_id == pane.pane_id), None
+        )
+        if pending is not None:
+            self._media("codex-pulse.gif", fps=8, loop=True, update=False)
+            self.set_background_color([3, 20, 18, 255], update=False)
+            self._labels("", pane.project, "DONE")
+            return
         self._media("codex-ready.png", update=False)
         color = [10, 62, 48, 255] if pane.active else [8, 27, 43, 255]
         self.set_background_color(color, update=False)
-        self._labels("CODEX", pane.pane_id, pane.project)
+        self._labels("", pane.project, "WORKING" if pane.busy else "")
 
 
 class AudioAction(ManagedKeyAction):
