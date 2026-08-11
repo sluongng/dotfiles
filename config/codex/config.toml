@@ -59,7 +59,7 @@ sleep_tool = true
 enabled = true
 
 [agents]
-max_concurrent_threads_per_session = 12 # spawned agents; root thread is separate
+max_concurrent_threads_per_session = 4 # spawned agents; root thread is separate
 max_depth = 2
 
 [tui]
