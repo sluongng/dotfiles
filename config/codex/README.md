@@ -9,13 +9,6 @@ Deploy it with:
 ./automation/codex/install-codex.sh
 ```
 
-Set `CODEX_HOME` to render the same tracked config into another Codex home,
-for example:
-
-```sh
-CODEX_HOME="$HOME/.codexp" ./automation/codex/install-codex.sh
-```
-
 The deploy script manages these paths under `${CODEX_HOME:-~/.codex}`:
 
 - preserves App-managed desktop, bundled plugin, and `node_repl` tables in
