@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# Last reviewed for codex-cli v0.145.0-alpha.24 and current main on 2026-07-20.
+# Last reviewed for active npm alpha codex-cli v0.147.0-alpha.6.6 on 2026-08-11.
 
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
@@ -34,7 +34,6 @@ code_mode = true
 code_mode_only = false
 concurrent_reasoning_summaries = true
 default_mode_request_user_input = false
-enable_fanout = true
 goals = true
 local_thread_store_compression = true
 memories = true
