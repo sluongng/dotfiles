@@ -28,7 +28,7 @@ local rules = {
     { name = "tiled-workspace-decoration", match = { float = false, workspace = "f[1-10]" }, border_size = 3, rounding = 4 },
     { name = "app-workspace-ghostty", match = { class = [[^com\.mitchellh\.ghostty$]] }, workspace = "1", focus_on_activate = true },
     { name = "app-workspace-chrome", match = { class = [[^google-chrome$]] }, workspace = "2 silent", no_initial_focus = true, focus_on_activate = true },
-    { name = "app-workspace-slack", match = { class = [[^slack$]] }, workspace = "3 silent", no_initial_focus = true, suppress_event = "activate activatefocus" },
+    { name = "app-workspace-slack", match = { class = [[^slack$]] }, workspace = "3 silent", fullscreen = true, no_initial_focus = true, suppress_event = "activate activatefocus" },
     { name = "app-workspace-discord", match = { class = [[^discord$]] }, workspace = "4 silent", no_initial_focus = true, suppress_event = "activate activatefocus" },
     { name = "app-workspace-steam", match = { class = [[^steam$]] }, workspace = "6 silent", no_initial_focus = true, suppress_event = "activate activatefocus" },
     { name = "app-workspace-slay-the-spire-2", match = { class = [[^Slay the Spire 2$]] }, workspace = "6 silent" },
