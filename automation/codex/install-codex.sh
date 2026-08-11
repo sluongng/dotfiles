@@ -186,6 +186,7 @@ main() {
   local target_config_path="${TARGET_DIR}/config.toml"
   local local_config_path="${TARGET_DIR}/config.local.toml"
   local projects_local_path="${TARGET_DIR}/projects.local.toml"
+  local runtime_local_path="${TARGET_DIR}/runtime.local.toml"
   local platform=""
   local nested_feature_tables=""
 
@@ -215,6 +216,7 @@ main() {
     --shared "${SOURCE_DIR}/config.toml" \
     --local "${local_config_path}" \
     --projects "${projects_local_path}" \
+    --runtime "${runtime_local_path}" \
     --target "${target_config_path}" \
     --platform "${platform}" \
     --nested-feature-tables "${nested_feature_tables}" \

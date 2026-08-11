@@ -20,15 +20,18 @@ class RenderConfigTest(unittest.TestCase):
         platform: str,
         nested_features: bool,
         local_text: str = "",
+        runtime_text: str = "",
         python_executable: str = sys.executable,
     ) -> dict:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             local = root / "config.local.toml"
             projects = root / "projects.local.toml"
+            runtime = root / "runtime.local.toml"
             target = root / "config.toml"
             local.write_text(local_text)
             projects.write_text("")
+            runtime.write_text(runtime_text)
             subprocess.run(
                 [
                     python_executable,
@@ -39,6 +42,8 @@ class RenderConfigTest(unittest.TestCase):
                     str(local),
                     "--projects",
                     str(projects),
+                    "--runtime",
+                    str(runtime),
                     "--target",
                     str(target),
                     "--platform",
@@ -56,6 +61,75 @@ class RenderConfigTest(unittest.TestCase):
             )
             with target.open("rb") as rendered:
                 return tomllib.load(rendered)
+
+    def test_preserves_app_managed_runtime_tables(self) -> None:
+        config = self.render(
+            platform="Linux",
+            nested_features=True,
+            runtime_text='''
+[marketplaces.openai-bundled]
+source_type = "bundled"
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[mcp_servers.node_repl]
+command = "/runtime/node"
+
+[desktop]
+open_fullscreen = true
+''',
+        )
+
+        self.assertEqual(
+            config["marketplaces"]["openai-bundled"]["source_type"],
+            "bundled",
+        )
+        self.assertTrue(config["plugins"]["browser@openai-bundled"]["enabled"])
+        self.assertEqual(config["mcp_servers"]["node_repl"]["command"], "/runtime/node")
+        self.assertTrue(config["desktop"]["open_fullscreen"])
+
+    def test_sync_removes_stale_runtime_overlay(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            local = root / "config.local.toml"
+            projects = root / "projects.local.toml"
+            runtime = root / "runtime.local.toml"
+            target = root / "config.toml"
+            local.write_text("")
+            projects.write_text("")
+            runtime.write_text('[desktop]\nopen_fullscreen = true\n')
+            target.write_text('model = "gpt-5.6-sol"\n')
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(RENDERER),
+                    "--shared",
+                    str(SHARED),
+                    "--local",
+                    str(local),
+                    "--projects",
+                    str(projects),
+                    "--runtime",
+                    str(runtime),
+                    "--target",
+                    str(target),
+                    "--platform",
+                    "Linux",
+                    "--nested-feature-tables",
+                    "true",
+                    "--marketplace-name",
+                    "sluongng-dotfiles",
+                    "--marketplace-source",
+                    str(ROOT / "config/codex"),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertFalse(runtime.exists())
 
     def test_legacy_macos_uses_cross_runtime_safe_settings(self) -> None:
         config = self.render(
