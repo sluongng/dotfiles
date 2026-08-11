@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "id": "com_sluongng_CodexDeck",
+  "name": "Codex Deck",
+  "description": "Dynamic Codex, tmux, PipeWire, and AirPods controls.",
+  "short-description": "Codex and desktop controls",
+  "descriptions": {
+    "en_US": "Dynamic Codex, tmux, PipeWire, and AirPods controls."
+  },
+  "short-descriptions": {
+    "en_US": "Codex and desktop controls"
+  },
+  "tags": ["Productivity", "Utility"],
+  "minimum-app-version": "1.5.0-beta.15",
+  "app-version": "1.5.0-beta.15"
+}

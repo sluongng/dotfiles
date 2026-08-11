@@ -23,6 +23,7 @@ project_doc_fallback_filenames = [
 suppress_unstable_features_warning = true
 personality = "none"
 service_tier = "default"
+notify = ["/home/nb/.dotfiles/config/streamdeck/codexdeck/notify.py"]
 
 [tools.experimental_request_user_input]
 enabled = false
@@ -63,8 +64,10 @@ max_depth = 2
 
 [tui]
 alternate_screen = "never"
+notifications = false # Completion popups are emitted by the top-level notify hook.
 status_line = ["model-with-reasoning", "project-root", "git-branch", "context-used", "five-hour-limit", "weekly-limit", "codex-version"]
 session_picker_view = "dense"
+terminal_title = ["thread-id"]
 
 # Linux desktop trust entries kept here as comments on purpose.
 # They are not meant to be active on this laptop.
