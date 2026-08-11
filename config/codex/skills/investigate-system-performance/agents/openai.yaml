@@ -1,0 +1,4 @@
+interface:
+  display_name: "Investigate System Performance"
+  short_description: "Profile, explain, and improve performance"
+  default_prompt: "Use $investigate-system-performance to find the dominant performance costs in this system and validate an improvement."
