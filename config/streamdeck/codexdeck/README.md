@@ -15,9 +15,11 @@ Layout:
 
 Codex's top-level `notify` command invokes `notify.py` after each completed
 turn. The callback stores only identifiers, cwd, pane ID, and timestamp under
-`$XDG_STATE_HOME/codex-deck`; prompts and assistant messages are discarded. It
-also posts a passive desktop notification without an action that focuses
-Ghostty.
+`$XDG_STATE_HOME/codex-deck`, together with the notification classification;
+prompts, assistant messages, and subagent paths are discarded.
+Root sessions also post a passive desktop notification without an action that
+focuses Ghostty. Subagent and unclassified completions remain in the event log
+for diagnostics but do not post desktop notifications.
 
 The AirPods control calls BlueZ over D-Bus. It does not enable auto-connect.
 

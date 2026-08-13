@@ -214,6 +214,8 @@ def load_pending(panes: tuple[Pane, ...]) -> tuple[Pending, ...]:
             event = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if event.get("notification-policy") == "suppress":
+            continue
         pane_id = resolve_event_pane(event, panes)
         turn_id = event.get("turn-id")
         if pane_id not in pane_map or not isinstance(turn_id, str):

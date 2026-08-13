@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 import tempfile
 import unittest
@@ -38,6 +39,25 @@ class ManagerTest(unittest.TestCase):
             manager.resolve_event_pane({"thread-id": thread_id, "tmux-pane": None}, panes),
             "%7",
         )
+
+    def test_suppressed_notification_does_not_request_attention(self):
+        pane = manager.Pane("%7", "work", "2", False, "codex", "thread title")
+        with tempfile.TemporaryDirectory() as directory:
+            state_dir = Path(directory)
+            event = {
+                "thread-id": "thread-1",
+                "turn-id": "turn-1",
+                "cwd": "/work/codex",
+                "tmux-pane": "%7",
+                "timestamp": 50,
+                "notification-policy": "suppress",
+            }
+            (state_dir / "events.jsonl").write_text(json.dumps(event) + "\n")
+            with (
+                mock.patch.object(manager, "EVENTS_PATH", state_dir / "events.jsonl"),
+                mock.patch.object(manager, "ACK_PATH", state_dir / "acknowledged.json"),
+            ):
+                self.assertEqual(manager.load_pending((pane,)), ())
 
     def test_order_panes_is_deterministic_by_tmux_location(self):
         panes = (
