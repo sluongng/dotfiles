@@ -1,4 +1,4 @@
 interface:
   display_name: "Upgrade Codex Stack"
-  short_description: "Upgrade the Arch Linux Codex stack"
-  default_prompt: "Use $upgrade-codex-stack to update my Codex CLI packaging and Linux desktop app, audit my dotfiles, and report new features."
+  short_description: "Upgrade the Arch Codex and ChatGPT stack"
+  default_prompt: "Use $upgrade-codex-stack to update my Codex CLI packaging and first-party Linux ChatGPT/Codex desktop app, audit my dotfiles, and report new features."

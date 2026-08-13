@@ -1,15 +1,15 @@
 ---
 name: upgrade-codex-stack
-description: On the Arch Linux workstation, upgrade and audit the local Codex CLI package, Linux Codex App repackager, configuration, skills, plugins, services, and feature maturity. Do not use this Linux packaging workflow for macOS Codex upgrades.
+description: On the Arch Linux workstation, upgrade and audit the local Codex CLI package, first-party Linux ChatGPT/Codex App distribution, Arch desktop packaging, legacy repackager fallback, configuration, skills, plugins, services, and feature maturity. Do not use this Linux packaging workflow for macOS Codex upgrades.
 ---
 
 # Upgrade Codex Stack
 
 This is the Arch Linux workstation upgrade workflow. If `uname -s` is not
-`Linux`, stop before using any `/home/nb`, pacman, systemd, or Linux Codex App
+`Linux`, stop before using any `/home/nb`, pacman, systemd, or Linux desktop app
 steps and use the platform's normal Codex distribution/update path instead.
 
-Upgrade the complete local Codex stack and finish with a current-state report. Treat the CLI package, Codex App, desktop runtime, rendered configuration, plugins, system skills, and services as one system while preserving the boundary between their responsibilities.
+Upgrade the complete local Codex stack and finish with a current-state report. Treat the CLI package, desktop app, desktop runtime, rendered configuration, plugins, system skills, and services as one system while preserving the boundary between their responsibilities.
 
 ## Scope and Safety
 
@@ -17,7 +17,7 @@ Use these default paths unless the user supplies different ones:
 
 - Codex source and workspace: `/home/nb/work/misc/codex`
 - Arch package: `/home/nb/work/misc/codex/openai-codex-pkg`
-- Linux Codex App: `/home/nb/work/misc/codex-app`
+- Linux desktop packaging and legacy repackager: `/home/nb/work/misc/codex-app`
 - Dotfiles source of truth: `/home/nb/.dotfiles`
 - Live Codex home: `${CODEX_HOME:-$HOME/.codex}`
 
@@ -29,7 +29,13 @@ Before editing:
 4. Use official upstream release metadata, source, documentation, and artifacts as primary evidence.
 5. Never print credentials, cookies, tokens, or unredacted authentication payloads.
 
-Build and update the scoped repositories when the user requests an upgrade. Do not use `sudo`, install a built package, replace the installed desktop app, restart services, or overwrite live config unless the user explicitly requests that disruptive action. Return exact deferred commands in the final report.
+Build and update the scoped repositories when the user requests an upgrade. Do not use `sudo`, install a built package, replace the installed desktop app, register package repositories, run foreign-package maintainer scripts, restart services, or overwrite live config unless the user explicitly requests that disruptive action. Return exact deferred commands in the final report.
+
+The first-party Linux app is the unified ChatGPT desktop app and includes Codex.
+Treat its native Linux package as the primary desktop release source. Do not call
+it a standalone Codex-only app. Keep the macOS-derived Linux repackager as a
+fallback until the first-party package is supported by the local Arch packaging
+and passes the user's required workflows.
 
 Use subagents only for independent bounded audits that materially reduce elapsed time. Keep release selection and edits that block the main path local.
 
@@ -40,13 +46,26 @@ Record the current state before changing anything:
 - installed and packaged Codex CLI versions;
 - running CLI, app-server daemon, and service versions;
 - current package source URLs and checksums;
-- current Codex App version and packaged output;
+- current desktop app version, installation path, distribution channel
+  (first-party Linux or legacy macOS-derived), and packaged output;
 - relevant repository commits, branches, dirty files, and upstream remotes;
 - enabled/default feature flags and plugin state.
 
 Select the latest packageable CLI alpha by checking both the npm registry metadata for `@openai/codex` and the matching official GitHub release. Do not select a tag merely because it sorts newest. Require the release assets consumed by the package, including the Linux musl CLI package and responses API proxy. If the newest alpha lacks required assets, choose the newest complete alpha and explain the gap.
 
-Determine the Codex App target from the appcast through the repository's release-info command. Prefer the latest upstream app release that the repackager supports, and record its release date and source identifier.
+Determine the desktop app target from current official Linux release metadata and
+artifacts. Use the official product/download page and signed APT or RPM repository
+metadata as primary evidence. Record the release date, package version,
+architecture, artifact URL, size, checksum, signing identity, supported distro
+matrix, and the version of the embedded Codex CLI. Do not infer freshness from a
+redirect filename or compare desktop and CLI versions as if they shared a release
+line.
+
+Prefer the newest verifiable first-party Linux package. Use the macOS appcast via
+the repository's `release-info` command only when auditing the legacy fallback or
+when the first-party package is missing, unverifiable, or unusable. If falling
+back, state the exact reason and compare both channels' versions and release
+dates.
 
 ## 2. Upgrade the Arch CLI Package
 
@@ -70,29 +89,81 @@ pacman -Qlp ./<package-file>
 
 Extract the built package into a temporary directory, run its embedded `codex --version`, and inspect helper binary types. Report the exact artifact path, version, package layout result, and deferred `sudo pacman -U ...` command.
 
-## 3. Upgrade and Validate Codex App
+## 3. Upgrade and Validate the Linux Desktop App
 
-Always include `/home/nb/work/misc/codex-app` in a full run. Follow its repository instructions and existing scripts instead of duplicating repackaging logic.
+Always include `/home/nb/work/misc/codex-app` in a full run. Follow its repository
+instructions and existing scripts. Evolve that repository's packaging path when
+the user requests an upgrade; do not build a one-off package outside it.
 
-1. Resolve the target with `npm run release-info -- --json` or the current equivalent.
-2. Install JavaScript dependencies only when the lockfile or repository state requires it.
-3. Run the repository's forced repackage command for the target version.
-4. Patch only concrete upstream bundle drift or Linux compatibility failures exposed by the build.
-5. Refresh checked-in automation examples or fixtures when their source bundle changed.
-6. Run the repository smoke test and relevant extension-host or MCP tests.
+### Prefer the first-party Linux package
 
-Ensure the Linux primary runtime bundled for Browser/JavaScript MCP is valid:
+1. Discover the current `.deb` or `.rpm` from an official OpenAI page or signed
+   package repository. Select the host architecture explicitly.
+2. Verify signed repository metadata and then verify the downloaded artifact
+   against its exact size and SHA-256. Record the signing-key fingerprint from
+   the verified metadata; allow legitimate key rotation instead of hardcoding a
+   historical fingerprint as permanent truth. State precisely whether trust
+   comes from signed repository metadata authenticating the package hash, a
+   per-package signature, or both; do not describe an unsigned `.deb` as
+   directly signed.
+3. Inspect package metadata, file layout, dependencies, desktop/MIME handlers,
+   AppArmor policy, and maintainer scripts before building or installing
+   anything. Treat maintainer scripts as untrusted-to-run during inspection.
+4. On Arch/CachyOS, never install the `.deb` with `dpkg`, add its APT repository,
+   or execute its maintainer scripts. Use the repository's Arch-native wrapper
+   for the official payload. If none exists and the user requested an upgrade,
+   add the smallest maintainable wrapper to that repository rather than
+   extending the legacy macOS conversion path.
+5. Preserve the vendor application payload and native runtimes byte-for-byte
+   unless a concrete host incompatibility proves a patch is necessary. Keep the
+   first-party layout and names, including the unified ChatGPT branding, rather
+   than rewriting them to resemble the legacy package. Treat vendor binaries and
+   resources as the immutable payload boundary; Arch package metadata, launchers,
+   and host-integration files may differ when necessary and must be reviewed
+   explicitly.
+6. Build a pacman-inspectable artifact and check package ownership, conflicts,
+   upgrade behavior, desktop entry, URL scheme, MIME registration, and any
+   coexistence rules with the legacy installation.
 
-- `node_repl` must be the pinned Linux executable, not a copied Mach-O binary;
-- pin and verify its checksum and manifest metadata;
-- verify ELF architecture and required shared-library compatibility;
-- retain or refresh the weak `pidfd_*` compatibility patch where the target glibc needs it;
-- retain or refresh Browser native-pipe and trust patches when upstream code paths changed;
-- test MCP initialization, tool listing, JavaScript evaluation, and the Browser bridge when those paths are packaged.
+Validate the first-party payload before activation using isolated `HOME`,
+`CODEX_HOME`, and XDG directories. At minimum check:
 
-Keep the runtime boundary explicit in the report: the desktop app's `node_repl` serves Browser/JavaScript MCP, while CLI code mode uses `codex-code-mode-host`.
+- package signature provenance, checksum, architecture, ELF types, and unresolved
+  shared libraries;
+- renderer startup and the bundled app-server initialization handshake;
+- bundled `codex --version`, `codex-code-mode-host`, and `rg`;
+- `node_repl` MCP initialization, tool listing, JavaScript evaluation, and the
+  Browser bridge;
+- clean process shutdown and absence of probe processes afterward.
 
-Do not install or restart Codex App by default. Report the generated package or install path and the exact deferred installation command.
+Do not interpret an isolated probe's missing login or failed `codex://`
+registration as a product failure. Those require an installed desktop session.
+Do not copy browser cookies, app credentials, or authentication state between
+profiles; use the application's supported sign-in flow when installation is
+authorized.
+
+### Use the legacy repackager only as fallback
+
+If the first-party Linux release cannot be used, resolve the macOS target with
+`npm run release-info -- --json` or the current equivalent and use the existing
+forced repackage, install, and smoke-test commands. Patch only concrete bundle
+drift or Linux compatibility failures. For this path, continue verifying the
+pinned Linux `node_repl`, manifest/checksum, GLIBC compatibility, Browser
+native-pipe behavior, and required compatibility patches. Refresh checked-in
+fixtures only when their source bundle changed.
+
+Keep the runtime boundary explicit in the report: the desktop app's `node_repl`
+serves Browser/JavaScript MCP, while CLI code mode uses
+`codex-code-mode-host`. The first-party package should supply native Linux builds
+of both; the legacy path may source them separately.
+
+Do not install, switch the active desktop entry, migrate a profile, or restart
+the app by default. Prefer a side-by-side first-party installation and distinct
+profile for initial parity testing only after checking app IDs, single-instance
+locks, DBus names, URL/MIME handlers, and profile paths for collisions. If those
+cannot be isolated, use an extracted-package probe instead of simultaneous
+activation. Report the generated Arch artifact, the channel used, and only
+installation/switch commands verified from the repository or package metadata.
 
 ## 4. Audit Dotfiles and Live Runtime State
 
@@ -103,6 +174,8 @@ Compare configuration source, rendered state, and local overlays without exposin
 - `${CODEX_HOME}/config.local.toml` and project-local overlays;
 - the dotfiles Codex renderer and install script;
 - systemd user services or sockets that run Codex binaries;
+- first-party and legacy desktop installation roots, desktop entries, URL/MIME
+  handlers, profiles, and package ownership;
 - live and dotfiles-managed `.system` skills;
 - installed plugins and their configured roots.
 
@@ -119,6 +192,12 @@ systemctl --user status <relevant-unit>
 
 Inspect service executable paths, process versions, and deleted or stale binaries after a package change. Compare release-tag system-skill samples with both the live system-skill directory and dotfiles-managed copies. Validate local skills and plugin roots when release drift could affect discovery.
 
+Also inspect whether running Browser/JavaScript MCP workers still execute a
+superseded legacy `node_repl`. Separate the persistent CLI app-server service
+from the desktop app's bundled app-server and do not restart one as a substitute
+for the other. Detect conflicting `codex://` handlers or desktop entries before
+recommending activation of the first-party app.
+
 Classify findings by consequence:
 
 - **Required:** prevents startup, breaks a configured workflow, violates the new schema, or leaves an incompatible running service.
@@ -130,7 +209,14 @@ Prefer changing the dotfiles source of truth and rerendering over editing genera
 
 ## 5. Produce a Current Feature Radar
 
-Use the `$openai-docs` skill to consult the current official Codex documentation. Documentation lookup is read-only and remains required during an audit-only run; skip it only when the helper or upstream source is unavailable, and report the exact freshness limitation. Also inspect the target release notes, source at the target tag, changes since the previously installed or packaged version, and `codex features list`.
+Use the `$openai-docs` skill to consult the current official Codex and desktop-app
+documentation. Documentation lookup is read-only and remains required during an
+audit-only run; skip it only when the helper or upstream source is unavailable,
+and report the exact freshness limitation. For a new Linux preview, cross-check
+the official announcement, support matrix, product/download page, and signed
+package repository because general desktop documentation may lag the release.
+Also inspect the target release notes, source at the target tag, changes since the
+previously installed or packaged version, and `codex features list`.
 
 Cover practical user-facing changes in all relevant maturity classes:
 
@@ -158,7 +244,14 @@ If current documentation, release metadata, or an upstream service is unavailabl
 Repeat version and configuration checks against the newly built artifacts. Confirm that:
 
 - package metadata, contents, and embedded versions agree;
-- the Codex App package passes its smoke and relevant runtime tests;
+- the desktop artifact came from the selected first-party or fallback channel,
+  and its signature/checksum evidence is recorded;
+- the desktop package passes its smoke and relevant runtime tests;
+- a first-party payload remains unmodified unless a documented compatibility
+  failure required a narrowly scoped patch;
+- the Arch package does not depend on executing Debian or RPM maintainer scripts;
+- first-party and legacy desktop entries, profiles, and URL handlers have an
+  explicit coexistence or migration plan;
 - source config renders consistently or documented local overlays explain the difference;
 - feature recommendations match the target binary rather than only upstream main;
 - no unrelated dirty files were overwritten;
@@ -173,7 +266,7 @@ Always end with these headings, even when a section has no changes:
 ```markdown
 ## Release outcome
 ## CLI package
-## Codex App
+## Desktop app
 ## Runtime and code mode
 ## Dotfiles and live-state audit
 ## Feature radar
@@ -182,4 +275,14 @@ Always end with these headings, even when a section has no changes:
 ## Preserved work and blockers
 ```
 
-Include actual versions, dates, artifact paths, and test results. Use a compact feature table with columns for feature, maturity, default/enabled state, practical impact, and recommendation. Separate changes made from findings reported only. Under **Actions for the user**, include only remaining privileged or disruptive steps with exact commands whose availability was verified from repository scripts or command help; write `None` if there are none. Explicitly state any degraded freshness, missing release assets, preserved pre-existing changes, and unresolved blockers.
+Include actual versions, dates, artifact paths, release channel, signing/checksum
+evidence, and test results. State whether a desktop version change occurred or
+whether the result is only a distribution/support-path migration. Use a compact
+feature table with columns for feature, maturity, default/enabled state,
+practical impact, and recommendation. Separate changes made from findings
+reported only. Under **Actions for the user**, include only remaining privileged
+or disruptive steps with exact commands whose availability was verified from
+repository scripts or command help; write `None` if there are none. Explicitly
+state unsupported-host risk, degraded documentation freshness, missing release
+assets, preserved pre-existing changes, fallback status, and unresolved
+blockers.
