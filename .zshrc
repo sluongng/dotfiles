@@ -366,6 +366,22 @@ codex() {
   command codex "$@"
 }
 
+# Run Codex on the Windows desktop through the key-only SSH connection.
+codex-win() {
+  emulate -L zsh
+  local encoded_args remote_command ssh_tty=-T
+  [[ -t 0 && -t 1 ]] && ssh_tty=-t
+
+  if (( $# == 0 )); then
+    command ssh "$ssh_tty" windows-codex \
+      codex -c tui.animations=false --no-alt-screen resume --all
+  else
+    encoded_args=$(printf '%s\0' "$@" | base64 | tr -d '\n') || return
+    remote_command="pwsh.exe -NoLogo -NoProfile -Command \"\$bytes=[Convert]::FromBase64String('$encoded_args'); \$remoteArgs=[Text.Encoding]::UTF8.GetString(\$bytes).Split([char]0); \$remoteArgs=\$remoteArgs[0..(\$remoteArgs.Length-2)]; \$codexExe=Get-ChildItem -LiteralPath (\$env:LOCALAPPDATA + '\OpenAI\Codex\bin') -Filter codex.exe -Recurse -File | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1 -ExpandProperty FullName; if (-not \$codexExe) { throw 'Codex executable not found' }; & \$codexExe -c 'tui.animations=false' --no-alt-screen @remoteArgs\""
+    command ssh "$ssh_tty" windows-codex "$remote_command"
+  fi
+}
+
 # Codex personal account. Uses the same codex binary with isolated state.
 alias codexp='CODEX_HOME="$HOME/.codexp" codex'
 
