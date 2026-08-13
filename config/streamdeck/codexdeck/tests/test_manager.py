@@ -2,6 +2,7 @@ import importlib.util
 import json
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -102,6 +103,100 @@ class ManagerTest(unittest.TestCase):
         ):
             state._handle("pane", 0)
         acknowledge.assert_called_once_with("%7", "turn-1")
+
+    def test_focused_codex_pane_acknowledges_pending_completion(self):
+        pane = manager.Pane("%7", "work", "2", True, "codex", "thread title")
+        pending = manager.Pending("%7", "turn-1", "codex", 50)
+        with (
+            mock.patch.object(
+                manager, "_run", return_value="attached,focused,UTF-8\t%7"
+            ),
+            mock.patch.object(manager, "list_codex_panes", return_value=(pane,)),
+            mock.patch.object(manager, "load_pending", return_value=(pending,)),
+            mock.patch.object(manager, "acknowledge") as acknowledge,
+        ):
+            self.assertTrue(manager.acknowledge_focused_pane("/dev/pts/8", "%7"))
+        acknowledge.assert_called_once_with("%7", "turn-1")
+
+    def test_pane_focus_hook_resolves_focused_client_without_client_context(self):
+        pane = manager.Pane("%7", "work", "2", True, "codex", "thread title")
+        pending = manager.Pending("%7", "turn-1", "codex", 50)
+        with (
+            mock.patch.object(
+                manager,
+                "_run",
+                return_value="attached,focused,UTF-8\t%7\nattached,UTF-8\t%8",
+            ) as run,
+            mock.patch.object(manager, "list_codex_panes", return_value=(pane,)),
+            mock.patch.object(manager, "load_pending", return_value=(pending,)),
+            mock.patch.object(manager, "acknowledge") as acknowledge,
+        ):
+            self.assertTrue(manager.acknowledge_focused_pane("", "%7"))
+        run.assert_called_once_with(
+            ["tmux", "list-clients", "-F", "#{client_flags}\t#{pane_id}"],
+            check=True,
+        )
+        acknowledge.assert_called_once_with("%7", "turn-1")
+
+    def test_unfocused_tmux_client_does_not_acknowledge(self):
+        with (
+            mock.patch.object(manager, "_run", return_value="attached,UTF-8\t%7"),
+            mock.patch.object(manager, "list_codex_panes") as list_codex_panes,
+            mock.patch.object(manager, "acknowledge") as acknowledge,
+        ):
+            self.assertFalse(manager.acknowledge_focused_pane("/dev/pts/8", "%7"))
+        list_codex_panes.assert_not_called()
+        acknowledge.assert_not_called()
+
+    def test_focused_non_codex_pane_does_not_acknowledge(self):
+        codex_pane = manager.Pane("%7", "work", "2", False, "codex", "thread title")
+        with (
+            mock.patch.object(
+                manager, "_run", return_value="attached,focused,UTF-8\t%8"
+            ),
+            mock.patch.object(manager, "list_codex_panes", return_value=(codex_pane,)),
+            mock.patch.object(manager, "load_pending") as load_pending,
+            mock.patch.object(manager, "acknowledge") as acknowledge,
+        ):
+            self.assertFalse(manager.acknowledge_focused_pane("/dev/pts/8", "%8"))
+        load_pending.assert_not_called()
+        acknowledge.assert_not_called()
+
+    def test_stale_focus_hook_does_not_acknowledge_new_selected_pane(self):
+        with (
+            mock.patch.object(
+                manager, "_run", return_value="attached,focused,UTF-8\t%8"
+            ),
+            mock.patch.object(manager, "list_codex_panes") as list_codex_panes,
+            mock.patch.object(manager, "acknowledge") as acknowledge,
+        ):
+            self.assertFalse(manager.acknowledge_focused_pane("/dev/pts/8", "%7"))
+        list_codex_panes.assert_not_called()
+        acknowledge.assert_not_called()
+
+    def test_concurrent_acknowledgements_preserve_each_pane(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_dir = Path(directory)
+            with (
+                mock.patch.object(manager, "STATE_DIR", state_dir),
+                mock.patch.object(manager, "ACK_PATH", state_dir / "acknowledged.json"),
+            ):
+                barrier = threading.Barrier(8)
+
+                def acknowledge(index):
+                    barrier.wait()
+                    manager.acknowledge(f"%{index}", f"turn-{index}")
+
+                threads = [threading.Thread(target=acknowledge, args=(index,)) for index in range(8)]
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join()
+
+                self.assertEqual(
+                    json.loads((state_dir / "acknowledged.json").read_text()),
+                    {f"%{index}": f"turn-{index}" for index in range(8)},
+                )
 
     def test_switch_to_exact_pane_and_focus_ghostty(self):
         pane = manager.Pane("%7", "work", "2", False, "codex", "thread title")

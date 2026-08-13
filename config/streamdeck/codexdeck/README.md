@@ -28,6 +28,11 @@ also records a durable attention event whenever an existing Codex process goes
 from an active turn to waiting, so sessions started before the callback was
 configured still pulse when they need attention.
 
+Tmux focus hooks acknowledge a pending completion when its exact Codex pane is
+actually viewed, whether selected with the keyboard, mouse, or Stream Deck.
+Unfocused clients, non-Codex panes, and Codex panes without a pending completion
+are ignored.
+
 The actions self-assign StreamController's image, label, and background control
 fields when a hand-authored page omits them. This keeps generated pages from
 rendering as black keys.

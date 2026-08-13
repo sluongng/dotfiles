@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import re
 import subprocess
+import sys
+import tempfile
 import threading
 import time
 import weakref
@@ -306,11 +309,80 @@ def switch_to_pane(pane: Pane) -> bool:
 
 def acknowledge(pane_id: str, turn_id: str) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
-    data = load_acknowledged()
-    data[pane_id] = turn_id
-    temporary = ACK_PATH.with_suffix(".tmp")
-    temporary.write_text(json.dumps(data, sort_keys=True) + "\n")
-    temporary.replace(ACK_PATH)
+    lock_path = ACK_PATH.with_suffix(".lock")
+    with lock_path.open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        data = load_acknowledged()
+        data[pane_id] = turn_id
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=f".{ACK_PATH.name}.", suffix=".tmp", dir=ACK_PATH.parent
+        )
+        temporary = Path(temporary_name)
+        try:
+            with os.fdopen(descriptor, "w") as output:
+                output.write(json.dumps(data, sort_keys=True) + "\n")
+            temporary.replace(ACK_PATH)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+
+def acknowledge_focused_pane(
+    client_name: str, expected_pane_id: str | None = None
+) -> bool:
+    """Acknowledge a pending completion only when its Codex pane is being viewed."""
+    if expected_pane_id and PANE_RE.fullmatch(expected_pane_id) is None:
+        return False
+    try:
+        if client_name:
+            clients = (
+                _run(
+                    [
+                        "tmux",
+                        "display-message",
+                        "-p",
+                        "-c",
+                        client_name,
+                        "#{client_flags}\t#{pane_id}",
+                    ],
+                    check=True,
+                ),
+            )
+        else:
+            clients = tuple(
+                _run(
+                    ["tmux", "list-clients", "-F", "#{client_flags}\t#{pane_id}"],
+                    check=True,
+                ).splitlines()
+            )
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+    focused_panes = []
+    for client in clients:
+        fields = client.split("\t")
+        if len(fields) != 2:
+            continue
+        flags = set(fields[0].split(","))
+        pane_id = fields[1]
+        if "focused" in flags and PANE_RE.fullmatch(pane_id):
+            focused_panes.append(pane_id)
+    if expected_pane_id:
+        if expected_pane_id not in focused_panes:
+            return False
+        pane_id = expected_pane_id
+    elif len(focused_panes) == 1:
+        pane_id = focused_panes[0]
+    else:
+        return False
+
+    panes = list_codex_panes()
+    if not any(pane.pane_id == pane_id for pane in panes):
+        return False
+    pending = next((item for item in load_pending(panes) if item.pane_id == pane_id), None)
+    if pending is None:
+        return False
+    acknowledge(pending.pane_id, pending.turn_id)
+    return True
 
 
 class DeckStateManager:
@@ -441,3 +513,17 @@ class DeckStateManager:
             except (OSError, subprocess.SubprocessError, IndexError):
                 pass
             time.sleep(0.25)
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if not argv or argv[0] != "acknowledge-focused-pane":
+        return 2
+    client_name = argv[1] if len(argv) > 1 else ""
+    expected_pane_id = argv[2] if len(argv) > 2 else None
+    acknowledge_focused_pane(client_name, expected_pane_id)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
