@@ -52,6 +52,7 @@ hl.config({
         enable_swallow = true,
         swallow_regex = [[^(nautilus|nemo|thunar|btrfs-assistant.)$]],
         focus_on_activate = false,
+        middle_click_paste = false,
         vrr = 0,
     },
     ecosystem = {
