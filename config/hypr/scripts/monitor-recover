@@ -4,7 +4,7 @@ set -euo pipefail
 connector="${MONITOR_RECOVER_CONNECTOR:-HDMI-A-1}"
 drm_card="${MONITOR_RECOVER_DRM_CARD:-card1}"
 status_path="/sys/class/drm/${drm_card}-${connector}/status"
-monitor_desc="${MONITOR_RECOVER_DESC:-Samsung Electric Company Odyssey G70B H1AK500000}"
+monitor_output="${MONITOR_RECOVER_OUTPUT:-$connector}"
 monitor_mode="${MONITOR_RECOVER_MODE:-3840x2160@120}"
 monitor_position="${MONITOR_RECOVER_POSITION:-0x0}"
 monitor_scale="${MONITOR_RECOVER_SCALE:-1}"
@@ -12,6 +12,21 @@ poll_interval="${MONITOR_RECOVER_POLL_INTERVAL:-2}"
 
 log() {
     printf 'monitor-recover: %s\n' "$*" >&2
+}
+
+lua_string() {
+    local bytes
+
+    bytes="$(
+        printf '%s' "$1" \
+            | LC_ALL=C od -An -v -t u1 \
+            | awk '{ for (i = 1; i <= NF; i++) { if (seen++) printf ","; printf "%s", $i } }'
+    )"
+    if [[ -z "$bytes" ]]; then
+        printf '""'
+    else
+        printf 'string.char(%s)' "$bytes"
+    fi
 }
 
 load_hypr_env() {
@@ -53,9 +68,22 @@ connector_status() {
 }
 
 recover_once() {
-    local attempt status monitor_rule
+    local attempt status monitor_rule lua_code
 
-    monitor_rule="desc:${monitor_desc},${monitor_mode},${monitor_position},${monitor_scale}"
+    monitor_rule="${monitor_output},${monitor_mode},${monitor_position},${monitor_scale}"
+    lua_code="
+        local scale = $(lua_string "$monitor_scale")
+        hl.monitor({
+            output = $(lua_string "$monitor_output"),
+            mode = $(lua_string "$monitor_mode"),
+            position = $(lua_string "$monitor_position"),
+            scale = tonumber(scale) or scale,
+        })
+        return hl.dispatch(hl.dsp.dpms({
+            action = \"on\",
+            monitor = $(lua_string "$connector"),
+        }))
+    "
 
     for attempt in {1..10}; do
         status="$(connector_status)"
@@ -66,7 +94,7 @@ recover_once() {
                 return 1
             fi
 
-            hyprctl --batch "keyword monitor ${monitor_rule}; dispatch dpms on ${connector}; reload" >/dev/null
+            hyprctl eval "$lua_code" >/dev/null
             log "recovered ${connector} with ${monitor_rule}"
             return 0
         fi

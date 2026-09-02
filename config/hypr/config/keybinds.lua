@@ -10,13 +10,79 @@ local function exec(keys, command, description, options)
     bind(keys, hl.dsp.exec_cmd(command), description, options)
 end
 
-exec(main_mod .. " + RETURN", [[sh -lc 'if [ "$(hyprctl -j activeworkspace | jq -r .id)" != 1 ]; then hyprctl dispatch workspace 1 >/dev/null; fi; sleep 0.2; ghostty']], "Open Ghostty on workspace 1")
+local ghostty_launch_queue = 0
+local ghostty_launch_pending = false
+local ghostty_focus_subscription
+local ghostty_cleanup_timer
+local launch_next_ghostty
+
+local function finish_ghostty_launch(window)
+    ghostty_launch_pending = false
+    if ghostty_cleanup_timer then
+        ghostty_cleanup_timer:set_enabled(false)
+        ghostty_cleanup_timer = nil
+    end
+    if window then
+        hl.timer(function()
+            hl.dispatch(hl.dsp.focus({ window = window }))
+        end, { timeout = 1, type = "oneshot" })
+    end
+    if ghostty_launch_queue > 0 then
+        launch_next_ghostty()
+    elseif ghostty_focus_subscription then
+        if ghostty_focus_subscription:is_active() then
+            ghostty_focus_subscription:remove()
+        end
+        ghostty_focus_subscription = nil
+    end
+end
+
+launch_next_ghostty = function()
+    if ghostty_launch_pending or ghostty_launch_queue == 0 then
+        return
+    end
+
+    ghostty_launch_queue = ghostty_launch_queue - 1
+    ghostty_launch_pending = true
+    if not ghostty_focus_subscription then
+        ghostty_focus_subscription = hl.on("window.open", function(window)
+            if window.class ~= "com.mitchellh.ghostty" and window.initial_class ~= "com.mitchellh.ghostty" then
+                return
+            end
+            finish_ghostty_launch(window)
+        end)
+    end
+    ghostty_cleanup_timer = hl.timer(function()
+        if ghostty_launch_pending then
+            finish_ghostty_launch(nil)
+        end
+    end, { timeout = 3000, type = "oneshot" })
+
+    local active_workspace = hl.get_active_workspace()
+    if not active_workspace or active_workspace.id ~= 1 then
+        hl.dispatch(hl.dsp.focus({ workspace = 1 }))
+    end
+    hl.exec_cmd([[sh -lc 'sleep 0.2; ghostty']])
+end
+
+local function open_ghostty()
+    ghostty_launch_queue = ghostty_launch_queue + 1
+    launch_next_ghostty()
+end
+
+local function set_gaps(gaps_out, gaps_in)
+    return function()
+        hl.config({ general = { gaps_out = gaps_out, gaps_in = gaps_in } })
+    end
+end
+
+bind(main_mod .. " + RETURN", open_ghostty, "Open Ghostty on workspace 1")
 exec(main_mod .. " + E", "dolphin", "Open Dolphin")
 bind(main_mod .. " + Q", hl.dsp.window.close(), "Close the active window")
 exec(main_mod .. " + SHIFT + M", [[loginctl terminate-user ""]], "Terminate the user session")
 bind(main_mod .. " + V", hl.dsp.window.float({ action = "toggle" }), "Toggle floating for the active window")
 exec(main_mod .. " + SPACE", "walker", "Open Walker")
-bind(main_mod .. " + F", hl.dsp.window.fullscreen_state({ internal = 2, client = 0 }), "Toggle compositor fullscreen")
+bind(main_mod .. " + F", hl.dsp.window.fullscreen_state({ internal = 2, client = 0, action = "toggle" }), "Toggle compositor fullscreen")
 bind(main_mod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen" }), "Toggle native application fullscreen")
 bind(main_mod .. " + Y", hl.dsp.window.pin(), "Pin the active window")
 bind(main_mod .. " + J", hl.dsp.layout("togglesplit"), "Toggle the active window split")
@@ -28,8 +94,8 @@ exec(main_mod .. " + SHIFT + S", "grimblast copy area", "Screenshot an area")
 
 bind(main_mod .. " + K", hl.dsp.group.toggle(), "Toggle grouping for the active window")
 
-exec(main_mod .. " + SHIFT + G", [[hyprctl --batch "keyword general:gaps_out 5;keyword general:gaps_in 3"]], "Restore the default gaps")
-exec(main_mod .. " + G", [[hyprctl --batch "keyword general:gaps_out 0;keyword general:gaps_in 0"]], "Remove window gaps")
+bind(main_mod .. " + SHIFT + G", set_gaps(5, 3), "Restore the default gaps")
+bind(main_mod .. " + G", set_gaps(0, 0), "Remove window gaps")
 
 local function volume_command(action)
     return action .. [[ && wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{ if ($3 == "[MUTED]") print 0; else print int($2 * 100) }' > "/tmp/$HYPRLAND_INSTANCE_SIGNATURE.wob"]]
@@ -108,7 +174,15 @@ bind(main_mod .. " + F1", hl.dsp.workspace.toggle_special("scratchpad"), "Toggle
 bind(main_mod .. " + ALT + SHIFT + F1", hl.dsp.window.move({ workspace = "special:scratchpad", follow = false }), "Move the active window silently to the scratchpad")
 
 exec("ALT + SPACE", "fcitx5-remote -t", "Toggle Vietnamese IME")
-exec(main_mod .. " + CTRL + O", [[hyprctl --batch "keyword monitor desc:Samsung Electric Company Odyssey G70B H1AK500000,3840x2160@120,0x0,1; dispatch dpms on HDMI-A-1; reload"]], "Recover the monitor")
+bind(main_mod .. " + CTRL + O", function()
+    hl.monitor({
+        output = "HDMI-A-1",
+        mode = "3840x2160@120",
+        position = "0x0",
+        scale = 1,
+    })
+    hl.dispatch(hl.dsp.dpms({ action = "on", monitor = "HDMI-A-1" }))
+end, "Recover the monitor")
 exec(main_mod .. " + CTRL + M", "~/.config/hypr/scripts/mx-ergo-recover recover", "Reconnect MX Ergo")
 exec(main_mod .. " + CTRL + S", "~/.config/hypr/scripts/steamlink-host-mode on", "Enable Steam Link host mode")
 exec(main_mod .. " + CTRL + SHIFT + S", "~/.config/hypr/scripts/steamlink-host-mode off", "Disable Steam Link host mode")

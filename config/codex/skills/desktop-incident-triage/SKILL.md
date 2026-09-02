@@ -41,6 +41,29 @@ evidence.
 - Existing durable placement preferences include Ghostty on ws1, Chrome on ws2,
   Slack on ws3, Discord on ws4, and Steam on ws6 unless the user changes them.
 
+## Hyprland Lua Control Plane
+
+- This host uses Hyprland's Lua configuration and typed dispatcher API. Keep
+  read-only `hyprctl` queries such as `clients -j`, `activewindow -j`,
+  `configerrors`, and `binds`; express compositor mutations with Lua.
+- Never use legacy dispatcher payloads such as `hyprctl dispatch workspace 1`,
+  `focuswindow`, `closewindow`, `movetoworkspace`, or legacy `keyword`/`--batch`
+  mutations. They are parsed as Lua on this host and fail with errors such as
+  `')' expected`.
+- For a durable change, edit the tracked Lua config and use `hl.dsp.*`,
+  `hl.config`, `hl.monitor`, or another typed `hl.*` API directly. For a
+  one-time action, use `hyprctl eval`, for example:
+  `hyprctl eval 'return hl.dispatch(hl.dsp.focus({ workspace = 1 }))'` or
+  `hyprctl eval 'return hl.dispatch(hl.dsp.focus({ window = "class:^(com.mitchellh.ghostty)$" }))'`.
+- Resolve unfamiliar actions from the installed-version API stub at
+  `/usr/share/hypr/stubs/hl.meta.lua` and the working examples under
+  `/usr/share/hypr/hyprland.lua`; do not translate an old Hyprland command from
+  memory. Validate persistent edits with `luac -p`, `Hyprland --verify-config`,
+  and `hyprctl configerrors` before invoking the changed action.
+- Before finishing Hyprland work, scan the relevant config and desktop scripts
+  for `hyprctl dispatch`, `hyprctl keyword`, and `hyprctl --batch`. Treat every
+  relevant hit as requiring review and convert legacy payloads to typed Lua.
+
 ## Tools
 
 - Use `$screenshot` or `$linux-computer-use` when visual state matters.
