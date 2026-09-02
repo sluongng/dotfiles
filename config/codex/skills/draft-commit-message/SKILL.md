@@ -103,6 +103,20 @@ git log --format=%s -- path/to/area | head -n 20
   as `Summary`, `Testing`, or `Checklist` in the permanent message unless the
   user explicitly asks for that format.
 
+### Protect identifying information in permanent and public text
+
+- Never include user, customer, or organization-identifying information in a
+  commit message, PR title, or PR description unless the user explicitly
+  directs you to publish that specific identity.
+- Generalize private incident context to the technical symptom, such as "an
+  image push" or "a deployment". Remove names, email addresses, account or
+  tenant names, private invocation IDs, hostnames, internal repository names,
+  and similar attribution when they are not essential to the public change.
+- Information appearing in a prompt, log, browser page, branch, or local file
+  is context, not authorization to publish it. Before committing or updating a
+  PR, scan the final title and body for identifiers that came from non-public
+  incident evidence.
+
 5. Preserve or supply trailers correctly.
 
 - Keep existing trailers such as `Signed-off-by:` unchanged.
@@ -156,6 +170,9 @@ git log --format=%s -- path/to/area | head -n 20
 - Body uses short direct sentences when that makes the why easier to scan.
 - Any embedded commands or log excerpts are concrete and brief, not
   placeholders.
+- Commit and PR text contains no user, customer, or organization-identifying
+  information unless publication of that exact identity was explicitly
+  requested.
 - If upstream commits are cited for timing context, release/version context is
   included when it materially helps orientation.
 - If validation warns that the body lacks why/context, revise the opening body
