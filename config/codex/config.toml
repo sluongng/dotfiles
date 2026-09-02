@@ -1,11 +1,13 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# Last reviewed for active npm alpha codex-cli v0.147.0-alpha.6.6 on 2026-08-11.
+# Last reviewed for prepared codex-cli v0.153.0-alpha.2 and ChatGPT App 26.825.51511
+# (bundled codex-cli v0.151.0-alpha.7.2) on 2026-09-01; guarded activation is pending.
 
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"
 model_reasoning_summary = "detailed"
+model_verbosity = "high"
 plan_mode_reasoning_effort = "xhigh"
 show_raw_agent_reasoning = true
 
@@ -23,6 +25,7 @@ project_doc_fallback_filenames = [
 suppress_unstable_features_warning = true
 personality = "none"
 service_tier = "default"
+analytics.enabled = false
 notify = ["/home/nb/.dotfiles/config/streamdeck/codexdeck/notify.py"]
 
 [tools.experimental_request_user_input]
@@ -36,9 +39,11 @@ code_mode_only = false
 concurrent_reasoning_summaries = true
 default_mode_request_user_input = false
 goals = true
+hooks = false
 local_thread_store_compression = true
 memories = true
 mentions_v2 = true
+personality = false
 prevent_idle_sleep = true
 remote_compaction_v2 = true
 runtime_metrics = true
@@ -47,7 +52,6 @@ runtime_metrics = true
 # cross-runtime assumption.
 shell_zsh_fork = false
 unified_exec = true
-unified_exec_zsh_fork = false
 
 [features.current_time_reminder]
 enabled = true

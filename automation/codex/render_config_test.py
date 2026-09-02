@@ -213,7 +213,7 @@ enabled = true
         )
 
         self.assertFalse(config["features"]["shell_zsh_fork"])
-        self.assertFalse(config["features"]["unified_exec_zsh_fork"])
+        self.assertNotIn("unified_exec_zsh_fork", config["features"])
         self.assertTrue(config["features"]["multi_agent_v2"])
         self.assertTrue(config["features"]["current_time_reminder"])
         self.assertNotIn("agents", config)
