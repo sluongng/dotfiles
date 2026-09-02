@@ -1,6 +1,6 @@
 ---
 name: upgrade-codex-stack
-description: On the Arch Linux workstation, upgrade and audit the local Codex CLI package, first-party Linux ChatGPT/Codex App distribution, Arch desktop packaging, legacy repackager fallback, configuration, skills, plugins, services, and feature maturity. Do not use this Linux packaging workflow for macOS Codex upgrades.
+description: On the Arch Linux workstation, upgrade and audit the local Codex CLI package, first-party Linux ChatGPT/Codex App distribution, Arch desktop packaging, shared app-server and SSH/OpenAI Relay topology, legacy repackager fallback, configuration, skills, plugins, services, and feature maturity. Do not use this Linux packaging workflow for macOS Codex upgrades.
 ---
 
 # Upgrade Codex Stack
@@ -32,10 +32,14 @@ Before editing:
 Build and update the scoped repositories when the user requests an upgrade. Do not use `sudo`, install a built package, replace the installed desktop app, register package repositories, run foreign-package maintainer scripts, restart services, or overwrite live config unless the user explicitly requests that disruptive action. Return exact deferred commands in the final report.
 
 The first-party Linux app is the unified ChatGPT desktop app and includes Codex.
-Treat its native Linux package as the primary desktop release source. Do not call
-it a standalone Codex-only app. Keep the macOS-derived Linux repackager as a
-fallback until the first-party package is supported by the local Arch packaging
-and passes the user's required workflows.
+Treat its native Linux package and the repository's Arch wrapper for that payload
+as the active primary desktop distribution. Do not call it a standalone
+Codex-only app. Keep the macOS-derived Linux repackager as an emergency fallback
+only; do not retain or reactivate it as a parallel runtime merely because its
+files remain on disk. Remove a stale installation only with explicit
+authorization after proving that no package, process, open file, desktop entry,
+URL handler, profile, or rendered runtime path still uses it. Prefer a
+recoverable cleanup such as moving it to the desktop trash.
 
 Use subagents only for independent bounded audits that materially reduce elapsed time. Keep release selection and edits that block the main path local.
 
@@ -48,6 +52,11 @@ Record the current state before changing anything:
 - current package source URLs and checksums;
 - current desktop app version, installation path, distribution channel
   (first-party Linux or legacy macOS-derived), and packaged output;
+- the binary and version serving each path: the interactive system CLI, shared
+  app-server, desktop App Local host, SSH proxy backend, code-mode host, and
+  Browser/JavaScript MCP runtime;
+- shared app-server socket ownership, systemd service state, OpenAI Relay state,
+  saved App SSH connections, and any active or idle loaded remote tasks;
 - relevant repository commits, branches, dirty files, and upstream remotes;
 - enabled/default feature flags and plugin state.
 
@@ -207,7 +216,27 @@ Classify findings by consequence:
 
 Prefer changing the dotfiles source of truth and rerendering over editing generated live config directly. Do not update a version review marker alone; first perform the functional audit it represents. If a service is stale after the package build or installation, report its exact restart command and current impact.
 
-## 5. Produce a Current Feature Radar
+## 5. Preserve Shared App-Server and Remote-Access Ownership
+
+Treat the systemd-managed external app-server as the authoritative machine
+backend for tasks that must be available through the desktop App, LAN SSH, and
+OpenAI Relay. On the packaged Linux App, require
+`CODEX_APP_SERVER_USE_LOCAL_DAEMON=1` in the launcher so the App's `Local`
+connection reuses that server's Unix socket. Treat a persistent App-bundled
+`codex ... app-server` process as a failed handoff or compatibility fallback to
+investigate before resuming the same task over SSH or Relay. Do not expose an
+app-server listener directly to the LAN or internet.
+
+For every full upgrade, and whenever the CLI, App, app-server service, remote
+connections, or task ownership may change, read and follow
+[references/remote-access.md](references/remote-access.md). It defines the exact
+topology, read-only ownership audit, guarded service handoff, task-state
+semantics, supported connection-management boundary, version map, and validation
+matrix. Do not restart the shared server while a remote turn is active. Never
+repair ownership or client listing by editing SQLite, LevelDB, `app.asar`, or
+unverified lock files.
+
+## 6. Produce a Current Feature Radar
 
 Use the `$openai-docs` skill to consult the current official Codex and desktop-app
 documentation. Documentation lookup is read-only and remains required during an
@@ -239,7 +268,7 @@ Distinguish shipped behavior from source-only work and supported features from e
 
 If current documentation, release metadata, or an upstream service is unavailable, continue with verified local artifacts where possible and label the freshness limitation. Never present an inference as a confirmed release fact.
 
-## 6. Validate the Integrated Result
+## 7. Validate the Integrated Result
 
 Repeat version and configuration checks against the newly built artifacts. Confirm that:
 
@@ -254,8 +283,31 @@ Repeat version and configuration checks against the newly built artifacts. Confi
   explicit coexistence or migration plan;
 - source config renders consistently or documented local overlays explain the difference;
 - feature recommendations match the target binary rather than only upstream main;
+- the systemd-managed `MainPID` owns the shared app-server socket, or any
+  intentional deviation is explained;
+- the desktop App's `Local` connection reuses the shared daemon and does not
+  leave a persistent App-bundled app-server process;
+- LAN SSH and the App's SSH connection attach through `codex app-server proxy`
+  without starting a competing authoritative server;
+- OpenAI Relay reaches a connected state after any transient takeover period;
+- a dormant shared task can be listed, read, and opened through the intended
+  host without concurrent Local/remote writer ownership;
+- desktop and iOS UI visibility are reported separately from API visibility,
+  with unperformed actual-device checks labeled as such;
+- an authorized App restart preserves or reconnects the saved SSH connection;
 - no unrelated dirty files were overwritten;
 - no required install or restart was silently performed.
+
+For an upgrade that changes the CLI, desktop App, app-server service, or
+connection state, include the matrix from
+[references/remote-access.md](references/remote-access.md) and mark each row
+pass, fail, not tested, or not applicable.
+
+On Hyprland, add a lightweight post-upgrade smoke check for the main window,
+right-click menus and popovers, pet placement/workspace following, unexpected
+focus activation, and compositor configuration errors. Route failures to the
+`desktop-incident-triage` skill; do not turn this package-upgrade workflow into a
+compositor repair or patch the vendor payload for a window-management symptom.
 
 Do not call the run complete when a required build, smoke test, or configuration check failed. State the blocker, preserve useful artifacts, and give the smallest recovery step.
 
@@ -268,6 +320,7 @@ Always end with these headings, even when a section has no changes:
 ## CLI package
 ## Desktop app
 ## Runtime and code mode
+## Remote access and writer ownership
 ## Dotfiles and live-state audit
 ## Feature radar
 ## Validation
@@ -280,7 +333,11 @@ evidence, and test results. State whether a desktop version change occurred or
 whether the result is only a distribution/support-path migration. Use a compact
 feature table with columns for feature, maturity, default/enabled state,
 practical impact, and recommendation. Separate changes made from findings
-reported only. Under **Actions for the user**, include only remaining privileged
+reported only. Under **Remote access and writer ownership**, include the
+authoritative server binary/version, service state and `MainPID`, socket owner,
+SSH proxy and Relay state, saved App connection state, Local/remote task
+ownership, actual-device coverage, and any UI-listing or deep-link limitation.
+Under **Actions for the user**, include only remaining privileged
 or disruptive steps with exact commands whose availability was verified from
 repository scripts or command help; write `None` if there are none. Explicitly
 state unsupported-host risk, degraded documentation freshness, missing release

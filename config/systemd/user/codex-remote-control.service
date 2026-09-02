@@ -1,11 +1,11 @@
 [Unit]
-Description=Codex Remote Control
+Description=Codex shared app-server for SSH and OpenAI Remote
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/env codex app-server --remote-control --listen unix://
+ExecStart=/usr/bin/codex app-server --remote-control --listen unix://
 Restart=always
 RestartSec=5s
 WorkingDirectory=%h
