@@ -32,7 +32,11 @@ local rules = {
     { name = "app-workspace-discord", match = { class = [[^discord$]] }, workspace = "4 silent", no_initial_focus = true, suppress_event = "activate activatefocus" },
     { name = "app-workspace-steam", match = { class = [[^steam$]] }, workspace = "6 silent", no_initial_focus = true, suppress_event = "activate activatefocus" },
     { name = "app-workspace-slay-the-spire-2", match = { class = [[^Slay the Spire 2$]] }, workspace = "6 silent" },
-    { name = "codex-app-pet-overlay", match = { class = [[^(Codex|electron)$]], title = [[^Codex$]], float = true }, pin = true, border_size = 0, rounding = 0, no_blur = true },
+    { name = "chatgpt-xwayland-passive", match = { class = [[^Chatgpt$]] }, no_blur = true, no_initial_focus = true, focus_on_activate = false, suppress_event = "activate activatefocus" },
+    -- Match both the legacy repackaged app and the official Linux ChatGPT app.
+    -- `float` keeps this rule scoped to the pet overlay, not the tiled main window.
+    { name = "codex-app-pet-overlay", match = { class = [[^(Codex|Chatgpt|electron)$]], title = [[^(Codex|ChatGPT)$]], float = true }, pin = true, border_size = 0, rounding = 0, no_blur = true, no_shadow = true },
+    { name = "codex-app-pet-surface", match = { class = [[^Chatgpt$]], title = [[^Pet Surface .+$]], float = true }, pin = true, border_size = 0, rounding = 0, no_blur = true, no_shadow = true },
 }
 
 for _, rule in ipairs(rules) do
