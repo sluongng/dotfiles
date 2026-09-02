@@ -83,11 +83,19 @@ class NotifyTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             create_state_db(root / "codex", "vscode", "cli")
-            with mock.patch.object(notify.subprocess, "run") as run:
+            with mock.patch.object(notify.subprocess, "Popen") as popen:
                 event = self.run_hook(root / "codex", root / "state")
         self.assertEqual(event["session-kind"], "root")
         self.assertEqual(event["notification-policy"], "show")
-        run.assert_called_once()
+        popen.assert_called_once()
+        command = popen.call_args.args[0]
+        self.assertEqual(command[2:], [notify.NOTIFICATION_WORKER_ARG])
+        self.assertNotIn(THREAD_ID, command)
+        self.assertTrue(popen.call_args.kwargs["start_new_session"])
+        popen.return_value.stdin.write.assert_called_once_with(
+            "Finished in /work/project"
+        )
+        popen.return_value.stdin.close.assert_called_once_with()
 
     def test_subagent_completion_is_logged_without_notification(self):
         source = json.dumps(
@@ -103,32 +111,32 @@ class NotifyTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             create_state_db(root / "codex", source, "subagent")
-            with mock.patch.object(notify.subprocess, "run") as run:
+            with mock.patch.object(notify.subprocess, "Popen") as popen:
                 event = self.run_hook(root / "codex", root / "state")
         self.assertEqual(event["session-kind"], "subagent")
         self.assertNotIn("parent-thread-id", event)
         self.assertNotIn("agent-path", event)
         self.assertEqual(event["notification-policy"], "suppress")
-        run.assert_not_called()
+        popen.assert_not_called()
 
     def test_unknown_completion_is_logged_without_notification(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            with mock.patch.object(notify.subprocess, "run") as run:
+            with mock.patch.object(notify.subprocess, "Popen") as popen:
                 event = self.run_hook(root / "codex", root / "state")
         self.assertEqual(event["session-kind"], "unknown")
         self.assertEqual(event["notification-policy"], "suppress")
-        run.assert_not_called()
+        popen.assert_not_called()
 
     def test_root_rollout_fallback_posts_desktop_notification(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             create_rollout(root / "codex", "vscode")
-            with mock.patch.object(notify.subprocess, "run") as run:
+            with mock.patch.object(notify.subprocess, "Popen") as popen:
                 event = self.run_hook(root / "codex", root / "state")
         self.assertEqual(event["session-kind"], "root")
         self.assertEqual(event["notification-policy"], "show")
-        run.assert_called_once()
+        popen.assert_called_once()
 
     def test_subagent_rollout_fallback_is_logged_without_notification(self):
         source = {
@@ -142,13 +150,22 @@ class NotifyTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             create_rollout(root / "codex", source)
-            with mock.patch.object(notify.subprocess, "run") as run:
+            with mock.patch.object(notify.subprocess, "Popen") as popen:
                 event = self.run_hook(root / "codex", root / "state")
         self.assertEqual(event["session-kind"], "subagent")
         self.assertNotIn("parent-thread-id", event)
         self.assertNotIn("agent-path", event)
         self.assertEqual(event["notification-policy"], "suppress")
-        run.assert_not_called()
+        popen.assert_not_called()
+
+    def test_notification_worker_posts_passive_notice(self):
+        with mock.patch.object(notify.subprocess, "run") as run:
+            self.assertEqual(notify.notification_worker("Finished"), 0)
+
+        command = run.call_args.args[0]
+        self.assertEqual(command[0], "notify-send")
+        self.assertNotIn("--action=default=Open", command)
+        run.assert_called_once()
 
 
 if __name__ == "__main__":

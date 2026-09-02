@@ -13,6 +13,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+NOTIFICATION_WORKER_ARG = "--notification-worker"
+THREAD_ID_PATTERN = re.compile(r"[0-9a-fA-F-]{36}")
+
+
 @dataclass(frozen=True)
 class ThreadLineage:
     kind: str
@@ -89,7 +93,51 @@ def thread_lineage(thread_id: str) -> ThreadLineage:
     return ThreadLineage("unknown")
 
 
+def notification_worker(body: str) -> int:
+    try:
+        subprocess.run(
+            [
+                "notify-send",
+                "--app-name=Codex",
+                "--icon=utilities-terminal",
+                "Codex thread finished",
+                body,
+            ],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return 0
+
+
+def post_notification(body: str) -> None:
+    try:
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                str(Path(__file__).resolve()),
+                NOTIFICATION_WORKER_ARG,
+            ],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+            start_new_session=True,
+            text=True,
+        )
+        if process.stdin is not None:
+            process.stdin.write(body)
+            process.stdin.close()
+    except (OSError, BrokenPipeError):
+        pass
+
+
 def main() -> int:
+    if len(sys.argv) == 2 and sys.argv[1] == NOTIFICATION_WORKER_ARG:
+        return notification_worker(sys.stdin.read(4096))
     if len(sys.argv) < 2:
         return 0
     try:
@@ -98,8 +146,9 @@ def main() -> int:
         return 0
     pane = os.environ.get("TMUX_PANE", "")
     thread_id = payload.get("thread-id", "")
-    if payload.get("type") != "agent-turn-complete" or not re.fullmatch(
-        r"[0-9a-fA-F-]{36}", thread_id
+    if (
+        payload.get("type") != "agent-turn-complete"
+        or THREAD_ID_PATTERN.fullmatch(thread_id) is None
     ):
         return 0
     lineage = thread_lineage(thread_id)
@@ -124,22 +173,7 @@ def main() -> int:
 
     cwd = payload.get("cwd", "")
     body = f"Finished in {cwd}" if cwd else "A Codex thread finished."
-    try:
-        subprocess.run(
-            [
-                "notify-send",
-                "--app-name=Codex",
-                "--icon=utilities-terminal",
-                "Codex thread finished",
-                body,
-            ],
-            check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=5,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        pass
+    post_notification(body)
     return 0
 
 
