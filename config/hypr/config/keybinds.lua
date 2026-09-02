@@ -101,8 +101,17 @@ local function volume_command(action)
     return action .. [[ && wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{ if ($3 == "[MUTED]") print 0; else print int($2 * 100) }' > "/tmp/$HYPRLAND_INSTANCE_SIGNATURE.wob"]]
 end
 
-exec("XF86AudioRaiseVolume", volume_command("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), "Raise volume", { locked = true, repeating = true })
-exec("XF86AudioLowerVolume", volume_command("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"), "Lower volume", { locked = true, repeating = true })
+local nape_pro_keyboard_names = {
+    "keychron-nape-pro-keyboard", -- Bluetooth
+    "keychron-keychron-nape-pro-keyboard", -- USB / 2.4 GHz
+}
+local nape_pro_keyboard = { inclusive = true, list = nape_pro_keyboard_names }
+local keyboards_except_nape_pro = { inclusive = false, list = nape_pro_keyboard_names }
+
+exec("XF86AudioRaiseVolume", "ydotool mousemove --wheel -- 0 -1", "Scroll down clockwise with the Nape Pro ring", { locked = true, repeating = true, device = nape_pro_keyboard })
+exec("XF86AudioLowerVolume", "ydotool mousemove --wheel -- 0 1", "Scroll up counter-clockwise with the Nape Pro ring", { locked = true, repeating = true, device = nape_pro_keyboard })
+exec("XF86AudioRaiseVolume", volume_command("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), "Raise volume", { locked = true, repeating = true, device = keyboards_except_nape_pro })
+exec("XF86AudioLowerVolume", volume_command("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"), "Lower volume", { locked = true, repeating = true, device = keyboards_except_nape_pro })
 exec("XF86AudioMute", volume_command("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), "Toggle audio mute", { locked = true, repeating = true })
 
 exec("XF86AudioPlay", "playerctl play-pause", "Toggle play or pause")
