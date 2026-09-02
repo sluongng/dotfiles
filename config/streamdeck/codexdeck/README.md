@@ -4,12 +4,22 @@ StreamController 1.5 plugin for the 15-key Stream Deck MK.2.
 
 Layout:
 
-- Top and middle rows: one deterministic list of up to ten Codex tmux panes,
-  ordered by tmux session, window, and pane index. Focus and completion state
-  never reorder the keys. Unacknowledged completed turns pulse in place until
-  pressed; pressing any key selects its exact tmux pane and focuses Ghostty.
+- Top row: a deterministic list of up to five Codex tmux panes, ordered by tmux
+  session, window, and pane index. Focus and completion state never reorder the
+  keys. Unacknowledged completed turns pulse in place until pressed; pressing
+  any key selects its exact tmux pane and focuses Ghostty.
   `WORKING` reflects a real Codex active-turn inhibitor; the selected tmux pane
   is indicated by color instead of a potentially misleading text status.
+- Middle row: the four most recently active ChatGPT tasks, ordered
+  oldest-to-newest from left to right. New activity rotates the four-key window;
+  each key remains bound to the exact task it rendered even if the database
+  updates before the press is handled. Task keys show the project name on top,
+  their plain slot number in the center, and the task title at the bottom. The
+  fifth key toggles ChatGPT dictation:
+  first press starts recording, and the next press stops, transcribes, and
+  submits the composer. Recording can continue while another app is focused;
+  submission restores the originating ChatGPT task instead of cancelling when
+  the foreground app or visible task changes.
 - Bottom row: volume down/up, output mute, microphone mute, and a manual
   AirPods connect/disconnect toggle.
 

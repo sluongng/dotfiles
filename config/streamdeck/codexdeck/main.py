@@ -4,6 +4,8 @@ from src.backend.PluginManager.ActionInputSupport import ActionInputSupport
 from src.backend.PluginManager.PluginBase import PluginBase
 
 from .actions import AirPodsAction
+from .actions import AppDictationAction
+from .actions import AppThreadAction
 from .actions import CodexPaneAction
 from .actions import MicMuteAction
 from .actions import OutputMuteAction
@@ -28,6 +30,8 @@ class CodexDeckPlugin(PluginBase):
         self.manager = DeckStateManager()
         for suffix, name, action in (
             ("CodexPane", "Codex pane", CodexPaneAction),
+            ("AppThread", "Recent ChatGPT task", AppThreadAction),
+            ("AppDictation", "ChatGPT dictation", AppDictationAction),
             ("VolumeDown", "Volume down", VolumeDownAction),
             ("VolumeUp", "Volume up", VolumeUpAction),
             ("OutputMute", "Mute output", OutputMuteAction),
@@ -47,7 +51,7 @@ class CodexDeckPlugin(PluginBase):
         self.register(
             plugin_name="Codex Deck",
             github_repo="https://github.com/sluongng/dotfiles",
-            plugin_version="0.1.0",
+            plugin_version="0.5.0",
             app_version="1.5.0-beta.15",
         )
         self.manager.start()

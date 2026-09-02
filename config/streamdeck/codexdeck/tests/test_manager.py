@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import threading
@@ -68,6 +69,418 @@ class ManagerTest(unittest.TestCase):
         )
         ordered = manager.order_panes(panes)
         self.assertEqual([pane.pane_id for pane in ordered], ["%4", "%5", "%3"])
+
+    def test_recent_app_threads_rotate_oldest_to_newest_and_exclude_children(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database = Path(directory) / "state.sqlite"
+            connection = manager.sqlite3.connect(database)
+            connection.executescript(
+                """
+                CREATE TABLE threads (
+                    id TEXT PRIMARY KEY, name TEXT, title TEXT, archived INTEGER,
+                    preview TEXT, thread_source TEXT, recency_at_ms INTEGER,
+                    cwd TEXT
+                );
+                CREATE TABLE thread_spawn_edges (child_thread_id TEXT);
+                """
+            )
+            ids = [f"00000000-0000-0000-0000-{value:012d}" for value in range(1, 8)]
+            for index, thread_id in enumerate(ids[:5], 1):
+                connection.execute(
+                    "INSERT INTO threads VALUES (?, NULL, ?, 0, 'visible', 'user', ?, ?)",
+                    (thread_id, f"Task {index}", index, f"/work/project-{index}"),
+                )
+            connection.execute(
+                "INSERT INTO threads VALUES (?, NULL, 'Tagged child', 0, 'visible', 'subagent', 99, '/work/child')",
+                (ids[5],),
+            )
+            connection.execute(
+                "INSERT INTO threads VALUES (?, NULL, 'Edge child', 0, 'visible', 'user', 98, '/work/child')",
+                (ids[6],),
+            )
+            connection.execute("INSERT INTO thread_spawn_edges VALUES (?)", (ids[6],))
+            connection.commit()
+            connection.close()
+            with mock.patch.object(manager, "CODEX_STATE_DB", database):
+                threads = manager.recent_app_threads()
+        self.assertEqual([thread.title for thread in threads], ["Task 2", "Task 3", "Task 4", "Task 5"])
+        self.assertEqual(
+            [thread.project for thread in threads],
+            ["project-2", "project-3", "project-4", "project-5"],
+        )
+
+    def test_open_app_thread_uses_exact_uuid_deep_link(self):
+        thread = manager.AppThread(
+            "00000000-0000-0000-0000-000000000123", "Exact task"
+        )
+        with (
+            mock.patch.object(manager, "_run", return_value="") as run,
+            mock.patch.object(manager, "focus_app_thread", return_value=True),
+        ):
+            self.assertTrue(manager.open_app_thread(thread))
+        run.assert_called_once_with(
+            ["xdg-open", "codex://threads/00000000-0000-0000-0000-000000000123"],
+            timeout=5,
+            check=True,
+        )
+
+    def test_send_return_targets_exact_hyprland_window(self):
+        with mock.patch.object(manager, "_run") as run:
+            manager.send_return_to_window("0xabc")
+        run.assert_called_once_with(
+            [
+                "hyprctl",
+                "eval",
+                "return hl.dispatch(hl.dsp.send_shortcut({ "
+                'mods = "", key = "Return", window = "address:0xabc" }))',
+            ],
+            timeout=3,
+            check=True,
+        )
+
+    def test_send_return_rejects_invalid_window_address(self):
+        with (
+            mock.patch.object(manager, "_run") as run,
+            self.assertRaises(ValueError),
+        ):
+            manager.send_return_to_window('0xabc" })) os.execute("false") --')
+        run.assert_not_called()
+
+    def test_dictation_toggles_owned_key_and_submits_after_release(self):
+        process = mock.Mock()
+        process.poll.return_value = None
+        state = manager.DeckStateManager()
+        with (
+            mock.patch.object(manager, "focus_codex_app", return_value=True),
+            mock.patch.object(manager.subprocess, "Popen", return_value=process) as popen,
+            mock.patch.object(
+                manager,
+                "focused_app_activity_since",
+                return_value=manager.AppActivity(
+                    "00000000-0000-0000-0000-000000000123", 7
+                ),
+            ),
+            mock.patch.object(manager, "desktop_log_marker", return_value=()),
+            mock.patch.object(manager, "active_codex_window_address", return_value="0xabc"),
+            mock.patch.object(manager.time, "sleep"),
+        ):
+            state._toggle_dictation()
+        self.assertEqual(state._dictation_state, "recording")
+        self.assertIs(state._dictation_process, process)
+        self.assertIn("-P", popen.call_args.args[0])
+
+        with (
+            mock.patch.object(manager, "focus_codex_app", return_value=True),
+            mock.patch.object(manager, "send_return_to_window") as send_return,
+            mock.patch.object(
+                manager, "desktop_log_marker", return_value=((Path("log"), 1),)
+            ),
+            mock.patch.object(manager, "turn_started_since", return_value=True),
+            mock.patch.object(manager, "app_thread_context_matches", return_value=True),
+            mock.patch.object(manager.time, "sleep"),
+        ):
+            state._toggle_dictation()
+        process.stdin.close.assert_called_once_with()
+        process.wait.assert_called_once_with(timeout=3)
+        send_return.assert_called_once_with("0xabc")
+        self.assertEqual(state._dictation_state, "idle")
+
+    def test_dictation_stop_releases_key_when_focus_cannot_be_restored(self):
+        process = mock.Mock()
+        state = manager.DeckStateManager()
+        state._dictation_process = process
+        state._dictation_state = "recording"
+        state._dictation_thread_id = "00000000-0000-0000-0000-000000000123"
+        state._dictation_window_address = "0xabc"
+        state._dictation_renderer_window_id = 7
+        with (
+            mock.patch.object(manager, "focus_codex_app", return_value=False),
+            mock.patch.object(manager, "open_app_thread", return_value=False),
+            mock.patch.object(manager, "desktop_log_marker", return_value=None),
+        ):
+            state._toggle_dictation()
+        process.stdin.close.assert_called_once_with()
+        process.wait.assert_called_once_with(timeout=3)
+        self.assertIsNone(state._dictation_process)
+        self.assertEqual(state._dictation_state, "idle")
+
+    def test_manager_stop_releases_an_active_dictation_key(self):
+        process = mock.Mock()
+        state = manager.DeckStateManager()
+        state._dictation_process = process
+        state._dictation_state = "recording"
+        state.stop()
+        process.stdin.close.assert_called_once_with()
+        process.wait.assert_called_once_with(timeout=3)
+        self.assertIsNone(state._dictation_process)
+        self.assertEqual(state._dictation_state, "idle")
+
+    def test_dictation_press_is_ignored_while_transcribing(self):
+        state = manager.DeckStateManager()
+        state._dictation_state = "transcribing"
+        with mock.patch.object(manager.subprocess, "Popen") as popen:
+            state._toggle_dictation()
+        popen.assert_not_called()
+        self.assertEqual(state._dictation_state, "transcribing")
+
+    def test_dictation_press_does_not_queue_during_submission(self):
+        state = manager.DeckStateManager()
+        state._dictation_state = "transcribing"
+        state._app_interaction_lock.acquire()
+        try:
+            with mock.patch.object(state, "_toggle_dictation") as toggle:
+                state._handle("app_dictation", 0)
+        finally:
+            state._app_interaction_lock.release()
+        toggle.assert_not_called()
+
+    def test_dictation_submit_restores_original_task_after_focus_changes(self):
+        process = mock.Mock()
+        state = manager.DeckStateManager()
+        state._dictation_process = process
+        state._dictation_state = "recording"
+        state._dictation_thread_id = "00000000-0000-0000-0000-000000000123"
+        state._dictation_window_address = "0xabc"
+        state._dictation_renderer_window_id = 7
+        with (
+            mock.patch.object(manager, "focus_codex_app", return_value=True),
+            mock.patch.object(
+                manager, "desktop_log_marker", return_value=((Path("log"), 1),)
+            ),
+            mock.patch.object(
+                manager, "app_thread_context_matches", side_effect=[False, True, True]
+            ),
+            mock.patch.object(manager, "open_app_thread", return_value=True) as reopen,
+            mock.patch.object(manager, "turn_started_since", return_value=True),
+            mock.patch.object(manager, "send_return_to_window") as send_return,
+            mock.patch.object(manager.time, "sleep"),
+        ):
+            state._toggle_dictation()
+        reopen.assert_called_once_with(
+            manager.AppThread(
+                "00000000-0000-0000-0000-000000000123", "Dictation target"
+            )
+        )
+        send_return.assert_called_once_with("0xabc")
+        self.assertEqual(state._dictation_state, "idle")
+
+    def test_dictation_submit_does_not_abort_during_send_context_change(self):
+        process = mock.Mock()
+        state = manager.DeckStateManager()
+        state._dictation_process = process
+        state._dictation_state = "recording"
+        state._dictation_thread_id = "00000000-0000-0000-0000-000000000123"
+        state._dictation_window_address = "0xabc"
+        state._dictation_renderer_window_id = 7
+        with (
+            mock.patch.object(manager, "focus_codex_app", return_value=True),
+            mock.patch.object(manager, "app_thread_context_matches", return_value=True) as context,
+            mock.patch.object(
+                manager, "desktop_log_marker", return_value=((Path("log"), 1),)
+            ),
+            mock.patch.object(
+                manager, "turn_started_since", side_effect=[False, False, True]
+            ),
+            mock.patch.object(manager, "send_return_to_window") as send_return,
+            mock.patch.object(manager.time, "sleep"),
+        ):
+            state._toggle_dictation()
+        self.assertEqual(context.call_count, 3)
+        context.assert_called_with(
+            "00000000-0000-0000-0000-000000000123", "0xabc", 7
+        )
+        send_return.assert_called_once_with("0xabc")
+        self.assertEqual(state._dictation_state, "idle")
+
+    def test_dictation_submit_is_not_repeated_without_confirmation(self):
+        process = mock.Mock()
+        state = manager.DeckStateManager()
+        state._dictation_process = process
+        state._dictation_state = "recording"
+        state._dictation_thread_id = "00000000-0000-0000-0000-000000000123"
+        state._dictation_window_address = "0xabc"
+        state._dictation_renderer_window_id = 7
+        with (
+            mock.patch.object(manager, "focus_codex_app", return_value=True),
+            mock.patch.object(manager, "app_thread_context_matches", return_value=True),
+            mock.patch.object(
+                manager, "desktop_log_marker", return_value=((Path("log"), 1),)
+            ),
+            mock.patch.object(manager, "turn_started_since", return_value=False),
+            mock.patch.object(manager, "send_return_to_window") as send_return,
+            mock.patch.object(manager.time, "sleep"),
+        ):
+            state._toggle_dictation()
+        send_return.assert_called_once_with("0xabc")
+        self.assertEqual(state._dictation_state, "idle")
+
+    def test_app_thread_navigation_waits_for_dictation_interaction(self):
+        state = manager.DeckStateManager()
+        thread = manager.AppThread(
+            "00000000-0000-0000-0000-000000000123", "Another task"
+        )
+        with mock.patch.object(manager, "open_app_thread", return_value=True) as open_thread:
+            state._app_interaction_lock.acquire()
+            worker = state.handle_app_thread(thread)
+            self.assertTrue(worker.is_alive())
+            open_thread.assert_not_called()
+            state._app_interaction_lock.release()
+            worker.join(timeout=1)
+        self.assertFalse(worker.is_alive())
+        open_thread.assert_called_once_with(thread)
+
+    def test_manager_stop_cancels_transcribing_before_any_submit(self):
+        process = mock.Mock()
+        state = manager.DeckStateManager()
+        state._dictation_process = process
+        state._dictation_state = "recording"
+        state._dictation_thread_id = "00000000-0000-0000-0000-000000000123"
+        state._dictation_window_address = "0xabc"
+        state._dictation_renderer_window_id = 7
+
+        def stop_manager(_delay):
+            state.stop()
+
+        with (
+            mock.patch.object(manager, "focus_codex_app", return_value=True),
+            mock.patch.object(manager, "app_thread_context_matches", return_value=True),
+            mock.patch.object(
+                manager, "desktop_log_marker", return_value=((Path("log"), 1),)
+            ),
+            mock.patch.object(manager, "_run") as run,
+            mock.patch.object(manager.time, "sleep", side_effect=stop_manager),
+        ):
+            state._toggle_dictation()
+        run.assert_not_called()
+        self.assertEqual(state._dictation_state, "idle")
+
+    def test_turn_started_since_matches_exact_active_thread(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "desktop.log"
+            path.write_text("old\n")
+            marker = ((path, path.stat().st_size),)
+            path.write_text(
+                "old\n"
+                "response_routed conversationId=00000000-0000-0000-0000-000000000123 "
+                "method=turn/start originWebcontentsId=1\n"
+            )
+            self.assertTrue(
+                manager.turn_started_since(
+                    marker, "00000000-0000-0000-0000-000000000123"
+                )
+            )
+            self.assertFalse(
+                manager.turn_started_since(
+                    marker, "00000000-0000-0000-0000-000000000999"
+                )
+            )
+
+    def test_log_correlation_ignores_newer_unrelated_stream(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ui_log = root / "codex-desktop-ui.log"
+            watcher_log = root / "codex-desktop-watcher.log"
+            thread_id = "00000000-0000-0000-0000-000000000123"
+            ui_log.write_text(
+                "2026-08-14T16:00:00.000Z info "
+                f"thread_stream_view_activity_changed active=true conversationId={thread_id} "
+                "rendererWindowFocused=true rendererWindowId=1\n"
+            )
+            watcher_log.write_text("2026-08-14T16:00:01.000Z git watcher update\n")
+            os.utime(watcher_log, (2_000_000_000, 2_000_000_000))
+            with mock.patch.object(manager, "CODEX_DESKTOP_LOG_ROOT", root):
+                self.assertEqual(manager.current_app_thread_id(), thread_id)
+                marker = manager.desktop_log_marker()
+                with ui_log.open("a") as destination:
+                    destination.write(
+                        "2026-08-14T16:00:02.000Z info response_routed "
+                        f"conversationId={thread_id} method=turn/start "
+                        "originWebcontentsId=7\n"
+                    )
+                self.assertTrue(manager.turn_started_since(marker, thread_id))
+
+    def test_focus_app_thread_correlates_the_routed_task_to_its_window(self):
+        thread_id = "00000000-0000-0000-0000-000000000123"
+        with (
+            mock.patch.object(
+                manager,
+                "codex_app_window_addresses",
+                return_value=("0xsecondary", "0xprimary"),
+            ),
+            mock.patch.object(manager, "focus_codex_app", return_value=True) as focus,
+            mock.patch.object(
+                manager,
+                "focused_app_activity_since",
+                side_effect=[
+                    manager.AppActivity("00000000-0000-0000-0000-000000000999", 2),
+                    manager.AppActivity(thread_id, 1),
+                ],
+            ),
+            mock.patch.object(manager, "desktop_log_marker", return_value=()),
+        ):
+            self.assertTrue(manager.focus_app_thread(thread_id, attempts=1))
+        self.assertEqual(
+            [call.kwargs["window_address"] for call in focus.call_args_list],
+            ["0xsecondary", "0xprimary"],
+        )
+
+    def test_focus_app_thread_accepts_an_already_active_single_window(self):
+        thread_id = "00000000-0000-0000-0000-000000000123"
+        with (
+            mock.patch.object(
+                manager, "codex_app_window_addresses", return_value=("0xprimary",)
+            ),
+            mock.patch.object(
+                manager, "active_codex_window_address", return_value="0xprimary"
+            ),
+            mock.patch.object(
+                manager,
+                "latest_app_activity",
+                return_value=manager.AppActivity(thread_id, 1),
+            ),
+            mock.patch.object(manager, "focus_codex_app") as focus,
+        ):
+            self.assertTrue(manager.focus_app_thread(thread_id, attempts=1))
+        focus.assert_not_called()
+
+    def test_focused_activity_waits_for_a_post_focus_event(self):
+        wrong_activity = manager.AppActivity(
+            "00000000-0000-0000-0000-000000000999", 8
+        )
+        correct_activity = manager.AppActivity(
+            "00000000-0000-0000-0000-000000000123", 7
+        )
+        with (
+            mock.patch.object(
+                manager,
+                "latest_app_activity",
+                side_effect=[wrong_activity, correct_activity, correct_activity],
+            ),
+            mock.patch.object(
+                manager, "active_codex_window_address", return_value="0xabc"
+            ),
+            mock.patch.object(manager.time, "sleep") as sleep,
+        ):
+            self.assertEqual(
+                manager.focused_app_activity_since((), "0xabc", attempts=3),
+                correct_activity,
+            )
+        self.assertEqual(sleep.call_count, 2)
+
+    def test_focus_codex_app_validates_the_active_window(self):
+        with mock.patch.object(
+            manager,
+            "_run",
+            side_effect=[
+                '[{"class":"Chatgpt","mapped":true,"title":"ChatGPT",'
+                '"focusHistoryID":0,"address":"0xabc","workspace":{"id":1}}]',
+                '{"id":1}',
+                "",
+                '{"class":"Chatgpt","address":"0xabc"}',
+            ],
+        ) as run:
+            self.assertTrue(manager.focus_codex_app(attempts=1))
+        self.assertEqual(run.call_count, 4)
 
     def test_busy_to_idle_transition_requests_attention(self):
         panes = (
