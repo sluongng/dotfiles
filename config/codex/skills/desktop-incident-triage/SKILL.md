@@ -44,8 +44,9 @@ evidence.
 ## Tools
 
 - Use `$screenshot` or `$linux-computer-use` when visual state matters.
-- Use `$codex-chrome-linux` for Chrome tab/focus control when browser state is
-  part of the incident.
+- Use the official Chrome plugin for tab-level browser state when it is
+  available. Use `$linux-computer-use` for Chrome window placement, focus, or
+  extension-connection incidents that require desktop-level evidence.
 
 ## Output
 

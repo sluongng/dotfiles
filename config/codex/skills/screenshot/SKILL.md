@@ -14,7 +14,7 @@ Follow these save-location rules every time:
 
 ## Tool priority
 
-- Prefer tool-specific screenshot capabilities when available (for example: a Figma MCP/skill for Figma files, or Playwright/agent-browser tools for browsers and Electron apps).
+- Prefer tool-specific screenshot capabilities when available (for example: a Figma MCP/skill for Figma files, or the built-in Browser/Chrome tools for web pages and browser apps).
 - Use this skill when explicitly asked, for whole-system desktop captures, or when a tool-specific capture cannot get what you need.
 - Otherwise, treat this skill as the default for desktop apps without a better-integrated capture tool.
 

@@ -75,8 +75,8 @@ terminal_title = ["thread-id"]
 
 # Chrome DevTools MCP is intentionally not enabled in the shared or always-on
 # local config. Configured MCP servers start during every Codex conversation;
-# prefer the codex-chrome-linux skill and Chrome Extension native host bridge
-# for Linux Chrome control. For a deliberate Chrome DevTools MCP session,
+# prefer the official Chrome plugin for an existing Chrome profile, or the
+# built-in Browser for local web apps. For a deliberate Chrome DevTools session,
 # temporarily enable the local ${CODEX_HOME:-~/.codex}/config.local.toml stanza.
 
 [plugins."gmail@openai-curated"]
