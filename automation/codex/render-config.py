@@ -22,7 +22,8 @@ PROJECTS_ENTRY_RE = re.compile(r"^\[projects\.")
 PLUGIN_TABLE_RE = re.compile(r'^\[plugins\."([^"]+)"\]\s*$')
 RUNTIME_TABLE_RE = re.compile(
     r"^\[(?:"
-    r"desktop"
+    r"desktop(?:\..+)?"
+    r"|shell_environment_policy\.set"
     r"|marketplaces\.(?:openai-bundled|openai-primary-runtime)"
     r'|plugins\."[^"]+@(?:openai-bundled|openai-primary-runtime)"'
     r"|mcp_servers\.node_repl(?:\..+)?"

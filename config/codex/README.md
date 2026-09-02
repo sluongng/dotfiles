@@ -11,9 +11,9 @@ Deploy it with:
 
 The deploy script manages these paths under `${CODEX_HOME:-~/.codex}`:
 
-- preserves App-managed desktop, bundled plugin, and `node_repl` tables in
-  `runtime.local.toml`, then renders `config.toml` from the tracked shared
-  config plus local overlays
+- preserves App-managed desktop, bundled plugin, `node_repl`, and trusted
+  Browser shell-environment tables in `runtime.local.toml`, then renders
+  `config.toml` from the tracked shared config plus local overlays
 - tracked global `AGENTS.md`
 - tracked files under `agents/`
 - tracked custom skill directories under `skills/`
@@ -62,8 +62,8 @@ config in this directory, or use one of these machine-local files instead:
 - `${CODEX_HOME:-~/.codex}/config.local.toml` for additive local-only settings
 - `${CODEX_HOME:-~/.codex}/projects.local.toml` for local trust entries (`[projects]`)
 - `${CODEX_HOME:-~/.codex}/runtime.local.toml` for App-managed desktop,
-  bundled plugin, and `node_repl` state; the deploy script updates this file
-  automatically
+  bundled plugin, `node_repl`, and trusted Browser shell-environment state;
+  the deploy script updates this file automatically
 
 These files live outside the checkout. The matching `*.local.toml` names are
 also ignored under this directory so a copied local overlay cannot be added by

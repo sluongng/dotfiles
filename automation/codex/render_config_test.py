@@ -76,6 +76,9 @@ enabled = true
 [mcp_servers.node_repl]
 command = "/runtime/node"
 
+[shell_environment_policy.set]
+NODE_REPL_TRUSTED_CODE_PATHS = "/runtime/node"
+
 [desktop]
 open_fullscreen = true
 ''',
@@ -87,6 +90,10 @@ open_fullscreen = true
         )
         self.assertTrue(config["plugins"]["browser@openai-bundled"]["enabled"])
         self.assertEqual(config["mcp_servers"]["node_repl"]["command"], "/runtime/node")
+        self.assertEqual(
+            config["shell_environment_policy"]["set"]["NODE_REPL_TRUSTED_CODE_PATHS"],
+            "/runtime/node",
+        )
         self.assertTrue(config["desktop"]["open_fullscreen"])
 
     def test_sync_removes_stale_runtime_overlay(self) -> None:
@@ -130,6 +137,70 @@ open_fullscreen = true
             )
 
             self.assertFalse(runtime.exists())
+
+    def test_sync_preserves_nested_desktop_tables(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            local = root / "config.local.toml"
+            projects = root / "projects.local.toml"
+            runtime = root / "runtime.local.toml"
+            target = root / "config.toml"
+            local.write_text("")
+            projects.write_text("")
+            target.write_text(
+                '''
+[desktop]
+appearanceLightCodeThemeId = "codex"
+
+[desktop.appearanceLightChromeTheme]
+accent = "#0169cc"
+
+[desktop.appearanceLightChromeTheme.semanticColors]
+diffAdded = "#00a240"
+'''
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(RENDERER),
+                    "--shared",
+                    str(SHARED),
+                    "--local",
+                    str(local),
+                    "--projects",
+                    str(projects),
+                    "--runtime",
+                    str(runtime),
+                    "--target",
+                    str(target),
+                    "--platform",
+                    "Linux",
+                    "--nested-feature-tables",
+                    "true",
+                    "--marketplace-name",
+                    "sluongng-dotfiles",
+                    "--marketplace-source",
+                    str(ROOT / "config/codex"),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            with runtime.open("rb") as runtime_file:
+                runtime_config = tomllib.load(runtime_file)
+            self.assertEqual(
+                runtime_config["desktop"]["appearanceLightChromeTheme"],
+                {"accent": "#0169cc", "semanticColors": {"diffAdded": "#00a240"}},
+            )
+
+            with target.open("rb") as rendered_file:
+                rendered_config = tomllib.load(rendered_file)
+            self.assertEqual(
+                rendered_config["desktop"]["appearanceLightChromeTheme"],
+                runtime_config["desktop"]["appearanceLightChromeTheme"],
+            )
 
     def test_legacy_macos_uses_cross_runtime_safe_settings(self) -> None:
         config = self.render(
