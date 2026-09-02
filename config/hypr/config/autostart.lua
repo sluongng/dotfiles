@@ -11,7 +11,7 @@ hl.on("hyprland.start", function()
         tail -f "$wob_fifo" | wob
     ]])
 
-    hl.exec_cmd([[systemctl --user import-environment DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS CODEX_APP_SERVER_USE_LOCAL_DAEMON; command -v dbus-update-activation-environment >/dev/null 2>&1 && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS CODEX_APP_SERVER_USE_LOCAL_DAEMON; systemctl --user start elephant.service app-StreamController@autostart.service]])
+    hl.exec_cmd([[systemctl --user import-environment DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS CODEX_APP_SERVER_USE_LOCAL_DAEMON; command -v dbus-update-activation-environment >/dev/null 2>&1 && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS CODEX_APP_SERVER_USE_LOCAL_DAEMON; systemctl --user start codex-remote-control.service elephant.service app-StreamController@autostart.service]])
 
     hl.exec_cmd("ghostty")
     hl.exec_cmd("google-chrome-stable")

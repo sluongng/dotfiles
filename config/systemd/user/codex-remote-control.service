@@ -2,6 +2,7 @@
 Description=Codex shared app-server for SSH and OpenAI Remote
 After=network-online.target
 Wants=network-online.target
+ConditionEnvironment=HYPRLAND_INSTANCE_SIGNATURE
 
 [Service]
 Type=simple
