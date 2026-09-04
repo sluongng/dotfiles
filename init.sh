@@ -42,6 +42,8 @@ else
   echo "Using existing checkout ${DOTFILES_DIR} (set DOTFILES_UPDATE=1 to pull)."
 fi
 
+git -C "${DOTFILES_DIR}" config core.hooksPath .githooks
+
 backup_path() {
   local target_path="$1"
   local relative_path="${target_path#"${HOME}/"}"

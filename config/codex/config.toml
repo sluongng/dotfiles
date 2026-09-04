@@ -69,14 +69,6 @@ status_line = ["model-with-reasoning", "project-root", "git-branch", "context-us
 session_picker_view = "dense"
 terminal_title = ["thread-id"]
 
-# Linux desktop trust entries kept here as comments on purpose.
-# They are not meant to be active on this laptop.
-#
-#
-#
-#
-#
-#
 # Chrome DevTools MCP is intentionally not enabled in the shared or always-on
 # local config. Configured MCP servers start during every Codex conversation;
 # prefer the codex-chrome-linux skill and Chrome Extension native host bridge

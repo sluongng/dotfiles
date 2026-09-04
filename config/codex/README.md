@@ -65,4 +65,16 @@ config in this directory, or use one of these machine-local files instead:
   bundled plugin, and `node_repl` state; the deploy script updates this file
   automatically
 
-Do not commit secrets or API keys here.
+These files live outside the checkout. The matching `*.local.toml` names are
+also ignored under this directory so a copied local overlay cannot be added by
+mistake. The repository hooks reject active or commented `[projects]` tables
+in every outgoing revision of the shared config.
+
+Run `init.sh` after a direct clone or pull to activate the tracked hooks, or
+configure them explicitly with:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+Do not commit secrets, API keys, or machine-local project paths here.
