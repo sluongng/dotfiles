@@ -202,6 +202,64 @@ diffAdded = "#00a240"
                 runtime_config["desktop"]["appearanceLightChromeTheme"],
             )
 
+    def test_sync_preserves_nested_hook_state_tables(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            local = root / "config.local.toml"
+            projects = root / "projects.local.toml"
+            runtime = root / "runtime.local.toml"
+            target = root / "config.toml"
+            local.write_text("")
+            projects.write_text("")
+            hook_key = "/home/example/.codex/hooks.json:session_start:0:0"
+            target.write_text(
+                f'''
+[hooks.state]
+
+[hooks.state."{hook_key}"]
+trusted_hash = "sha256:test"
+'''
+            )
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    str(RENDERER),
+                    "--shared",
+                    str(SHARED),
+                    "--local",
+                    str(local),
+                    "--projects",
+                    str(projects),
+                    "--runtime",
+                    str(runtime),
+                    "--target",
+                    str(target),
+                    "--platform",
+                    "Linux",
+                    "--nested-feature-tables",
+                    "true",
+                    "--marketplace-name",
+                    "sluongng-dotfiles",
+                    "--marketplace-source",
+                    str(ROOT / "config/codex"),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+            expected_hooks = {
+                "state": {hook_key: {"trusted_hash": "sha256:test"}}
+            }
+            with runtime.open("rb") as runtime_file:
+                runtime_config = tomllib.load(runtime_file)
+            self.assertEqual(runtime_config["hooks"], expected_hooks)
+
+            with target.open("rb") as rendered_file:
+                rendered_config = tomllib.load(rendered_file)
+            self.assertEqual(rendered_config["hooks"], expected_hooks)
+
     def test_legacy_macos_uses_cross_runtime_safe_settings(self) -> None:
         config = self.render(
             platform="Darwin",

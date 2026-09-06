@@ -11,8 +11,8 @@ Deploy it with:
 
 The deploy script manages these paths under `${CODEX_HOME:-~/.codex}`:
 
-- preserves App-managed desktop, bundled plugin, `node_repl`, and trusted
-  Browser shell-environment tables in `runtime.local.toml`, then renders
+- preserves App-managed desktop, hook trust, bundled plugin, `node_repl`, and
+  trusted Browser shell-environment tables in `runtime.local.toml`, then renders
   `config.toml` from the tracked shared config plus local overlays
 - tracked global `AGENTS.md`
 - tracked files under `agents/`

@@ -24,6 +24,7 @@ RUNTIME_TABLE_RE = re.compile(
     r"^\[(?:"
     r"desktop(?:\..+)?"
     r"|shell_environment_policy\.set"
+    r"|hooks\.state(?:\..+)?"
     r"|marketplaces\.(?:openai-bundled|openai-primary-runtime)"
     r'|plugins\."[^"]+@(?:openai-bundled|openai-primary-runtime)"'
     r"|mcp_servers\.node_repl(?:\..+)?"
@@ -268,7 +269,7 @@ def extract_runtime_tables(text: str, runtime_path: Path) -> str:
         return ""
 
     header = [
-        "# App-managed local runtime state for desktop settings, plugins, and MCP servers.",
+        "# App-managed local runtime state for desktop settings, hooks, plugins, and MCP servers.",
         f"# This file is updated by ~/.dotfiles/automation/codex/install-codex.sh for {display_path(runtime_path.parent)}.",
         "# Do not commit this file or move version-specific paths into tracked config.",
         "",
