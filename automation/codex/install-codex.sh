@@ -61,6 +61,50 @@ ensure_symlink() {
   echo "Linked ${target_path} -> ${source_path}"
 }
 
+ensure_regular_file() {
+  # Role loading uses the sensitive-file reader, which does not follow symlinks.
+  # Stage beside the destination and replace its directory entry atomically so
+  # upgrading an old role symlink never writes through it into tracked source.
+  python3 - "$1" "$2" "${TARGET_DIR}" "${BACKUP_DIR}" <<'PY'
+import filecmp
+import os
+from pathlib import Path
+import shutil
+import sys
+import tempfile
+
+source, target, target_root, backup_root = map(Path, sys.argv[1:])
+relative = target.relative_to(target_root)
+if target.parent.is_symlink():
+    raise SystemExit(f"Refusing role deployment through symlink directory: {target.parent}")
+target.parent.mkdir(parents=True, exist_ok=True)
+if target.exists() and not target.is_symlink() and not target.is_file():
+    raise SystemExit(f"Refusing to replace non-file role destination: {target}")
+if target.is_file() and not target.is_symlink() and filecmp.cmp(source, target, shallow=False):
+    print(f"Already copied {target}")
+    raise SystemExit(0)
+
+fd, temporary_name = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent)
+os.close(fd)
+temporary = Path(temporary_name)
+try:
+    shutil.copy2(source, temporary)
+    if os.path.lexists(target):
+        backup = backup_root / relative
+        backup.parent.mkdir(parents=True, exist_ok=True)
+        suffix = 0
+        while os.path.lexists(backup):
+            suffix += 1
+            backup = (backup_root / relative).with_name(f"{target.name}.{suffix}")
+        shutil.copy2(target, backup, follow_symlinks=False)
+        print(f"Backed up {target} to {backup}")
+    os.replace(temporary, target)
+finally:
+    temporary.unlink(missing_ok=True)
+print(f"Copied {source} -> {target}")
+PY
+}
+
 prune_stale_skill_links() {
   local target_path=""
   local current_target=""
@@ -233,7 +277,7 @@ main() {
   if [ -d "${SOURCE_DIR}/agents" ]; then
     while IFS= read -r source_path; do
       relative_path="${source_path#"${SOURCE_DIR}/"}"
-      ensure_symlink "${source_path}" "${TARGET_DIR}/${relative_path}"
+      ensure_regular_file "${source_path}" "${TARGET_DIR}/${relative_path}"
     done < <(find "${SOURCE_DIR}/agents" -type f | sort)
   fi
 
@@ -255,4 +299,6 @@ main() {
   sync_tracked_plugin_caches
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

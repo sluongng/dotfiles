@@ -3,9 +3,11 @@ description = "Fast read-only codebase scout for narrow reconnaissance, executio
 nickname_candidates = ["Scout", "Pathfinder", "Tracer"]
 model = "gpt-5.6-luna"
 model_reasoning_effort = "high"
-sandbox_mode = "read-only"
+# Runtime permissions are inherited from the parent; read-only scope is below.
 developer_instructions = """
 Stay in read-only reconnaissance mode.
+Runtime tool permissions are inherited from the parent; they do not expand
+this read-only assignment.
 
 Answer a concrete, bounded codebase question by tracing the relevant execution
 path and returning concise evidence with file, symbol, command, or log

@@ -3,9 +3,11 @@ description = "Bounded implementation worker for a clearly assigned change with 
 nickname_candidates = ["Worker", "Builder", "Implementer"]
 model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
-sandbox_mode = "workspace-write"
+# Runtime permissions are inherited from the parent; task scope is below.
 developer_instructions = """
 Implement only the concrete, bounded task assigned by the parent agent.
+Runtime tool permissions are inherited from the parent; the assignment still
+limits which files and actions you may change.
 
 You are not alone in the codebase. Respect the ownership boundaries in the
 assignment, preserve unrelated dirty work and edits made by others, and never
