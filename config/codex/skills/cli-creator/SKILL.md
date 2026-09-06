@@ -1,6 +1,6 @@
 ---
 name: cli-creator
-description: Build a composable CLI for Codex from API docs, an OpenAPI spec, existing curl examples, an SDK, a web app, an admin tool, or a local script. Use when the user wants Codex to create a command-line tool that can run from any repo, expose composable read/write commands, return stable JSON, manage auth, and pair with a companion skill.
+description: "Create a durable, composable command-line tool from an API, SDK, web workflow, or existing script, with stable JSON and a companion skill."
 ---
 
 # CLI Creator
@@ -47,11 +47,13 @@ State the choice in one sentence before scaffolding, including the reason and th
 
 ## Command Contract
 
-Sketch the command surface in chat before coding. Include the binary name, discovery commands, resolve or ID-lookup commands, read commands, write commands, raw escape hatch, auth/config choice, and PATH/install command.
+Sketch the command surface before coding. Include the binary name, selected
+command families, applicable auth/config, and PATH/install method.
 
 When designing the command surface, read [references/agent-cli-patterns.md](references/agent-cli-patterns.md) for the expected composable CLI shape.
 
-Build toward this surface:
+Choose the parts of this surface that serve the requested jobs. An offline
+transform does not need auth, discovery, writes, or a raw HTTP escape hatch:
 
 - `tool-name --help` shows every major capability.
 - `tool-name --json doctor` verifies config, auth, version, endpoint reachability, and missing setup.
@@ -69,15 +71,21 @@ Document the JSON policy in the CLI README or equivalent: API pass-through versu
 
 ## Auth and Config
 
-Support the boring paths first, in this precedence order:
+For capabilities that require credentials, support the applicable paths in this
+precedence order. Skip credential configuration for tools that do not need it:
 
 1. Environment variable using the service's standard name, such as `GITHUB_TOKEN`.
 2. User config under `~/.<tool-name>/config.toml` or another simple documented path.
 3. `--api-key` or a tool-specific token flag only for explicit one-off tests. Prefer env/config for normal use because flags can leak into shell history or process listings.
 
-Never print full tokens. `doctor --json` should say whether a token is available, the auth source category (`flag`, `env`, `config`, provider default, or missing), and what setup step is missing.
+Never print full tokens. If a diagnostic command is implemented, it should
+report credential availability, the auth source category (`flag`, `env`,
+`config`, provider default, or missing), and missing setup for authenticated
+capabilities.
 
-If the CLI can run without network or auth, make that explicit in `doctor --json`: report fixture/offline mode, whether fixture data was found, and whether auth is not required for that mode.
+Document when the CLI or an individual mode runs without network or auth.
+Existing diagnostic commands should reflect that mode and fixture availability;
+do not add `doctor` solely to report that an offline tool needs no credentials.
 
 For internal web apps sourced from DevTools curls, create sanitized endpoint notes before implementing: resource name, method/path, required headers, auth mechanism, CSRF behavior, request body, response ID fields, pagination, errors, and one redacted sample response. Never commit copied cookies, bearer tokens, customer secrets, or full production payloads.
 
@@ -88,12 +96,15 @@ Use screenshots to infer workflow, UI vocabulary, fields, and confirmation point
 1. Read the source just enough to inventory resources, auth, pagination, IDs, media/file flows, rate limits, and dangerous write actions. If the docs expose OpenAPI, download or inspect it before naming commands.
 2. Sketch the command list in chat. Keep names short and shell-friendly.
 3. Scaffold the CLI with a README or equivalent repo-facing instructions.
-4. Implement `doctor`, discovery, resolve, read commands, one narrow draft or dry-run write path if requested, and the raw escape hatch.
+4. Implement the selected command families and only the requested write paths.
+   Add diagnostics, discovery, ID resolution, or a raw escape hatch where they
+   support those jobs.
 5. Install the CLI on PATH so `tool-name ...` works outside the source folder.
-6. Smoke test from another repo or `/tmp`, not only with `cargo run` or package-manager wrappers. Run `command -v <tool-name>`, `<tool-name> --help`, and `<tool-name> --json doctor`.
-7. Run format, typecheck/build, unit tests for request builders, pagination/request-body builders, no-auth `doctor`, help output, and at least one fixture, dry-run, or live read-only API call.
+6. Smoke test from another repo or `/tmp`, not only with `cargo run` or package-manager wrappers. Run `command -v <tool-name>`, `<tool-name> --help`, and a representative implemented command with a fixture or read-only input. Run `<tool-name> --json doctor` only if that diagnostic command exists.
+7. Run required format and build checks, then validate meaningful behaviors such as request construction, pagination, auth failures, or fixture lookup where implemented. Avoid tests that only restate help wording or command declarations.
 
-If a live write is needed for confidence, ask first and make it reversible or draft-only.
+Use live writes for validation only when already authorized by the user's
+request; otherwise prepare a fixture or preview and ask before that write.
 
 When the source is an existing script or shell history, split the working invocation into real phases: setup, discovery, download/export, transform/index, draft, upload, poll, live write. Preserve the flags, paths, and environment variables the user already relies on, then wrap the repeatable phases with stable IDs, bounded JSON, and file outputs.
 
@@ -105,56 +116,23 @@ For fixture-backed prototypes, keep fixtures in a predictable project path and m
 
 For log-oriented CLIs, keep deterministic snippet extraction separate from model interpretation. Prefer a command that emits filenames, line numbers or byte ranges, matched rules, and short excerpts.
 
-## Rust Defaults
+## Runtime Details
 
-When building in Rust, use established crates instead of custom parsers:
-
-- `clap` for commands and help
-- `reqwest` for HTTP
-- `serde` / `serde_json` for payloads
-- `toml` for small config files
-- `anyhow` for CLI-shaped error context
-
-Add a `Makefile` target such as `make install-local` that builds release and installs the binary into `~/.local/bin`.
-
-## TypeScript/Node Defaults
-
-When building in TypeScript/Node, keep the CLI installable as a normal command:
-
-- `commander` or `cac` for commands and help
-- native `fetch`, the official SDK, or the user's existing HTTP helper for API calls
-- `zod` only where external payload validation prevents real breakage
-- `package.json` `bin` entry for the installed command
-- `tsup`, `tsx`, or `tsc` using the repo's existing convention
-
-Add an install path such as `pnpm install`, `pnpm build`, and `pnpm link --global`, or a `Makefile` target that installs a small wrapper into `~/.local/bin`.
-
-## Python Defaults
-
-When building in Python, prefer boring standard-library pieces unless the workflow needs more:
-
-- `argparse` for commands and help, or `typer` when subcommands would otherwise get messy
-- `urllib.request` / `urllib.parse`, `requests`, or `httpx` for HTTP, matching what is already installed or already used nearby
-- `json`, `csv`, `sqlite3`, `pathlib`, and `subprocess` for local files, exports, databases, and existing scripts
-- `pyproject.toml` console script or a small executable wrapper for the installed command
-- `uv` or a virtualenv only when dependencies are actually needed
-
-Add a `Makefile` target such as `make install-local` that installs the command on PATH and document whether it depends on `uv`, a virtualenv, or only system Python.
+Read [references/runtime-patterns.md](references/runtime-patterns.md) for the
+selected runtime's library and installation defaults.
 
 ## Companion Skill
 
-After the CLI works, create or update a small skill for it. Use `$skill-creator` when it is available. Use `$CODEX_HOME/skills/<tool-name>/SKILL.md` for a personal companion skill unless the user names a repo-local `.codex/skills/...` path or another skill repo.
+After the CLI works, create or update a small skill for it. Use `$skill-creator` when it is available. Use `${CODEX_HOME:-$HOME/.codex}/skills/<tool-name>/SKILL.md` for a personal companion skill unless the user names a repo-local `.codex/skills/...` path or another skill repo.
 
-Write the companion skill in the order a future Codex thread should use the CLI, not as a tour of every feature. Explain:
+Write the companion skill around the implemented jobs. Explain how to locate
+the installed command and complete a common task. Include only relevant details:
 
-- How to verify the installed command exists.
-- Which command to run first.
-- How auth is configured.
-- Which discovery command finds the common ID.
-- The safe read path.
-- The intended draft/write path.
-- The raw escape hatch.
-- What not to do without explicit user approval.
-- Three copy-pasteable command examples.
+- Auth/config setup when required.
+- Discovery and stable ID resolution when implemented.
+- The supported read or local transformation path.
+- Draft/write paths and their authorization boundaries when implemented.
+- A raw escape hatch when available.
+- Enough concrete command examples to cover the common jobs without padding.
 
 Keep API reference details in the CLI docs or a skill reference file. Keep the skill focused on ordering, safety, and examples future Codex threads should actually run.

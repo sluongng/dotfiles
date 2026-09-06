@@ -2,6 +2,10 @@
 
 Use this reference when designing the command surface for a new CLI Codex should run.
 
+Select patterns for the actual implemented capabilities. Offline file tools do
+not need authentication, service discovery, a raw API command, or `doctor`.
+The service-oriented examples below are examples, not a required command list.
+
 ## Mental model
 
 The CLI is Codex's command layer. It should turn a service, app, API, log source, or database into shell commands Codex can run repeatedly from any repo.
@@ -99,7 +103,7 @@ For exit codes:
 
 - Exit zero when the command succeeded, including an empty result.
 - Exit nonzero for auth failure, invalid input, network failure, parse failure, API error, or incomplete upload/download.
-- Make `doctor --json` usable even when auth is missing. It should report missing auth rather than crashing.
+- When `doctor --json` exists, make it usable even when auth is missing. It should report missing auth rather than crashing.
 
 ## Pagination and breadth
 
@@ -129,7 +133,9 @@ Treat raw writes as live writes. Do not hide POST/PUT/PATCH/DELETE behind a "deb
 
 ## Companion skill pattern
 
-The companion skill should be smaller than the CLI README. It should teach the path through the tool:
+The companion skill should be smaller than the CLI README. It should teach the
+path through the actual tool; omit capabilities absent from its implementation.
+For a service CLI with diagnostics, discovery, reads, and writes, for example:
 
 ```md
 Start with:
