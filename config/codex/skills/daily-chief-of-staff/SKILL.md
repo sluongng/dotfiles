@@ -154,6 +154,25 @@ later daily scan.
 - Inspect recent ChatGPT threads when they contain unresolved personal,
   purchase, travel, or architecture decisions relevant to today.
 
+### Tmux task windows
+
+- When the user asks to start, resume, or open a Codex task in tmux, create the
+  tmux window first and launch Codex from the user's interactive login shell.
+  The expected process structure is `tmux -> zsh -lic -> codex`; for a saved
+  task, run `codex resume --remote unix:// --include-non-interactive
+  <thread-id>` from that shell. Do not substitute a `journalctl` viewer or a
+  detached `codex exec` service for the interactive Codex pane.
+- A Codex thread has one active writer. Do not stop, kill, or replace an active
+  writer merely to move the thread into tmux: doing so marks the turn
+  interrupted and can cancel in-flight commands, tools, or subagents. Start
+  new work in its final tmux topology. If an existing detached writer must be
+  presented in tmux, let its active turn finish before resuming it unless the
+  user explicitly authorizes interruption.
+- Give each window a stable task-specific title and the correct working
+  directory. Verify the live parent-child process structure and confirm that
+  the Codex process inherited the expected shell environment, including
+  `EDITOR` and `VISUAL`, before reporting success.
+
 ## Ranking
 
 Rank only genuine actions. Prefer, in order:
