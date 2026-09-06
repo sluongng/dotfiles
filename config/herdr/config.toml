@@ -1,0 +1,97 @@
+# Optional Herdr workspace, tab, and pane configuration for manual use.
+# Ghostty remains the outer terminal; zsh, Neovim, Codex, and agy run inside.
+onboarding = false
+
+[theme]
+name = "one-dark"
+
+[terminal]
+default_shell = "/bin/zsh"
+shell_mode = "non_login"
+new_cwd = "follow"
+
+[update]
+channel = "stable"
+version_check = true
+manifest_check = true
+
+[keys]
+# Preserve the tmux prefix and the most-used tmux bindings.
+prefix = "ctrl+a"
+reload_config = "prefix+r"
+resize_mode = "prefix+shift+r"
+open_notification_target = ""
+new_tab = "prefix+c"
+goto = ["prefix+g", "prefix+shift+f"]
+split_vertical = "prefix+l"
+split_horizontal = "prefix+j"
+focus_pane_left = "prefix+left"
+focus_pane_down = "prefix+down"
+focus_pane_up = "prefix+up"
+focus_pane_right = "prefix+right"
+cycle_pane_next = "prefix+o"
+copy_mode = "prefix+["
+switch_tab = "prefix+1..9"
+last_pane = "prefix+tab"
+
+# Herdr Pluck is the Herdr-native replacement for tmux-fingers.
+[[keys.command]]
+key = "prefix+f"
+type = "plugin_action"
+command = "rmarganti.herdr-pluck.pluck"
+description = "copy a visible URL, path, SHA, or other token"
+
+[[keys.command]]
+key = "prefix+u"
+type = "plugin_action"
+command = "rmarganti.herdr-pluck.open-url"
+description = "open a visible URL"
+
+[server]
+headless_cols = 160
+headless_rows = 50
+
+[ui]
+mouse_capture = true
+copy_on_select = true
+pane_borders = true
+pane_outer_borders = false
+pane_scrollbars = false
+pane_gaps = false
+show_agent_labels_on_pane_borders = true
+tab_bar_position = "bottom"
+tab_bar_right = [
+  { type = "zoom" },
+  { type = "hostname" },
+  { type = "datetime", format = "%H:%M" },
+]
+tab_bar_right_separator = " · "
+window_title = "{workspace}: {tab}"
+agent_panel_sort = "priority"
+status_indicators = "symbols"
+
+[ui.toast]
+delivery = "herdr"
+delay_seconds = 1
+
+[ui.toast.herdr]
+position = "bottom-right"
+
+[ui.sound]
+enabled = false
+
+[session]
+resume_agents_on_restore = true
+
+[remote]
+manage_ssh_config = true
+
+[experimental]
+allow_nested = false
+kitty_graphics = false
+# Pane output can contain prompts, credentials, and tokens, so do not persist it.
+pane_history = false
+
+[advanced]
+# Approximate the old 200,000-line tmux history with a bounded byte limit.
+scrollback_limit_bytes = 67108864

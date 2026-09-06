@@ -43,6 +43,33 @@ CODEX_HOME=/path/to/codex-home ./init.sh
 Local secrets, Codex state, Git credentials, and machine-specific project trust
 entries are intentionally kept outside this repository.
 
+## Terminal sessions
+
+The default interactive stack is `Ghostty -> tmux -> zsh / Neovim / Codex /
+agy`. A local top-level terminal creates or attaches to the persistent `main`
+tmux session automatically. SSH shells, detected Emacs, Vim, IntelliJ, and Zed
+terminals, existing tmux panes, and manually started Herdr panes are not nested.
+Set `TMUX_AUTOSTART=0` before starting zsh for an ordinary shell outside tmux.
+
+Herdr remains installed and available manually with `herdr`, but it is no
+longer started by the shell. Its tracked config retains the same primary
+workflow:
+
+- `Ctrl-a c`: new tab
+- `Ctrl-a l` / `Ctrl-a j`: split right / down
+- `Ctrl-a` plus an arrow: move between panes
+- `Ctrl-a o`: cycle to the next pane
+- `Ctrl-a F`: find a workspace, tab, pane, or agent
+- `Ctrl-a [`: vi-style copy mode
+- `Ctrl-a f`: copy a visible token with Herdr Pluck
+- `Ctrl-a u`: open a visible URL with Herdr Pluck
+- `Ctrl-a q`: detach while keeping processes alive
+
+`init.sh` still installs Herdr's first-party Codex and Antigravity CLI hooks
+when the corresponding config directories exist. Check them with
+`herdr integration status`. The Herdr Pluck plugin remains Herdr-managed and
+can be installed with `herdr plugin install rmarganti/herdr-pluck --yes`.
+
 ## Neovim
 
 The shared Neovim configuration uses `vim.pack` and the current

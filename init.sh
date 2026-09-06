@@ -101,7 +101,7 @@ for relative_path in .zshrc .zprofile .ideavimrc .tmux.conf; do
 done
 ensure_symlink "${DOTFILES_DIR}/wezterm.lua" "${HOME}/.wezterm.lua"
 
-for config_name in nvim alacritty kitty bat git ghostty metals; do
+for config_name in nvim alacritty kitty bat git ghostty herdr metals; do
   link_config_tree \
     "${DOTFILES_DIR}/config/${config_name}" \
     "${CONFIG_HOME}/${config_name}"
@@ -140,6 +140,13 @@ if [ "${DOTFILES_INSTALL_PACKAGES:-0}" = "1" ]; then
     brew bundle install --file "${DOTFILES_DIR}/Brewfile"
   else
     echo "Linux package installation is intentionally host-managed; config is installed." >&2
+  fi
+fi
+
+if command -v herdr >/dev/null 2>&1; then
+  herdr integration install codex
+  if [ -d "${HOME}/.gemini/config" ]; then
+    herdr integration install antigravity-cli
   fi
 fi
 

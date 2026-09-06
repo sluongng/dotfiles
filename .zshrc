@@ -17,15 +17,6 @@ _path_append() {
 
 ZSH_THEME="sunaku"
 
-# Only auto-start tmux for local top-level terminal shells.
-if [[ -t 1 && -z "$TMUX" && -z "$SSH_CONNECTION" && -z "$SSH_TTY" && -z "$SSH_CLIENT" ]]; then
-  ZSH_TMUX_AUTOSTART=true
-  ZSH_TMUX_AUTOQUIT=true
-else
-  ZSH_TMUX_AUTOSTART=false
-  ZSH_TMUX_AUTOQUIT=false
-fi
-
 SHOW_AWS_PROMPT=false
 
 # M1 Mac
@@ -78,7 +69,6 @@ plugins=(
 if [[ -t 1 ]]; then
   plugins+=(
     zsh-autosuggestions
-    tmux
     fzf
   )
 fi
@@ -195,7 +185,7 @@ fi
 ## Navigate to dir
 export FZF_ALT_C_OPTS="--preview 'lsd -l {}'"
 
-## Use Tmux for FZF panel
+## Use a tmux popup for FZF when tmux is the active session layer.
 export FZF_TMUX=1
 export FZF_TMUX_OPTS='-p 70%'
 export FZF_TMUX_HEIGHT=50%
@@ -444,3 +434,20 @@ _path_prepend "$HOME/.local/bin"
 
 unset -f _path_prepend _path_append
 unset DOTFILES_OS
+
+# tmux is the default persistent layer for local top-level terminals again.
+# Keep SSH, detected editor terminals, and manually started Herdr panes unnested.
+alias ha='herdr'
+alias hl='herdr session list'
+alias hconf='${EDITOR:-nvim} "${XDG_CONFIG_HOME:-$HOME/.config}/herdr/config.toml"'
+
+if [[ -o interactive && -t 0 && -t 1 && "${TMUX_AUTOSTART:-1}" != 0 &&
+      -z "${HERDR_ENV:-}" && -z "${TMUX:-}" &&
+      -z "${SSH_CONNECTION:-}" && -z "${SSH_TTY:-}" && -z "${SSH_CLIENT:-}" &&
+      -z "${INSIDE_EMACS:-}" && -z "${EMACS:-}" && -z "${VIM:-}" &&
+      -z "${INTELLIJ_ENVIRONMENT_READER:-}" && -z "${ZED_TERM:-}" ]] &&
+   command -v tmux >/dev/null 2>&1; then
+  if command tmux new-session -A -s main; then
+    exit
+  fi
+fi
