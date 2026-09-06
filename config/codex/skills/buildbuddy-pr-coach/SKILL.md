@@ -1,12 +1,15 @@
 ---
 name: buildbuddy-pr-coach
-description: Coach BuildBuddy PR triage for buildbuddy-io/buildbuddy. Use when asked to act as a PR coach, triage the open BuildBuddy PR queue, identify high-likelihood merges, or run recurring PR-coach automation for BuildBuddy.
+description: "Produce recurring or report-only BuildBuddy PR queue triage with ranked merge blockers and next actions. Use the plugin PR coach for local preparation."
 ---
 
 # BuildBuddy PR Coach
 
 Use this skill for recurring BuildBuddy PR triage, especially automation prompts
 that ask for a daily PR coach view of `buildbuddy-io/buildbuddy`.
+For preparing worktrees, rebasing candidates, or fixing PRs, use the available
+BuildBuddy plugin PR coach when that work is requested. A queue report can be
+completed from GitHub state without fetching or changing a local checkout.
 
 ## Workflow
 
@@ -20,7 +23,9 @@ that ask for a daily PR coach view of `buildbuddy-io/buildbuddy`.
      sed -n '1,240p' "$MEMORY_PATH"
    fi
    ```
-2. Check local branch state first:
+2. If the requested work includes local preparation or checkout comparison,
+   inspect the relevant checkout and refresh its base as needed. Skip these
+   commands for a report-only queue scan:
    ```bash
    git status --short --branch
    git fetch origin +refs/heads/master:refs/remotes/origin/master

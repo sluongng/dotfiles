@@ -1,6 +1,6 @@
 ---
 name: linux-computer-use
-description: Use the local linux-computer-use CLI or MCP server to inspect and safely interact with running Wayland/Hyprland desktop apps through Sky-compatible computer-use tools, grim screenshots, AT-SPI, wtype, ydotool, approvals, and dry-run raw input.
+description: "Inspect and interact with running Wayland/Hyprland apps through the local linux-computer-use CLI or MCP server."
 ---
 
 # Linux Computer Use

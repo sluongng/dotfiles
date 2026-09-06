@@ -1,6 +1,6 @@
 ---
 name: personal-skill-review
-description: Review recent Codex session logs for repeated issues involving dotfiles-managed personal skills, then update or add a personal skill only when the evidence is concrete and recurring. Use for "scan recent sessions for skill issues", "should this become a skill?", or recurring automation runs that maintain personal skills.
+description: "Review recent Codex sessions for recurring friction and improve dotfiles-managed personal skills when the evidence supports a reusable fix."
 ---
 
 # Personal Skill Review

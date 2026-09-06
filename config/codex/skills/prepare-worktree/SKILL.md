@@ -1,6 +1,6 @@
 ---
 name: prepare-worktree
-description: Prepare or audit Git worktrees for Codex automation, scheduled or background agents, long-running tasks, and isolated branch work. Use when Codex needs to create or reuse a manual worktree, inspect its readiness, or carry local-only context declared by .worktreeinclude or known names such as AGENTS.md, user.bazelrc, .bazelrc.user, or .buckconfig.local into it. For Codex App-created worktrees, use this skill to distinguish repository .worktreeinclude copies from Local Environment setup commands.
+description: "Create or audit Git worktrees and propagate required local context; distinguish manual/headless copying from Codex App .worktreeinclude and setup behavior."
 ---
 
 # Prepare Worktree

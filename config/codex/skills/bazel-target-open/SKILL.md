@@ -1,6 +1,6 @@
 ---
 name: bazel-target-open
-description: Resolve Bazel labels from terminal output and open the matching BUILD file target with the local bazel-target-open CLI, especially when tmux-fingers selected labels such as //pkg:target or @repo//pkg:target.
+description: "Resolve terminal or tmux-fingers Bazel labels and open their BUILD targets with the local bazel-target-open CLI."
 ---
 
 # Bazel Target Open

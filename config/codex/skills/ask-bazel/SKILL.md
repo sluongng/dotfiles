@@ -1,6 +1,6 @@
 ---
 name: ask-bazel
-description: Research and answer Bazel questions by reading the Bazel source tree, commit history, and GitHub context (Issues, PRs, Discussions). Use when the user asks how Bazel works, why behavior changed, when a feature/regression appeared, or asks version-specific Bazel questions tied to bazelbuild/bazel.
+description: "Answer Bazel behavior, history, and version-specific questions from bazelbuild/bazel source, commits, and linked GitHub discussions."
 ---
 
 # Ask Bazel
@@ -20,42 +20,26 @@ Detect whether the user gave a Bazel version/ref (tag, branch, commit SHA, relea
 
 When no version/ref is provided, stay on the current checkout and research directly.
 
-When a version/ref is provided, follow this exact flow:
-
-1. Check repository cleanliness.
-
-```bash
-git -C "$repo" status --porcelain
-```
-
-2. If clean, resolve and checkout that version/ref in place.
-3. If dirty, create a local clone first and use the clone for all versioned research.
-
-```bash
-tmp_repo="$(mktemp -d "$(dirname "$repo")/bazel-codex-XXXX")"
-git clone --no-hardlinks "$repo" "$tmp_repo"
-repo="$tmp_repo"
-```
-
-4. Verify the ref exists locally.
+When a version/ref is provided, resolve it without switching the user's
+checkout:
 
 ```bash
 git -C "$repo" rev-parse --verify "${ref}^{commit}"
 ```
 
-5. If not found, fetch from GitHub and re-check.
+If not found, fetch the needed upstream ref from GitHub and re-check. Report an
+unresolved ref rather than researching a different version silently.
 
 ```bash
-git -C "$repo" fetch https://github.com/bazelbuild/bazel.git --tags --prune
+git -C "$repo" fetch https://github.com/bazelbuild/bazel.git "$ref"
 git -C "$repo" rev-parse --verify "${ref}^{commit}"
 ```
 
-6. If still not found, report that the version/ref could not be resolved.
-7. If found, checkout detached at the exact commit.
-
-```bash
-git -C "$repo" checkout --detach "${ref}^{commit}"
-```
+For an explicitly fetched ref that has no local name, resolve `FETCH_HEAD`
+immediately after the successful fetch. Use `git show <commit>:<path>`,
+`git grep <pattern> <commit>`, and `git log <commit>` for read-only research.
+If a checked-out tree is needed, create an isolated detached worktree or local
+clone at that commit. Preserve the existing checkout and unrelated dirty work.
 
 Always report the exact commit hash and repo path used for research.
 

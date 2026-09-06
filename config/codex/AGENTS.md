@@ -5,6 +5,20 @@
 When creating local Git branches for the user, use the `sluongng/` prefix.
 Do not use `codex/` as a branch prefix.
 
+## Skill scope and completion
+
+Use skills for task-specific knowledge. The user's explicit instructions and
+existing authorization take precedence over skill guidelines. Load supporting
+references only when their workflow applies; examples and output templates are
+defaults unless the task requires them.
+
+Carry authorized work through implementation and relevant validation. Ask only
+for a missing material decision or authority, after preparing the work that can
+already be completed. If a skill requires a pause, link the exact `SKILL.md`,
+quote the rule, and explain why it applies. Keep account, publication, and
+transaction boundaries intact. Scale validation to the change and rerun passing
+checks only when new edits, failures, or unresolved concerns justify it.
+
 ## Subagents
 
 Use subagents when they can materially advance the task in parallel without

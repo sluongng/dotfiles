@@ -1,6 +1,6 @@
 ---
 name: bazel-central-registry
-description: Inspect Bazel Central Registry (BCR) modules and bzlmod dependencies. Use when Codex needs to find BCR modules or versions, audit which direct deps in a repo are upgradeable, compare current pins to live BCR releases, update `bazel_dep` or `single_version_override` entries in `MODULE.bazel` (including `include()` files), or inspect module dependency trees.
+description: "Find Bazel Central Registry modules and versions, audit Bzlmod upgrades, update MODULE.bazel pins, or inspect module dependencies."
 ---
 
 # Bazel Central Registry

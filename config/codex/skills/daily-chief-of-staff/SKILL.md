@@ -1,6 +1,6 @@
 ---
 name: daily-chief-of-staff
-description: Prepare a live, point-by-point chief-of-staff brief from connected calendar, Gmail, Slack, GitHub, Codex, and ChatGPT sources, while maintaining a durable local task ledger across threads and context compaction. Use for a daily agenda, morning brief, today list, or cross-channel scan whose actionable items should be handed to separate Codex tasks.
+description: "Prepare a live daily agenda or cross-channel chief-of-staff brief, reconcile the local task ledger, and route actionable items to Codex tasks."
 ---
 
 # Daily Chief of Staff

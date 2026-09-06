@@ -42,7 +42,7 @@ branch=$(git branch --show-current)
 old_head=$(git rev-parse HEAD)
 old_upstream=$(git merge-base HEAD "$upstream")
 git log --oneline --reverse "$old_upstream"..HEAD
-git branch "backup/${branch}-before-upstream-rebase-$(date +%Y%m%d-%H%M%S)"
+git branch "sluongng/backup/${branch}-before-upstream-rebase-$(date +%Y%m%d-%H%M%S)"
 ```
 
 For a topic-only regroup, preserve the current base and make the operation name
@@ -52,7 +52,7 @@ explicit:
 branch=$(git branch --show-current)
 old_head=$(git rev-parse HEAD)
 old_upstream=$(git merge-base HEAD "$upstream")
-git branch "backup/${branch}-before-topic-regroup-$(date +%Y%m%d-%H%M%S)"
+git branch "sluongng/backup/${branch}-before-topic-regroup-$(date +%Y%m%d-%H%M%S)"
 ```
 
 ## Detect Upstreamed Commits
@@ -110,7 +110,6 @@ git status --short
 <validation command>
 git add <fixed-files>
 git commit --amend --no-edit
-<validation command>
 git rebase --continue
 ```
 
@@ -306,13 +305,15 @@ and stable unless the added commit changes the topic's purpose.
 
 ## Final Checks
 
-Run these after the rebase/regrouping is complete:
+After the rebase/regrouping, inspect the final stack and run any required
+validation not already passed on the final tree. Repeat checks when changes or
+restored local configuration invalidate the earlier result:
 
 ```bash
 git range-diff "$old_upstream".."$old_head" "$upstream"..HEAD
 git log --oneline --reverse "$upstream"..HEAD
 git status --short
-<final validation command>
+<any remaining required validation command>
 ```
 
 For a topic-only regroup, also run:

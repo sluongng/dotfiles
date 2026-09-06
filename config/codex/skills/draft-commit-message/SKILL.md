@@ -1,6 +1,6 @@
 ---
 name: draft-commit-message
-description: "Draft, rewrite, and review Git commit messages and pull-request title/body source text using the Git project's MyFirstContribution guidance. Use when Codex needs to turn staged changes, a diff, commit range, or rough summary into a `component: subject` line, imperative mood, a 50-character-or-less subject, a blank line before the body, and enough reviewer-facing context to explain and sell the change."
+description: "Draft or review Git commit messages and PR titles and bodies from diffs or task context, following Git contribution guidance and repository conventions."
 ---
 
 # Draft Commit Message
@@ -175,8 +175,9 @@ git log --format=%s -- path/to/area | head -n 20
   requested.
 - If upstream commits are cited for timing context, release/version context is
   included when it materially helps orientation.
-- If validation warns that the body lacks why/context, revise the opening body
-  lines to make the problem and motivation explicit, then re-run validation.
+- If validation warns that the body lacks why/context, check whether the
+  actual problem and motivation are clear. Revise missing context, not wording
+  that is already clear merely to satisfy the keyword heuristic.
 - Trailers are preserved.
 
 ## Resources
@@ -190,9 +191,9 @@ git log --format=%s -- path/to/area | head -n 20
 - Run `scripts/validate_commit_message.py` when the user asks to validate an
   existing commit message, when drafting a final message for commit/squash
   workflows, or when a draft is close to the line-length limits.
-- Treat validator `WARN` output as actionable review feedback, not a green
-  light. If it says the body may be missing explicit why/context language, add
-  a more direct motivation sentence and re-check.
+- Treat validator `WARN` output as a prompt to review the message. Its
+  why/context check matches a small keyword list, so a warning can be a false
+  positive; do not add filler solely to silence it.
 
 ```bash
 python3 scripts/format_commit_message.py --write .git/COMMIT_EDITMSG

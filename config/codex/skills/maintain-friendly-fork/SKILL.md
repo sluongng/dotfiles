@@ -1,6 +1,6 @@
 ---
 name: maintain-friendly-fork
-description: "Maintain a friendly fork or long-lived patch stack by refreshing from the origin default branch when requested, rebasing local changes, detecting commits already merged upstream, validating every replayed commit with build/test commands, resolving conflicts without hiding failures, squashing newly added commits into the existing stack, regrouping or renumbering reviewable topic sets, checking tree equivalence for topic-only restacks, and force-pushing rewritten history to the tracked upstream branch with --force-with-lease when asked."
+description: "Refresh or regroup a friendly fork or long-lived patch stack, preserve independently valid commits, and publish rewritten history when requested."
 ---
 
 # Maintain Friendly Fork
@@ -26,8 +26,8 @@ local commits.
   user only asked for topic regrouping or renumbering.
 - Create a safety branch or tag before any history rewrite, with a name that
   identifies the operation, for example
-  `backup/<branch>-before-upstream-rebase-<date>` or
-  `backup/<branch>-before-topic-regroup-<date>`.
+  `sluongng/backup/<branch>-before-upstream-rebase-<date>` or
+  `sluongng/backup/<branch>-before-topic-regroup-<date>`.
 - Prefer the origin remote's default branch from `refs/remotes/origin/HEAD`.
   Fall back to `origin/main` or `origin/master` only when the default branch is
   not configured.
@@ -88,7 +88,7 @@ local commits.
 4. Create a safety ref.
 
    ```bash
-   git branch backup/<branch>-before-<operation>-$(date +%Y%m%d-%H%M%S)
+   git branch sluongng/backup/<branch>-before-<operation>-$(date +%Y%m%d-%H%M%S)
    ```
 
 5. Rebase with per-commit validation.
@@ -169,8 +169,9 @@ local commits.
 
 10. Final validation and report.
 
-   Run the agreed final validation on the rebased branch tip, even if every
-   commit was validated during rebase. Report exact commands and outcomes.
+   Confirm the final tip has passed the agreed validation. Reuse its passing
+   per-commit result unless final edits, restored local configuration, or a
+   broader required check warrants another run. Report commands and outcomes.
 
 11. Publish a rewritten stack only when asked.
 

@@ -1,6 +1,6 @@
 ---
 name: github-create-pr
-description: "Create GitHub pull requests from the current checkout, including combined commit-and-PR requests. Use when Codex needs to inspect the change, use `draft-commit-message` as the source of truth for the commit message and PR title/body, then push and create a draft or ready PR without a separate wording approval when the user already requested PR creation."
+description: "Create a GitHub draft or ready PR from a local branch, including an authorized commit-and-PR workflow; derive its metadata from the final change."
 ---
 
 # GitHub Create PR
@@ -31,13 +31,15 @@ for validation in the body.
 
 1. Confirm the PR scope.
    - Run `git status -sb` and inspect the commit range that will be sent.
-   - If there are unrelated or ambiguous uncommitted changes, stop and clarify
-     scope.
+   - Preserve unrelated uncommitted changes and select only the intended task
+     diff. Ask about scope only when the intended change cannot be separated
+     confidently.
    - If the user requested a combined commit-and-PR workflow and the intended
      uncommitted change is coherent, use `$draft-commit-message` for the commit
      subject and body, create the commit, and continue.
-   - If there is no coherent commit range and the user did not authorize a
-     commit workflow, stop and ask the user to finish the commit first.
+   - A request to create a PR for a clear uncommitted task change includes
+     preparing its commit. If the intended change itself is unclear, finish
+     independent preparation and ask for the missing scope.
    - Check repo-local guidance such as `AGENTS.md` before choosing branch,
      remote, or base branch behavior.
 

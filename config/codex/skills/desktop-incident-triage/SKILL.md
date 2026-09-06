@@ -1,6 +1,6 @@
 ---
 name: desktop-incident-triage
-description: Triage this Framework Desktop's Hyprland, CachyOS, SDDM login, Ghostty/Chrome focus, workspace routing, Bluetooth, AirPods, PipeWire, media controls, and local desktop service incidents with live-state checks before changing config.
+description: "Diagnose Framework Desktop incidents involving CachyOS, Hyprland, login, window focus, Bluetooth audio, or local services from live state."
 ---
 
 # Desktop Incident Triage

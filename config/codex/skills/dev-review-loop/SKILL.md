@@ -1,6 +1,6 @@
 ---
 name: dev-review-loop
-description: Iteratively finish an active development task by implementing in the main thread, launching clean-room subagent code reviews of the total diff against the target branch, fixing all valid findings, repeating until no findings remain, then committing with draft-commit-message. Use when the user asks Codex to finish a coding task end-to-end with independent review loops before commit.
+description: "Finish a coding task with independent subagent review and fixes when the user requests review loops before committing."
 ---
 
 # Dev Review Loop
@@ -59,8 +59,8 @@ Use the correct diff form for the current state:
 Read the relevant code before editing. Make the narrowest change that completes
 the user request. Follow local style and existing abstractions.
 
-Run focused validation after implementation. Prefer the smallest representative
-test first, then broaden when the touched behavior is shared or user-facing.
+Run validation appropriate to the affected behavior and required repository
+checks. Broaden testing when a failure or unresolved risk warrants it.
 
 3. Launch a clean-room review subagent.
 
@@ -115,8 +115,10 @@ git diff --stat
 git diff --check
 ```
 
-Rerun the strongest practical validation command used during the task. Separate
-smoke checks from representative validation in the final report.
+Reuse passing validation on the final code state. Rerun affected checks after
+changes or when an unresolved concern warrants it; an unchanged tree does not
+need another full run merely because review finished. Separate smoke checks
+from representative validation in the final report.
 
 6. Commit with draft-commit-message.
 

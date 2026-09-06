@@ -1,6 +1,6 @@
 ---
 name: investigate-system-performance
-description: Investigate and improve software-system performance with cost estimation, representative measurement, profiling, controlled A/B experiments, and evidence-ranked changes. Use when Codex needs to diagnose or optimize latency, throughput, CPU, memory, allocations or GC, I/O, contention, cache behavior, code size, or scalability in a binary, library, service, build, or data pipeline; explain a performance regression; design or review benchmarks; interpret a flat profile; or validate a proposed optimization.
+description: "Diagnose performance regressions, interpret profiles, review benchmarks, or validate latency, throughput, and resource optimizations with representative measurements."
 ---
 
 # Investigate System Performance
@@ -35,6 +35,11 @@ a microbenchmark.
   or downstream service.
 
 ## Workflow
+
+Match the depth to the request. Interpreting an existing profile or reviewing a
+benchmark does not automatically require implementation, a new benchmark suite,
+or production experiments. Use the stages below that resolve the question;
+collect more evidence when it could change the conclusion.
 
 ### 1. Frame the question
 

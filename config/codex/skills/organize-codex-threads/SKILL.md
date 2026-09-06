@@ -1,6 +1,6 @@
 ---
 name: organize-codex-threads
-description: Rename and reorganize saved Codex threads from their recent user prompts and final model responses. Use when Codex needs to review recent thread history, generate concise resume-picker titles, apply thread names through app-server, or run the nightly thread-organizer automation while excluding unattended automation and subagent threads.
+description: "Rename saved Codex threads from recent dialogue using the guarded thread-organizer helper; use for requested library cleanup or the nightly organizer."
 ---
 
 # Organize Codex Threads
