@@ -223,6 +223,40 @@ EOF
   rm -rf "${probe_home}"
 }
 
+detect_context_management_table() {
+  # Older runtimes can support other nested feature tables while still parsing
+  # context_management as an unknown boolean flag. Probe it independently.
+  # Force false when sharing this config with a less capable App runtime.
+  local override="${CODEX_CONTEXT_MANAGEMENT_TABLE:-}"
+  local probe_home=""
+  case "${override}" in
+    true | false)
+      printf '%s\n' "${override}"
+      return 0
+      ;;
+    "") ;;
+    *)
+      echo "CODEX_CONTEXT_MANAGEMENT_TABLE must be true or false" >&2
+      return 1
+      ;;
+  esac
+  if ! command -v codex >/dev/null 2>&1; then
+    printf '%s\n' false
+    return 0
+  fi
+  probe_home="$(mktemp -d "${TMPDIR:-/tmp}/codex-context-probe.XXXXXX")"
+  cat > "${probe_home}/config.toml" <<'EOF'
+[features.context_management]
+experimental_mode = true
+EOF
+  if CODEX_HOME="${probe_home}" codex features list >/dev/null 2>&1; then
+    printf '%s\n' true
+  else
+    printf '%s\n' false
+  fi
+  rm -rf "${probe_home}"
+}
+
 main() {
   local relative_path=""
   local skill_name=""
@@ -233,6 +267,7 @@ main() {
   local runtime_local_path="${TARGET_DIR}/runtime.local.toml"
   local platform=""
   local nested_feature_tables=""
+  local context_management_table=""
 
   if [ ! -d "${SOURCE_DIR}" ]; then
     echo "Missing source directory: ${SOURCE_DIR}" >&2
@@ -255,6 +290,7 @@ main() {
       ;;
   esac
   nested_feature_tables="$(detect_nested_feature_tables)"
+  context_management_table="$(detect_context_management_table)"
 
   python3 "${RENDER_CONFIG_SCRIPT}" \
     --shared "${SOURCE_DIR}/config.toml" \
@@ -264,11 +300,13 @@ main() {
     --target "${target_config_path}" \
     --platform "${platform}" \
     --nested-feature-tables "${nested_feature_tables}" \
+    --context-management-table "${context_management_table}" \
     --marketplace-name "${MARKETPLACE_NAME}" \
     --marketplace-source "${SOURCE_DIR}"
 
   echo "Codex packaged zsh fork backends disabled (${platform})"
   echo "Codex nested feature tables supported: ${nested_feature_tables}"
+  echo "Codex context management table supported: ${context_management_table}"
 
   if [ -f "${SOURCE_DIR}/AGENTS.md" ]; then
     ensure_symlink "${SOURCE_DIR}/AGENTS.md" "${TARGET_DIR}/AGENTS.md"
@@ -279,6 +317,13 @@ main() {
       relative_path="${source_path#"${SOURCE_DIR}/"}"
       ensure_regular_file "${source_path}" "${TARGET_DIR}/${relative_path}"
     done < <(find "${SOURCE_DIR}/agents" -type f | sort)
+  fi
+
+  # Current CLI profiles are full config layers next to the generated config.
+  if [ -d "${SOURCE_DIR}/profiles" ]; then
+    while IFS= read -r source_path; do
+      ensure_regular_file "${source_path}" "${TARGET_DIR}/$(basename "${source_path}")"
+    done < <(find "${SOURCE_DIR}/profiles" -maxdepth 1 -type f -name '*.config.toml' | sort)
   fi
 
   while IFS= read -r source_path; do

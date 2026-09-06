@@ -317,9 +317,12 @@ def build_rendered_config(
     nested_feature_tables: bool,
     marketplace_name: str,
     marketplace_source: Path,
+    context_management_table: bool = False,
 ) -> str:
     shared_text = read_text(shared)
     reject_projects_table(shared, shared_text)
+    if not context_management_table:
+        shared_text = remove_table(shared_text, "[features.context_management]")
     if not nested_feature_tables:
         shared_text = remove_table(shared_text, "[features.current_time_reminder]")
         shared_text = remove_table(shared_text, "[features.multi_agent_v2]")
@@ -417,6 +420,10 @@ def main() -> int:
     parser.add_argument(
         "--nested-feature-tables", required=True, choices=("true", "false")
     )
+    parser.add_argument(
+        "--context-management-table", choices=("true", "false"), default="false",
+        help="Retain experimental context settings only after a separate runtime capability probe.",
+    )
     parser.add_argument("--marketplace-name", required=True)
     parser.add_argument("--marketplace-source", required=True, type=Path)
     args = parser.parse_args()
@@ -434,6 +441,7 @@ def main() -> int:
         runtime=args.runtime,
         platform=args.platform,
         nested_feature_tables=args.nested_feature_tables == "true",
+        context_management_table=args.context_management_table == "true",
         marketplace_name=args.marketplace_name,
         marketplace_source=args.marketplace_source,
     )

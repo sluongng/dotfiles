@@ -16,6 +16,7 @@ The deploy script manages these paths under `${CODEX_HOME:-~/.codex}`:
   `config.toml` from the tracked shared config plus local overlays
 - tracked global `AGENTS.md`
 - tracked files under `agents/`
+- tracked `profiles/*.config.toml` as named profile files beside `config.toml`
 - tracked custom skill directories under `skills/`
 - tracked local plugins under `plugins/`, synced into Codex's plugin cache by
   plugin manifest name and version
@@ -46,6 +47,8 @@ The rendered config is platform-aware:
   Desktop share config but may ship different resource layouts;
 - it probes whether the installed CLI accepts nested feature configuration and
   emits the compatible legacy boolean form for older Codex releases;
+- it probes experimental context-management support separately; set
+  `CODEX_CONTEXT_MANAGEMENT_TABLE=false` when sharing config with an older App;
 - it disables the Linux Chrome Bridge-only `chatgpt-threads` plugin on macOS;
 - it generates the tracked marketplace source from this checkout when a
   machine-local marketplace entry is not already present;
@@ -61,9 +64,9 @@ config in this directory, or use one of these machine-local files instead:
 
 - `${CODEX_HOME:-~/.codex}/config.local.toml` for additive local-only settings
 - `${CODEX_HOME:-~/.codex}/projects.local.toml` for local trust entries (`[projects]`)
-- `${CODEX_HOME:-~/.codex}/runtime.local.toml` for App-managed desktop,
-  bundled plugin, `node_repl`, and trusted Browser shell-environment state;
-  the deploy script updates this file automatically
+- `${CODEX_HOME:-~/.codex}/runtime.local.toml` for App-managed desktop, hook
+  trust, bundled plugin, `node_repl`, and trusted Browser shell-environment
+  state; the deploy script updates this file automatically
 
 These files live outside the checkout. The matching `*.local.toml` names are
 also ignored under this directory so a copied local overlay cannot be added by

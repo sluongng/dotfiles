@@ -1,0 +1,4 @@
+# Compare ordinary tasks with the default Astra/high workflow.
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+service_tier = "default"

@@ -1,0 +1,10 @@
+# Fresh-task comparison or rollback to ordinary summary compaction.
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+service_tier = "default"
+
+[features.context_management]
+experimental_mode = false
+
+[features.token_budget]
+enabled = false

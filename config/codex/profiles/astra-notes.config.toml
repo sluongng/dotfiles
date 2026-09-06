@@ -1,0 +1,8 @@
+# Explicit notes profile: codex --profile astra-notes (also the shared default).
+# Mixed-model delegation is inherited; leave token-budget defaults intact.
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+service_tier = "default"
+
+[features.context_management]
+experimental_mode = true

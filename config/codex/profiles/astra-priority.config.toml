@@ -1,0 +1,5 @@
+# Explicit opt-in: the model catalog advertises faster service at higher usage.
+# Scheduled jobs continue to use their own default-tier configuration.
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+service_tier = "priority"

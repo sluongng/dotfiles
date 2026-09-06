@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from pathlib import Path
+import os
 import subprocess
 import sys
 import tempfile
@@ -11,14 +12,44 @@ import unittest
 ROOT = Path(__file__).resolve().parents[2]
 RENDERER = ROOT / "automation/codex/render-config.py"
 SHARED = ROOT / "config/codex/config.toml"
+INSTALLER = ROOT / "automation/codex/install-codex.sh"
 
 
 class RenderConfigTest(unittest.TestCase):
+    def test_installer_probes_context_support_independently(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            binary = Path(temp_dir) / "codex"
+            binary.write_text('''#!/bin/sh
+case "$(cat "$CODEX_HOME/config.toml")" in
+  *context_management*) [ "$CODEX_TEST_CONTEXT_SUPPORT" = true ] ;;
+  *) exit 0 ;;
+esac
+''')
+            binary.chmod(0o755)
+            for supported, override, expected in (
+                ("false", "", ["true", "false"]),
+                ("true", "", ["true", "true"]),
+                ("true", "false", ["true", "false"]),
+            ):
+                with self.subTest(supported=supported, override=override):
+                    env = os.environ.copy()
+                    env["PATH"] = str(binary.parent) + os.pathsep + env["PATH"]
+                    env["CODEX_TEST_CONTEXT_SUPPORT"] = supported
+                    env["CODEX_NESTED_FEATURE_TABLES"] = ""
+                    env["CODEX_CONTEXT_MANAGEMENT_TABLE"] = override
+                    result = subprocess.run(
+                        ["bash", "-c", 'source "$1"; detect_nested_feature_tables; detect_context_management_table',
+                         "test-config-probes", str(INSTALLER)],
+                        env=env, check=True, capture_output=True, text=True,
+                    )
+                    self.assertEqual(result.stdout.splitlines(), expected)
+
     def render(
         self,
         *,
         platform: str,
         nested_features: bool,
+        context_management: bool = True,
         local_text: str = "",
         runtime_text: str = "",
         python_executable: str = sys.executable,
@@ -50,6 +81,8 @@ class RenderConfigTest(unittest.TestCase):
                     platform,
                     "--nested-feature-tables",
                     str(nested_features).lower(),
+                    "--context-management-table",
+                    str(context_management).lower(),
                     "--marketplace-name",
                     "sluongng-dotfiles",
                     "--marketplace-source",
@@ -264,6 +297,7 @@ trusted_hash = "sha256:test"
         config = self.render(
             platform="Darwin",
             nested_features=False,
+            context_management=False,
             local_text='''
 [plugins."buildbuddy@sluongng-dotfiles"]
 enabled = true
@@ -275,6 +309,7 @@ enabled = true
         self.assertTrue(config["features"]["multi_agent_v2"])
         self.assertTrue(config["features"]["current_time_reminder"])
         self.assertNotIn("agents", config)
+        self.assertNotIn("context_management", config["features"])
         self.assertFalse(
             config["plugins"]["chatgpt-threads@sluongng-dotfiles"]["enabled"]
         )
@@ -287,6 +322,7 @@ enabled = true
         self.assertFalse(config["features"]["shell_zsh_fork"])
         self.assertTrue(config["features"]["multi_agent_v2"]["enabled"])
         self.assertTrue(config["features"]["current_time_reminder"]["enabled"])
+        self.assertTrue(config["features"]["context_management"]["experimental_mode"])
         self.assertEqual(config["agents"]["max_depth"], 2)
         self.assertTrue(
             config["plugins"]["chatgpt-threads@sluongng-dotfiles"]["enabled"]
@@ -295,6 +331,16 @@ enabled = true
             config["marketplaces"]["sluongng-dotfiles"]["source_type"],
             "local",
         )
+
+    def test_context_management_support_is_independent_of_other_nested_features(self) -> None:
+        for platform in ("Darwin", "Linux"):
+            with self.subTest(platform=platform):
+                config = self.render(
+                    platform=platform, nested_features=True, context_management=False
+                )
+                self.assertNotIn("context_management", config["features"])
+                self.assertTrue(config["features"]["multi_agent_v2"]["enabled"])
+                self.assertTrue(config["features"]["current_time_reminder"]["enabled"])
 
     @unittest.skipUnless(Path("/usr/bin/python3").is_file(), "no system Python")
     def test_stock_macos_python_can_render_without_tomllib(self) -> None:
