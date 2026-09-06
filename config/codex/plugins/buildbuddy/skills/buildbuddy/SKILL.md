@@ -1,6 +1,6 @@
 ---
 name: buildbuddy
-description: Route public BuildBuddy troubleshooting, source research, invocation comparison, action reproduction, log-root-cause, flaky-test, and usage-analysis requests to the focused BuildBuddy skills bundled in this plugin.
+description: Route general BuildBuddy troubleshooting requests to the focused skills in this plugin.
 ---
 
 # BuildBuddy

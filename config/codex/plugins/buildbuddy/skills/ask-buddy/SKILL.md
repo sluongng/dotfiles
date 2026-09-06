@@ -1,6 +1,6 @@
 ---
 name: ask-buddy
-description: Research and troubleshoot BuildBuddy+Bazel issues by inspecting local clones or source history for bazelbuild/bazel, buildbuddy-io/buildbuddy, buildbuddy-io/buildbuddy-toolchains, and buildbuddy-io/buildbuddy-helm. Use when Codex needs source-backed answers for BuildBuddy behavior that spans Bazel client versions, remote cache or execution, BES, executor/toolchain images, Helm chart deployment settings, Bazelisk version drift, regressions, or customer-facing Bazel+BuildBuddy failures.
+description: Answer BuildBuddy and Bazel behavior or regression questions from source across Bazel, BuildBuddy, toolchains, and Helm.
 ---
 
 # Ask Buddy
@@ -52,13 +52,11 @@ The helper picks `<research-root>` from `--repo-root`,
 Runtime output may contain machine-local paths; do not copy those paths into
 reusable skill instructions or examples.
 
-These repos are large. If a needed repo is missing, ask the user to choose one
-of:
-
-1. an existing local clone path
-2. a parent directory where Codex may clone the repo
-
-Do not silently clone a missing large repo.
+If a relevant clone is missing, use a targeted source fetch or shallow/sparse
+checkout when it can answer the question. Choose an isolated scratch location
+within the task's authorization. Ask for a clone path only when local context
+is necessary and cannot be found; avoid downloading entire large histories
+without a reason.
 
 ## Version And Ref Selection
 
@@ -102,7 +100,7 @@ git -C "$repo" worktree add --detach "$worktree" "${ref}^{commit}"
 ```
 
 4. If the repo is dirty and worktrees are not suitable, clone locally with
-   `--no-hardlinks` into a user-approved parent directory and research there.
+   `--no-hardlinks` into an isolated scratch directory and research there.
 
 Always record the exact path and commit hash used for each repo:
 

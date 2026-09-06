@@ -1,6 +1,6 @@
 ---
 name: buildbuddy-usage-analysis
-description: Analyze BuildBuddy billing usage and trends data, fetch GetUsage/GetTrend/GetStatHeatmap/GetStatDrilldown/SearchInvocation/SearchExecution data, compare periods, spot anomalies, and recommend cost-saving actions while protecting API keys.
+description: Analyze BuildBuddy billing usage and trends, compare periods, investigate anomalies, and estimate cost savings.
 metadata:
   short-description: Analyze BuildBuddy usage trends and cost anomalies.
 ---
@@ -22,7 +22,7 @@ Fetch usage + trends data from BuildBuddyService, store responses in a temp dir,
 
 - Verify API key presence without printing it: `git config --local buildbuddy.api-key | wc -c`.
 - If `GetUser` returns `NotFound` (common with org API keys), use `GetGroup` with `urlIdentifier` to resolve `GROUP_ID`.
-- `GetUsage` is admin-only. If you get `PermissionDenied`, switch to an org admin key or admin user for the group.
+- `GetUsage` is admin-only. If you get `PermissionDenied`, report the missing access; use another authorized credential only when its group and scope are established.
 
 ## Fetch data (usage + trends)
 
@@ -36,73 +36,9 @@ Notes:
 - Keep windows small (days/weeks) to reduce payload size.
 - JSON fields are lowerCamelCase (e.g., `dailyUsage`, `actionCacheHits`).
 
-## Visual URLs (trends + drilldown)
-
-Use the org base URL from `GetGroup` (field `url`).
-
-Trends charts:
-
-```
-<ORG_URL>/trends/?start=YYYY-MM-DD&end=YYYY-MM-DD#builds
-<ORG_URL>/trends/?start=YYYY-MM-DD&end=YYYY-MM-DD#cache
-<ORG_URL>/trends/?start=YYYY-MM-DD&end=YYYY-MM-DD#cas
-<ORG_URL>/trends/?start=YYYY-MM-DD&end=YYYY-MM-DD#savings
-```
-
-Drilldown view:
-
-```
-<ORG_URL>/trends/?start=YYYY-MM-DD&end=YYYY-MM-DD#drilldown&ddMetric=i<INVOCATION_METRIC_ENUM>
-```
-
-Common query params: `start`, `end`, `days`, `user`, `repo`, `branch`, `commit`, `host`, `command`, `pattern`, `tag`, `status`, `role`.
-
-`ddMetric` format is `i<invocationEnum>` or `e<executionEnum>` (use the stat_filter metric enums from your API docs). Drilldown selections can be pinned via `ddSelection` or `ddZoom` (heatmap selection encoding: `start|end|bucketStart|bucketEnd|eventsSelected`).
-
-Example URLs (agent can adapt as-is):
-
-```
-<ORG_URL>/trends/?start=2026-01-01&end=2026-01-31#builds
-<ORG_URL>/trends/?start=2026-01-01&end=2026-01-31#cache
-<ORG_URL>/trends/?start=2026-01-01&end=2026-01-31#cas
-<ORG_URL>/trends/?start=2026-01-01&end=2026-01-31#savings
-<ORG_URL>/trends/?start=2026-01-01&end=2026-01-31#drilldown&ddMetric=i1
-<ORG_URL>/trends/?start=2026-01-01&end=2026-01-31#drilldown&ddMetric=i4
-<ORG_URL>/trends/?start=2026-01-01&end=2026-01-31#drilldown&ddMetric=e7
-<ORG_URL>/trends/?start=2026-01-01&end=2026-01-31#drilldown&ddMetric=e9
-```
-
-Example ddMetric labels:
-- `i1` = invocation duration (total build duration)
-- `i4` = invocation cache download size (CAS download bytes)
-- `e7` = execution input download size (RBE cache download bytes)
-- `e9` = execution wall time (total execution time)
-
-All ddMetric values (agent can use directly):
-
-Invocation metrics (`i*`)
-- `i1` duration (total build duration)
-- `i2` CAS cache misses
-- `i3` updated at (timestamp)
-- `i4` CAS cache download size (bytes)
-- `i5` CAS cache download speed (bytes/sec)
-- `i6` CAS cache upload size (bytes)
-- `i7` CAS cache upload speed (bytes/sec)
-- `i8` action cache misses
-- `i9` time saved (cached execution time)
-
-Execution metrics (`e*`)
-- `e1` queue time
-- `e2` updated at (timestamp)
-- `e3` input download time
-- `e4` real execution time
-- `e5` output upload time
-- `e6` peak memory
-- `e7` input download size
-- `e8` output upload size
-- `e9` execution wall time
-- `e10` execution CPU nanos
-- `e11` execution average millicores
+For links to the matching trends or drilldown view, load
+[references/requests.md](references/requests.md#ui-quick-links-visuals). It includes URL parameters
+and metric enum mappings; verify those against current source if they differ.
 
 ## Analyze for anomalies
 

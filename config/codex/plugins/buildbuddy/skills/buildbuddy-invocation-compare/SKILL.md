@@ -1,6 +1,6 @@
 ---
 name: buildbuddy-invocation-compare
-description: Compare two BuildBuddy invocation URLs or IDs to troubleshoot hermeticity/reproducibility and cache invalidation. Use when asked to diff canonical Bazel flags, find the first shared action-cache misses, inspect Action/ActionResult differences (inputs/command/env/platform/outputs), or analyze compact execution logs with `bb explain`.
+description: Compare two BuildBuddy invocations to explain cache invalidation, action differences, or non-reproducible outputs.
 metadata:
   short-description: Compare two BuildBuddy invocations and pinpoint cache/action differences.
 ---
@@ -9,7 +9,9 @@ metadata:
 
 ## Overview
 
-Compare two invocations end-to-end to isolate the earliest shared action-cache miss and pinpoint why actions are rebuilt or produce divergent outputs.
+Compare the relevant evidence from two invocations to explain why actions are
+rebuilt or produce divergent outputs. Start from the action or difference the
+user supplied; use the first shared cache miss when no specific action is known.
 
 ## Workflow
 
@@ -68,7 +70,8 @@ Prefer `bb explain` when input roots differ and compact execution logs are avail
 
 - Summarize the root cause clearly and tie it to the earliest shared AC miss.
 - Call out which of the divergence categories applies (inputs, command/outputs, env/platform, output digest).
-- Include a pointer to the compare UI sources: `app/compare/compare_actions.tsx` or `app/compare/compare_invocations.tsx` for deeper inspection.
+- When UI behavior matters, inspect `app/compare/compare_actions.tsx` or
+  `app/compare/compare_invocations.tsx`.
 
 ## Resources
 

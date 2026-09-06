@@ -1,6 +1,6 @@
 ---
 name: buck2-adoption-research
-description: Research and implement Buck2 adoption work that bridges Bazel ecosystem expectations, including rules_go or Gazelle comparisons, BCR strategy, Starlark API compatibility, BuildBuddy Workflow bootstrap, release assets, and fixture-backed validation.
+description: Research or implement Buck2 adoption through Bazel ecosystem compatibility and BuildBuddy workflow integration.
 ---
 
 # Buck2 Adoption Research

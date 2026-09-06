@@ -73,13 +73,17 @@ Use for platforms with many primitives, components, integrations, or use cases.
 
 - Pick one wedge and one primary audience. Mature pages can support multiple roles; early-stage pages need memorability.
 - Replace missing customer proof with credible technical proof: product walkthrough, benchmark, architecture diagram, OSS repo, integration list, founder expertise, waitlist traction, design partners, or one strong customer quote.
-- Put the actual product, not the brand mood, above the fold.
+- Prefer product evidence near the primary message; adapt its placement to the
+  requested layout and the evidence available.
 - Prefer one strong interactive/product visual over a grid of decorative feature cards.
 - Make the action explicit: start building, read docs, install, join waitlist, book demo, or view GitHub.
 - Give B2B evaluators a path without overbuilding enterprise pages: security note, deployment model, integrations, data handling, and team workflow are often enough for early review.
 - Keep claims falsifiable. Say what the product checks, automates, prevents, routes, measures, or deploys.
 
-## Recommended Page Sequence
+## Example Page Sequence
+
+Adapt or omit sections to fit the requested page, real proof, and product. This
+sequence is a starting point, not a required structure.
 
 1. Hero: concrete H1, ICP-aware subcopy, primary CTA, secondary technical CTA, real product visual.
 2. Proof strip: logos, real metric, GitHub stars, OSS/community proof, or "used by" only if true.

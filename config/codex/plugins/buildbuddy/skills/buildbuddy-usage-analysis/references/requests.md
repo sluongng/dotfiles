@@ -163,6 +163,9 @@ Use the org base URL from `GetGroup` (field `url`).
 ```
 
 `ddMetric` uses `i<invocationEnum>` or `e<executionEnum>`; use metric enum values from your API docs.
+Common filters include `user`, `repo`, `branch`, `commit`, `host`, `command`, `pattern`,
+`tag`, `status`, and `role`. Drilldown selections use `ddSelection` or `ddZoom`
+with `start|end|bucketStart|bucketEnd|eventsSelected` encoding.
 
 Example:
 

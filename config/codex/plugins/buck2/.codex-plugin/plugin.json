@@ -1,6 +1,6 @@
 {
   "name": "buck2",
-  "version": "0.1.0+codex.20260713072659",
+  "version": "0.1.0+codex.20260905140758",
   "description": "Local Buck2 fork maintenance and adoption helpers for the BuildBuddy-backed patch stack.",
   "author": {
     "name": "Sluong Ng",

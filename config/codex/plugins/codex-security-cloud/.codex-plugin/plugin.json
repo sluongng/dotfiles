@@ -1,6 +1,6 @@
 {
   "name": "codex-security-cloud",
-  "version": "0.1.0",
+  "version": "0.1.0+codex.20260905140758",
   "description": "Access Codex Security Cloud scan findings from local Codex credentials.",
   "author": {
     "name": "Personal"

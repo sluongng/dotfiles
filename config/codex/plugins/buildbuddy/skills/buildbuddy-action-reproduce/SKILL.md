@@ -1,6 +1,6 @@
 ---
 name: buildbuddy-action-reproduce
-description: Reproduce a specific Bazel remote action from a BuildBuddy invocation and generate a customizable `bb execute` replay command. Use when a user provides an invocation URL/ID and wants to re-run one action, modify command args/env/exec properties, or pin execution to a specific executor using scheduler debug properties.
+description: Generate or run a customizable bb execute replay for a specific remote action in a BuildBuddy invocation.
 ---
 
 # BuildBuddy Action Reproduce
@@ -69,26 +69,18 @@ Do not use `bb execute` alone for action discovery; it needs action details up f
   3. `(target_label, action_mnemonic, primary_output_path)` together
   4. fallback to failed actions or latest worker timestamp
 
-### 3) Ask clarifying questions when action is ambiguous
+### 3) Resolve ambiguity and generate the replay
 
-When no unique action is identified, ask focused questions.
+If the supplied digest, execution ID, or target/output metadata identifies one
+action, proceed. Otherwise narrow the candidates with available evidence and
+ask for the missing action identifier only when ambiguity remains.
 
-If `request_user_input` is available, ask one question at a time and prefer these identifiers:
+Use `scripts/generate_bb_execute.py` to produce the baseline command. The action
+card's "Copy as bb-execute" is an alternative when already available; do not
+require the user to copy it when the helper or API can provide the command.
+If needed, download the Action and Command protos and compose the replay using
+`references/requests.md`.
 
-1. action digest hash
-2. execution ID
-3. target label + mnemonic + primary output path
-
-If `request_user_input` is unavailable in the current mode, ask the same questions directly in chat.
-
-### 4) Build baseline replay command
-
-- Preferred path:
-  - Construct action page URL:
-    - `/invocation/<invocation_id>?executionId=<execution_id>&actionDigest=<hash/size>[&executeResponseDigest=<hash/size>]#action`
-  - Instruct user to click "Copy as bb-execute" in the action card.
-- Fallback path:
-  - Download `Action` and `Command` digests and compose `bb execute` manually.
 - Always preserve:
   - `--remote_executor`
   - `--digest_function`
@@ -100,14 +92,14 @@ If `request_user_input` is unavailable in the current mode, ask the same questio
   - `--output_path=*`
   - command arguments after `--`
 
-### 5) Apply customization safely
+### 4) Apply customization safely
 
 - Command args: edit everything after the `--` separator.
 - Env vars: add/edit/remove `--action_env=NAME=VALUE`.
 - Exec properties: add/edit/remove `--exec_properties=NAME=VALUE`.
 - Keep input root unchanged unless user explicitly wants different inputs.
 
-### 6) Pin to a specific executor
+### 5) Pin to a specific executor
 
 Use this exec property:
 
@@ -121,9 +113,10 @@ Important distinctions:
 - `Execution.executed_action_metadata.worker` may be a host identifier; map it via `GetExecutionNodes` when needed.
 - If no connected executor matches, scheduler returns requested-executor-not-found behavior.
 
-### 7) Verify reproduction
+### 6) Verify an authorized replay
 
-- Include `--invocation_id=<new_uuid>` for the replay run.
+- When the request is for a command, return the command. When replay execution
+  is authorized, include `--invocation_id=<new_uuid>` for the run.
 - Compare outcome to original action:
   - gRPC status
   - exit code

@@ -1,6 +1,6 @@
 ---
 name: codex-security-cloud
-description: Use when the user wants to list, inspect, or import ChatGPT-hosted Codex Security Cloud or Aardvark scan findings and accessible repos using local Codex ChatGPT credentials.
+description: List, inspect, or import ChatGPT-hosted Codex Security Cloud or Aardvark findings using local Codex credentials.
 ---
 
 # Codex Security Cloud

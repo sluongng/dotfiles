@@ -1,6 +1,6 @@
 ---
 name: buildbuddy-log-root-cause
-description: Diagnose BuildBuddy or bb CLI log snippets and customer reports when there is no clean invocation URL, especially FastCDC capability warnings, BES upload failures, confusing invocation IDs, cache proxy behavior, executor UI questions, and source-backed root-cause analysis.
+description: Diagnose BuildBuddy or bb CLI logs and reported symptoms when no specific invocation is available.
 ---
 
 # BuildBuddy Log Root Cause

@@ -187,7 +187,8 @@ ACTION_URL="${ACTION_URL}#action"
 echo "$ACTION_URL"
 ```
 
-Open that URL and use the action card button "Copy as bb-execute".
+The UI copy button is an alternative to the generator above, useful when the
+action card is already open.
 
 ## Map host ID to executor ID for pinning
 
@@ -222,7 +223,7 @@ PIN_EXECUTOR_ID=<EXECUTOR_ID>
 
 ## Optional fallback: download Action and Command protos
 
-Use this when you cannot use the UI copy button.
+Use this when the generator needs adaptation or direct proto inspection is useful.
 
 ```bash
 cas_resource() {

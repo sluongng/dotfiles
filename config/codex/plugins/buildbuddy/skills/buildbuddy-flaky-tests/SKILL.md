@@ -1,6 +1,6 @@
 ---
 name: buildbuddy-flaky-tests
-description: Fetch and triage recent BuildBuddy flaky-test data with BuildBuddyService RPCs. Use when Codex needs to list the latest flaky targets, match the Test Analytics flakes UI, get sample flaky invocations/log pointers, rank recent flakes, check whether a PR is already addressing a flaky target, or start reproducing and fixing the top flaky test.
+description: Find and rank recent BuildBuddy flaky tests, inspect sample failures, and reproduce or fix a selected flake.
 ---
 
 # BuildBuddy Flaky Tests
@@ -66,7 +66,8 @@ automation because it prioritizes the highest-volume flakes.
 4. Check whether an open PR already addresses it before editing:
    search GitHub PRs for the exact label, package path, test suite/class name,
    and distinctive error text from logs.
-5. If no PR is clearly addressing it, reproduce narrowly. Start with the target:
+5. If a fix is requested and no PR is clearly addressing it, reproduce narrowly.
+   Choose the repeat count for the observed flake rate and runtime; for example:
 
 ```bash
 bazel test <label> --config=remote-minimal --nocache_test_results --runs_per_test=30 --test_output=errors
@@ -75,8 +76,9 @@ bazel test <label> --config=remote-minimal --nocache_test_results --runs_per_tes
 Use the sample invocation's branch, commit, flags, and environment if local
 reproduction does not fail.
 
-6. Make the smallest plausible fix, then validate with the target test using a
-   higher repeat count when the failure was reproduced.
+6. Fix the demonstrated cause, then validate with the target test. Choose a
+   repeat count based on the observed failure rate and runtime; increase it
+   only when more runs would materially strengthen the result.
 7. Report the flaky target label, ranking evidence, sample invocation links,
    PR-search result, reproduction result, and validation commands.
 
@@ -84,27 +86,3 @@ reproduction does not fail.
 
 - `scripts/fetch_flaky_tests.py`: fetch, rank, and summarize flaky target stats.
 - `references/requests.md`: RPC field mapping and raw request templates.
-
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
-
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
-
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
-
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
-
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
-
----
-
-**Not every skill requires all three types of resources.**

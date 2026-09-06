@@ -1,6 +1,6 @@
 ---
 name: buck2-stack-maintainer
-description: Maintain the Buck2 BuildBuddy patch stack in a local Buck2 checkout by rebasing fork/stack onto origin/main, publishing bazel-rbe-style merge commits to fork/main with origin/main as first parent, triggering or polling BuildBuddy Workflows, and fixing failed stack commits.
+description: Refresh and validate the Buck2 BuildBuddy fork stack, including its linear stack and public merge branch.
 ---
 
 # Buck2 Stack Maintainer
