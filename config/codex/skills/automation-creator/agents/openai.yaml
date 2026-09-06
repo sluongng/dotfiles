@@ -1,0 +1,4 @@
+interface:
+  display_name: "Automation Creator"
+  short_description: "Manage Codex automations across backends"
+  default_prompt: "Use $automation-creator to create, update, or troubleshoot a Codex automation."

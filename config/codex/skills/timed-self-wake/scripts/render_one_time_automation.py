@@ -21,9 +21,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--on-calendar", required=True, help="Absolute systemd OnCalendar expression.")
     parser.add_argument("--prompt-file", required=True, type=Path, help="Prompt text to embed.")
     parser.add_argument("--out", required=True, type=Path, help="Output TOML path.")
-    parser.add_argument("--model", default="gpt-5.5")
-    parser.add_argument("--reasoning-effort", default="medium")
+    parser.add_argument("--model", help="Pin a model; omitted by default to inherit shared config.")
+    parser.add_argument("--reasoning-effort", help="Pin reasoning effort; otherwise inherit shared config.")
     parser.add_argument("--service-tier", default="")
+    parser.add_argument("--sandbox", choices=("read-only", "workspace-write", "danger-full-access"))
+    parser.add_argument("--approval-policy", choices=("on-request", "never"))
     parser.add_argument("--persistent", action="store_true", help="Set systemd Persistent=true.")
     return parser.parse_args()
 
@@ -45,15 +47,19 @@ def main() -> int:
     codex_lines = [
         "[codex]",
         'bin = "codex"',
-        f"model = {toml_string(args.model)}",
-        f"reasoning_effort = {toml_string(args.reasoning_effort)}",
     ]
+    for key, value in (
+        ("model", args.model),
+        ("reasoning_effort", args.reasoning_effort),
+        ("sandbox", args.sandbox),
+        ("approval_policy", args.approval_policy),
+    ):
+        if value:
+            codex_lines.append(f"{key} = {toml_string(value)}")
     if service_tier:
         codex_lines.append(service_tier)
     codex_lines.extend(
         [
-            'sandbox = "danger-full-access"',
-            'approval_policy = "never"',
             "search = false",
             "skip_git_repo_check = false",
             "dangerous_bypass = false",
@@ -69,6 +75,7 @@ description = {toml_string(args.description)}
 cwd = {toml_string(args.cwd)}
 on_calendar = {toml_string(args.on_calendar)}
 persistent = {str(args.persistent).lower()}
+one_shot = true
 prompt = {toml_string(prompt)}
 status = "ACTIVE"
 execution_environment = "local"
