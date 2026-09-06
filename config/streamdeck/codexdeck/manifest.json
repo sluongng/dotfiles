@@ -1,5 +1,5 @@
 {
-  "version": "0.5.0",
+  "version": "0.6.5",
   "id": "com_sluongng_CodexDeck",
   "name": "Codex Deck",
   "description": "Dynamic Codex, tmux, PipeWire, and AirPods controls.",

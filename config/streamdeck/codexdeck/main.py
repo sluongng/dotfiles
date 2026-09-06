@@ -7,8 +7,12 @@ from .actions import AirPodsAction
 from .actions import AppDictationAction
 from .actions import AppThreadAction
 from .actions import CodexPaneAction
+from .actions import GlobalDictationAction
+from .actions import MediaPlayPauseAction
 from .actions import MicMuteAction
+from .actions import NewCodexAction
 from .actions import OutputMuteAction
+from .actions import SendEnterAction
 from .actions import VolumeDownAction
 from .actions import VolumeUpAction
 from .manager import DeckStateManager
@@ -32,6 +36,10 @@ class CodexDeckPlugin(PluginBase):
             ("CodexPane", "Codex pane", CodexPaneAction),
             ("AppThread", "Recent ChatGPT task", AppThreadAction),
             ("AppDictation", "ChatGPT dictation", AppDictationAction),
+            ("GlobalDictation", "Dictate into tmux input", GlobalDictationAction),
+            ("SendEnter", "Send Enter to focused input", SendEnterAction),
+            ("NewCodex", "Start a Codex task", NewCodexAction),
+            ("MediaPlayPause", "Play or pause media", MediaPlayPauseAction),
             ("VolumeDown", "Volume down", VolumeDownAction),
             ("VolumeUp", "Volume up", VolumeUpAction),
             ("OutputMute", "Mute output", OutputMuteAction),
@@ -51,7 +59,7 @@ class CodexDeckPlugin(PluginBase):
         self.register(
             plugin_name="Codex Deck",
             github_repo="https://github.com/sluongng/dotfiles",
-            plugin_version="0.5.0",
+            plugin_version="0.6.5",
             app_version="1.5.0-beta.15",
         )
         self.manager.start()

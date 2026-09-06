@@ -1,0 +1,48 @@
+engine = "whisper"
+state_file = "auto"
+
+[hotkey]
+# The Stream Deck drives recording through `voxtype record toggle`; no evdev
+# access or synthetic global shortcut is needed.
+enabled = false
+
+[audio]
+device = "default"
+sample_rate = 16000
+max_duration_secs = 120
+
+[audio.feedback]
+enabled = true
+theme = "subtle"
+volume = 0.35
+
+[whisper]
+mode = "local"
+model = "base.en"
+language = "en"
+translate = false
+on_demand_loading = false
+initial_prompt = "Codex, tmux, zsh, GitHub, BuildBuddy, Bazel, Hyprland."
+
+[output]
+mode = "type"
+fallback_to_clipboard = false
+# uinput events reach XWayland games as well as native Wayland apps. Keep
+# wtype as the Unicode-capable fallback. Do not use the clipboard because its
+# history can retain dictated text.
+driver_order = ["ydotool", "wtype"]
+type_delay_ms = 1
+pre_type_delay_ms = 100
+
+[output.notification]
+on_recording_start = true
+on_recording_stop = true
+on_transcription = false
+
+[osd]
+# Stream Deck state plus notifications provide feedback without an extra
+# overlay that could cover the focused application.
+enabled = false
+
+[meeting]
+enabled = false

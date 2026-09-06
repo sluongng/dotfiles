@@ -1,0 +1,34 @@
+[Unit]
+Description=Local system-wide voice-to-text daemon
+Documentation=https://voxtype.io
+PartOf=graphical-session.target
+After=graphical-session.target pipewire.service pipewire-pulse.service
+Wants=ydotool.service
+After=ydotool.service
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/voxtype -q daemon
+Restart=on-failure
+RestartSec=5
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin
+Environment=XDG_RUNTIME_DIR=%t
+Environment=VOXTYPE_ENGINE=whisper
+Environment=RUST_LOG=off
+UnsetEnvironment=SONIOX_API_KEY VOXTYPE_REMOTE_ENDPOINT VOXTYPE_WHISPER_API_KEY
+# Dictation is intentionally offline. Even if a config or inherited
+# environment variable selects a remote backend, this cgroup cannot open an
+# Internet socket.
+IPAddressDeny=any
+RestrictAddressFamilies=AF_UNIX
+# Do not retain transcripts in journald. Voxtype logs completed text at info
+# level by default, so discard both streams and use its state file for health.
+StandardOutput=null
+StandardError=null
+UMask=0077
+LimitCORE=0
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=graphical-session.target

@@ -9,9 +9,13 @@ ASSETS = Path(__file__).with_name("assets")
 
 
 def fitted_label(text, max_chars=16):
-    text = str(text or "")
+    text = " ".join(str(text or "").split())
     if len(text) > max_chars:
-        text = text[: max_chars - 1] + "…"
+        clipped = text[: max_chars - 1].rstrip()
+        boundary = clipped.rfind(" ")
+        if boundary >= max(6, max_chars // 2):
+            clipped = clipped[:boundary]
+        text = clipped.rstrip(" ,.:;-_/") + "…"
     # A 72px key has roughly 64px of usable label width. At the default font,
     # an average glyph is about 0.6em wide, so scale longer names accordingly.
     font_size = max(7, min(14, 100 // max(1, len(text))))
@@ -88,7 +92,7 @@ class CompletionSlotAction(ManagedKeyAction):
             self.set_background_color([3, 8, 14, 255], update=False)
             self._labels()
             return
-        self._media("codex-pulse.gif", fps=8, loop=True, update=False)
+        self._media("codex-done.gif", fps=8, loop=True, update=False)
         self.set_background_color([3, 20, 18, 255], update=False)
         self._labels("DONE", pending.pane_id, pending.project)
 
@@ -107,11 +111,16 @@ class CodexPaneAction(ManagedKeyAction):
             (item for item in snapshot.pending if item.pane_id == pane.pane_id), None
         )
         if pending is not None:
-            self._media("codex-pulse.gif", fps=8, loop=True, update=False)
+            self._media("codex-done.gif", fps=8, loop=True, update=False)
             self.set_background_color([3, 20, 18, 255], update=False)
             self._labels("", pane.project, "DONE")
             return
-        self._media("codex-ready.png", update=False)
+        if pane.busy:
+            self._media("codex-working.gif", fps=8, loop=True, update=False)
+        elif pane.active:
+            self._media("codex-active.gif", fps=4, loop=True, update=False)
+        else:
+            self._media("codex-ready.png", update=False)
         color = [10, 62, 48, 255] if pane.active else [8, 27, 43, 255]
         self.set_background_color(color, update=False)
         self._labels("", pane.project, "WORKING" if pane.busy else "")
@@ -162,6 +171,52 @@ class AppDictationAction(ManagedKeyAction):
         self._media("codex-ready.png", update=False)
         self.set_background_color([13, 62, 52, 255], update=False)
         self._labels("", "DICTATE", "tap to start")
+
+
+class GlobalDictationAction(ManagedKeyAction):
+    kind = "global_dictation"
+
+    def render(self, snapshot):
+        if snapshot.global_dictation_state == "recording":
+            self._media("codex-pulse.gif", fps=8, loop=True, update=False)
+            self.set_background_color([110, 24, 34, 255], update=False)
+            self._labels("MIC", "LISTENING", "tap to stop")
+            return
+        if snapshot.global_dictation_state == "transcribing":
+            self._media("codex-pulse.gif", fps=8, loop=True, update=False)
+            self.set_background_color([66, 38, 12, 255], update=False)
+            self._labels("MIC", "WORKING", "transcribing")
+            return
+        self._media("dictation.png", update=False)
+        self.set_background_color([13, 62, 52, 255], update=False)
+        self._labels("", "DICTATE", "tap start/stop")
+
+
+class SendEnterAction(ManagedKeyAction):
+    kind = "send_enter"
+
+    def render(self, snapshot):
+        self._media("send-enter.png", update=False)
+        self.set_background_color([30, 38, 72, 255], update=False)
+        self._labels("", "ENTER", "send prompt")
+
+
+class NewCodexAction(ManagedKeyAction):
+    kind = "new_codex"
+
+    def render(self, snapshot):
+        self._media("new-codex.png", update=False)
+        self.set_background_color([12, 50, 65, 255], update=False)
+        self._labels("", "NEW", "Codex task")
+
+
+class MediaPlayPauseAction(ManagedKeyAction):
+    kind = "media_play_pause"
+
+    def render(self, snapshot):
+        self._media("media-play-pause.png", update=False)
+        self.set_background_color([13, 62, 52, 255], update=False)
+        self._labels("", "PLAY/PAUSE", "media")
 
 
 class AudioAction(ManagedKeyAction):

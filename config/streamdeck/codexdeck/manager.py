@@ -10,6 +10,7 @@ import sys
 import tempfile
 import threading
 import time
+import tomllib
 import uuid
 import weakref
 from contextlib import closing
@@ -27,8 +28,24 @@ EVENTS_PATH = STATE_DIR / "events.jsonl"
 ACK_PATH = STATE_DIR / "acknowledged.json"
 PANE_RE = re.compile(r"^%\d+$")
 CODEX_STATE_DB = Path.home() / ".codex/state_5.sqlite"
+CODEX_PROJECTS_LOCAL = Path.home() / ".codex/projects.local.toml"
 CODEX_DESKTOP_LOG_ROOT = STATE_DIR.parent / "codex/logs"
 THREAD_REFRESH_SECONDS = 2.0
+VOXTYPE = Path.home() / ".local/bin/voxtype"
+VOXTYPE_STATE_PATH = (
+    Path(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"))
+    / "voxtype/state"
+)
+YDOTOOL_SOCKET = (
+    Path(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"))
+    / ".ydotool_socket"
+)
+DICTATION_RUNTIME_DIR = (
+    Path(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"))
+    / "codex-deck/dictation"
+)
+WINDOW_ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]+$")
+GHOSTTY_CLASS = "com.mitchellh.ghostty"
 ACTIVE_APP_THREAD_RE = re.compile(
     r"thread_stream_view_activity_changed active=true conversationId=([0-9a-f-]{36})"
 )
@@ -69,11 +86,32 @@ class AppActivity:
 
 
 @dataclass(frozen=True)
+class TmuxInputTarget:
+    client_tty: str
+    session: str
+    window: str
+    pane_id: str
+    pane_pid: int
+    command: str
+    foreground_pid: int
+    foreground_start_time: int
+
+
+@dataclass(frozen=True)
+class InputTarget:
+    window_address: str
+    window_class: str
+    window_pid: int
+    tmux: TmuxInputTarget
+
+
+@dataclass(frozen=True)
 class Snapshot:
     pending: tuple[Pending, ...] = ()
     panes: tuple[Pane, ...] = ()
     app_threads: tuple[AppThread, ...] = ()
     dictation_state: str = "idle"
+    global_dictation_state: str = "stopped"
     volume: int | None = None
     output_muted: bool = False
     mic_muted: bool = False
@@ -100,6 +138,516 @@ def _run(argv: list[str], timeout: float = 5.0, check: bool = False) -> str:
         check=check,
     )
     return result.stdout.strip()
+
+
+def _start_detached(argv: list[str]) -> None:
+    subprocess.Popen(
+        argv,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+
+
+def _notify(summary: str, body: str = "") -> None:
+    try:
+        _start_detached(["notify-send", "--app-name=Codex Deck", summary, body])
+    except OSError:
+        pass
+
+
+def local_codex_projects() -> tuple[Path, ...]:
+    try:
+        with CODEX_PROJECTS_LOCAL.open("rb") as source:
+            data = tomllib.load(source)
+    except (OSError, tomllib.TOMLDecodeError):
+        return ()
+    projects = data.get("projects")
+    if not isinstance(projects, dict):
+        return ()
+    return tuple(
+        sorted(
+            (
+                Path(path).expanduser()
+                for path in projects
+                if Path(path).expanduser().is_dir()
+            ),
+            key=lambda path: (path.name.casefold(), str(path).casefold()),
+        )
+    )
+
+
+def choose_codex_project(projects: tuple[Path, ...]) -> Path | None:
+    if not projects:
+        return None
+    home = Path.home()
+    choices = {}
+    for path in projects:
+        try:
+            location = "~/" + str(path.relative_to(home))
+        except ValueError:
+            location = str(path)
+        label = f"{path.name}  -  {location}"
+        choices[label] = path
+    try:
+        result = subprocess.run(
+            ["walker", "--dmenu", "--placeholder", "Start Codex in a project"],
+            input="\n".join(choices) + "\n",
+            text=True,
+            capture_output=True,
+            timeout=300,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return choices.get(result.stdout.strip())
+
+
+def active_tmux_client() -> tuple[str, str] | None:
+    try:
+        output = _run(
+            [
+                "tmux",
+                "list-clients",
+                "-F",
+                "#{client_tty}\t#{client_activity}\t#{session_name}",
+            ],
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    clients = []
+    for line in output.splitlines():
+        fields = line.split("\t")
+        if len(fields) != 3:
+            continue
+        tty, activity, session = fields
+        try:
+            clients.append((int(activity), tty, session))
+        except ValueError:
+            continue
+    if not clients:
+        return None
+    _, tty, session = max(clients)
+    return tty, session
+
+
+def start_new_codex() -> bool:
+    projects = local_codex_projects()
+    if not projects:
+        _notify(
+            "No Codex projects found",
+            "The private projects file has no usable paths.",
+        )
+        return False
+    project = choose_codex_project(projects)
+    if project is None:
+        return False
+    client = active_tmux_client()
+    if client is None:
+        _notify("No attached tmux session", "Open tmux before starting a Codex task.")
+        return False
+    client_tty, session = client
+    try:
+        created = _run(
+            [
+                "tmux",
+                "new-window",
+                "-d",
+                "-P",
+                "-F",
+                "#{session_name}\t#{window_index}\t#{pane_id}",
+                "-t",
+                f"{session}:",
+                "-c",
+                str(project),
+                "/usr/bin/zsh",
+            ],
+            timeout=10,
+            check=True,
+        )
+        fields = created.split("\t")
+        if len(fields) != 3 or PANE_RE.fullmatch(fields[2]) is None:
+            raise RuntimeError(f"tmux returned an invalid new-window target: {created!r}")
+        created_session, window, pane_id = fields
+        if created_session != session:
+            raise RuntimeError("tmux created the new window in an unexpected session")
+        _run(["tmux", "send-keys", "-t", pane_id, "-l", "codex"], check=True)
+        _run(["tmux", "send-keys", "-t", pane_id, "Enter"], check=True)
+        _run(["tmux", "select-window", "-t", f"{session}:{window}"], check=True)
+        _run(["tmux", "select-pane", "-t", pane_id], check=True)
+        _run(["tmux", "switch-client", "-c", client_tty, "-t", session], check=True)
+        _run(
+            [
+                "hyprctl",
+                "eval",
+                'return hl.dispatch(hl.dsp.focus({window = "class:^(com.mitchellh.ghostty)$"}))',
+            ],
+            timeout=3,
+            check=True,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        log.error(f"Failed to start Codex in {project.name}: {error}")
+        _notify("Could not start Codex", "The new tmux window could not be prepared.")
+        return False
+    except RuntimeError as error:
+        log.error(f"Failed to start Codex in {project.name}: {error}")
+        _notify("Could not start Codex", "tmux returned an unexpected window target.")
+        return False
+    log.info(f"Started and focused a new tmux Codex task in {project.name}")
+    return True
+
+
+def ensure_voxtype_service() -> bool:
+    try:
+        if not VOXTYPE.is_file():
+            _notify(
+                "Dictation is not installed",
+                "Expected the local Voxtype binary at ~/.local/bin/voxtype.",
+            )
+            return False
+        if _run(
+            ["systemctl", "--user", "is-active", "voxtype.service"]
+        ) != "active":
+            _run(
+                ["systemctl", "--user", "start", "voxtype.service"],
+                timeout=10,
+                check=True,
+            )
+        return True
+    except (OSError, subprocess.SubprocessError) as error:
+        log.error(f"Failed to prepare global dictation: {error}")
+        _notify(
+            "Could not start dictation",
+            "The local speech-to-text service is unavailable.",
+        )
+        return False
+
+
+def process_stat(pid: int) -> tuple[int, int]:
+    """Return a process's foreground process group and kernel start time."""
+    fields = Path(f"/proc/{pid}/stat").read_text().rpartition(")")[2].split()
+    return int(fields[5]), int(fields[19])
+
+
+def foreground_process_identity(pane_pid: int) -> tuple[int, int]:
+    foreground_pid, _pane_start_time = process_stat(pane_pid)
+    if foreground_pid <= 1:
+        raise ValueError("the tmux pane has no foreground process")
+    process_group, start_time = process_stat(foreground_pid)
+    if process_group != foreground_pid:
+        raise ValueError("the tmux foreground process group is unstable")
+    return foreground_pid, start_time
+
+
+def active_input_target() -> InputTarget | None:
+    try:
+        window = json.loads(_run(["hyprctl", "-j", "activewindow"], check=True))
+        address = window.get("address")
+        window_class = window.get("class")
+        window_pid = window.get("pid")
+        if (
+            WINDOW_ADDRESS_RE.fullmatch(address or "") is None
+            or not isinstance(window_class, str)
+            or not window_class
+            or not isinstance(window_pid, int)
+            or window.get("acceptsInput") is False
+        ):
+            raise ValueError("the active window is not a stable input target")
+        if window_class != GHOSTTY_CLASS:
+            raise ValueError("targeted dictation currently requires a tmux input")
+        output = _run(
+            [
+                "tmux",
+                "list-clients",
+                "-F",
+                "#{client_tty}\t#{client_pid}\t#{client_flags}\t#{session_name}\t#{window_index}\t#{pane_id}\t#{pane_pid}\t#{pane_current_command}",
+            ],
+            check=True,
+        )
+        matches = []
+        for line in output.splitlines():
+            fields = line.split("\t")
+            if len(fields) != 8 or "focused" not in fields[2].split(","):
+                continue
+            if PANE_RE.fullmatch(fields[5]) is None:
+                continue
+            client_pid = int(fields[1])
+            if ancestor_root(client_pid, {window_pid}) != window_pid:
+                continue
+            matches.append(fields)
+        if len(matches) != 1:
+            raise ValueError("could not identify the focused tmux pane in this Ghostty window")
+        fields = matches[0]
+        pane_pid = int(fields[6])
+        foreground_pid, foreground_start_time = foreground_process_identity(pane_pid)
+        tmux_target = TmuxInputTarget(
+            client_tty=fields[0],
+            session=fields[3],
+            window=fields[4],
+            pane_id=fields[5],
+            pane_pid=pane_pid,
+            command=fields[7],
+            foreground_pid=foreground_pid,
+            foreground_start_time=foreground_start_time,
+        )
+        return InputTarget(address, window_class, window_pid, tmux_target)
+    except (
+        OSError,
+        ValueError,
+        json.JSONDecodeError,
+        subprocess.SubprocessError,
+    ) as error:
+        log.error(f"Could not capture the dictation input target: {error}")
+        _notify(
+            "Could not start dictation",
+            "The currently focused input could not be identified safely.",
+        )
+        return None
+
+
+def new_dictation_path() -> Path:
+    DICTATION_RUNTIME_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+    os.chmod(DICTATION_RUNTIME_DIR, 0o700)
+    return DICTATION_RUNTIME_DIR / f"transcript-{uuid.uuid4().hex}.txt"
+
+
+def cleanup_dictation_path(path: Path) -> None:
+    for candidate in (path, Path(str(path) + ".done")):
+        try:
+            candidate.unlink()
+        except FileNotFoundError:
+            pass
+
+
+def cleanup_dictation_buffers() -> None:
+    try:
+        names = _run(["tmux", "list-buffers", "-F", "#{buffer_name}"]).splitlines()
+    except (OSError, subprocess.SubprocessError):
+        return
+    for name in names:
+        if not name.startswith("codex-deck-dictation-"):
+            continue
+        try:
+            _run(["tmux", "delete-buffer", "-b", name], check=True)
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+
+def start_global_dictation(path: Path) -> bool:
+    if not ensure_voxtype_service():
+        return False
+    try:
+        _run(
+            [
+                str(VOXTYPE),
+                "record",
+                "start",
+                f"--file={path}",
+                "--no-auto-submit",
+                "--no-smart-auto-submit",
+            ],
+            timeout=10,
+            check=True,
+        )
+        log.info("Started local system-wide dictation with owned file output")
+        return True
+    except (OSError, subprocess.SubprocessError) as error:
+        log.error(f"Failed to start global dictation: {error}")
+        _notify(
+            "Could not start dictation",
+            "The local speech-to-text service rejected the recording.",
+        )
+        return False
+
+
+def stop_global_dictation(path: Path) -> int:
+    try:
+        result = subprocess.run(
+            [
+                str(VOXTYPE),
+                "record",
+                "stop",
+                "--wait",
+                "--json",
+                "--timeout",
+                "120",
+                "--wait-file",
+                str(path),
+            ],
+            text=True,
+            capture_output=True,
+            timeout=125,
+            check=False,
+        )
+        return result.returncode
+    except (OSError, subprocess.SubprocessError) as error:
+        log.error(f"Failed while waiting for global dictation: {error}")
+        return 1
+
+
+def cancel_global_dictation() -> bool:
+    try:
+        _run([str(VOXTYPE), "record", "cancel"], timeout=10, check=True)
+        return True
+    except (OSError, subprocess.SubprocessError) as error:
+        log.error(f"Failed to cancel global dictation: {error}")
+        return False
+
+
+def read_dictation_transcript(path: Path) -> str:
+    # Voxtype 1.0.1 ensures file output ends in LF, but the .done character
+    # count describes the original transcript. Keep a genuine trailing LF.
+    text = path.read_bytes().decode("utf-8")
+    outcome = json.loads(Path(str(path) + ".done").read_text())
+    if not isinstance(outcome, dict) or outcome.get("status") != "ok":
+        raise ValueError("transcript completion was not successful")
+    chars = outcome.get("chars")
+    if type(chars) is not int or chars < 0:
+        raise ValueError("transcript completion has no valid character count")
+    if len(text) == chars:
+        return text
+    if text.endswith("\n") and len(text) == chars + 1:
+        return text[:-1]
+    raise ValueError("transcript does not match its completion character count")
+
+
+def tmux_target_exists(target: TmuxInputTarget) -> bool:
+    try:
+        location = _run(
+            [
+                "tmux",
+                "display-message",
+                "-p",
+                "-t",
+                target.pane_id,
+                "-F",
+                "#{session_name}\t#{window_index}\t#{pane_id}\t#{pane_pid}\t#{pane_current_command}",
+            ],
+            check=True,
+        )
+        expected = (
+            f"{target.session}\t{target.window}\t{target.pane_id}\t"
+            f"{target.pane_pid}\t{target.command}"
+        )
+        clients = _run(
+            ["tmux", "list-clients", "-F", "#{client_tty}\t#{session_name}"],
+            check=True,
+        ).splitlines()
+        foreground_pid, foreground_start_time = foreground_process_identity(
+            target.pane_pid
+        )
+        return (
+            location == expected
+            and f"{target.client_tty}\t{target.session}" in clients
+            and foreground_pid == target.foreground_pid
+            and foreground_start_time == target.foreground_start_time
+        )
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return False
+
+
+def paste_into_tmux(target: TmuxInputTarget, transcript: str) -> bool:
+    # A raw newline is an Enter key to an application without bracketed paste.
+    # Reject other terminal controls (especially ESC, which could end a bracket)
+    # instead of silently changing the user's text.
+    if (
+        not transcript
+        or PANE_RE.fullmatch(target.pane_id) is None
+        or any(ord(char) < 32 and char not in "\n\t" or ord(char) == 127 for char in transcript)
+        or not tmux_target_exists(target)
+    ):
+        return False
+    buffer_name = f"codex-deck-dictation-{uuid.uuid4().hex}"
+    try:
+        subprocess.run(
+            ["tmux", "load-buffer", "-b", buffer_name, "-"],
+            input=transcript,
+            text=True,
+            capture_output=True,
+            timeout=10,
+            check=True,
+        )
+        # Revalidate after loading the buffer, then check bracketed-paste mode
+        # inside tmux's command queue immediately before pasting. -p alone is
+        # insufficient: tmux omits the brackets when the target has disabled it.
+        if not tmux_target_exists(target):
+            return False
+        needs_brackets = "\n" in transcript or "\t" in transcript
+        condition = "#{bracket_paste_flag}" if needs_brackets else "1"
+        result = _run(
+            [
+                "tmux", "if-shell", "-F", "-t", target.pane_id, condition,
+                f"paste-buffer -d -p -r -b {buffer_name} -t {target.pane_id} ; "
+                "display-message -p codex-deck-pasted",
+                "display-message -p codex-deck-paste-blocked",
+            ],
+            timeout=10,
+            check=True,
+        )
+        return result == "codex-deck-pasted"
+    except (OSError, subprocess.SubprocessError) as error:
+        log.error(f"Failed to paste dictation into {target.pane_id}: {error}")
+        return False
+    finally:
+        try:
+            _run(["tmux", "delete-buffer", "-b", buffer_name])
+        except (OSError, subprocess.SubprocessError):
+            pass
+
+
+def deliver_dictation(target: InputTarget, transcript: str) -> bool:
+    return paste_into_tmux(target.tmux, transcript)
+
+
+def global_dictation_state() -> str:
+    try:
+        state = VOXTYPE_STATE_PATH.read_text().strip()
+    except OSError:
+        return "stopped"
+    return state if state in {"idle", "recording", "transcribing"} else "stopped"
+
+
+def send_enter_to_focused_input() -> bool:
+    """Emit a physical Enter key to whichever application currently has focus."""
+    try:
+        if not YDOTOOL_SOCKET.exists():
+            _run(
+                ["systemctl", "--user", "start", "ydotool.service"],
+                timeout=10,
+                check=True,
+            )
+            for _attempt in range(20):
+                if YDOTOOL_SOCKET.exists():
+                    break
+                time.sleep(0.05)
+        if not YDOTOOL_SOCKET.exists():
+            raise RuntimeError("ydotool socket was not created")
+        _run(["ydotool", "key", "28:1", "28:0"], timeout=3, check=True)
+        log.info("Sent Enter to the focused input")
+        return True
+    except (OSError, RuntimeError, subprocess.SubprocessError) as error:
+        log.error(f"Failed to send Enter to the focused input: {error}")
+        _notify(
+            "Could not send Enter",
+            "The local virtual keyboard service is unavailable.",
+        )
+        return False
+
+
+def control_media(command: str) -> bool:
+    if command != "play-pause":
+        return False
+    try:
+        _run(["playerctl", command], check=True)
+        return True
+    except (OSError, subprocess.SubprocessError) as error:
+        log.debug(f"Could not control media with {command}: {error}")
+        _notify("No controllable media", "No active MPRIS player accepted the command.")
+        return False
 
 
 def send_return_to_window(window_address: str) -> None:
@@ -741,12 +1289,16 @@ class DeckStateManager:
         self._dictation_thread_id = None
         self._dictation_window_address = None
         self._dictation_renderer_window_id = None
+        self._global_dictation_lock = threading.Lock()
+        self._global_dictation_target = None
+        self._global_dictation_path = None
         self.snapshot = Snapshot()
 
     def start(self):
         if self._thread is not None:
             return
         STATE_DIR.mkdir(parents=True, exist_ok=True)
+        cleanup_dictation_buffers()
         self._thread = threading.Thread(target=self._watch, name="codex-deck-state", daemon=True)
         self._thread.start()
 
@@ -765,6 +1317,23 @@ class DeckStateManager:
                 process.wait(timeout=3)
             except (OSError, subprocess.SubprocessError):
                 process.terminate()
+        with self._global_dictation_lock:
+            path = self._global_dictation_path
+            self._global_dictation_target = None
+            self._global_dictation_path = None
+            cancelled = True
+            if path is not None and global_dictation_state() in {
+                "recording",
+                "transcribing",
+            }:
+                cancelled = cancel_global_dictation()
+            if path is not None and cancelled:
+                cleanup_dictation_path(path)
+            elif path is not None:
+                _notify(
+                    "Dictation needs recovery",
+                    f"Shutdown could not cancel dictation; recovery file: {path}",
+                )
 
     def register(self, action):
         with self._lock:
@@ -803,6 +1372,7 @@ class DeckStateManager:
                 panes=panes,
                 app_threads=self._app_threads,
                 dictation_state=self._dictation_state,
+                global_dictation_state=global_dictation_state(),
                 volume=volume,
                 output_muted=output_muted,
                 mic_muted=mic_muted,
@@ -851,6 +1421,14 @@ class DeckStateManager:
                 self._toggle_dictation()
             finally:
                 self._app_interaction_lock.release()
+        elif kind == "global_dictation":
+            self._toggle_global_dictation()
+        elif kind == "send_enter":
+            send_enter_to_focused_input()
+        elif kind == "new_codex":
+            start_new_codex()
+        elif kind == "media_play_pause":
+            control_media("play-pause")
         elif kind == "volume_down":
             _run(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
         elif kind == "volume_up":
@@ -861,6 +1439,91 @@ class DeckStateManager:
             _run(["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"])
         elif kind == "airpods":
             self._toggle_airpods()
+
+    def _toggle_global_dictation(self):
+        if not self._global_dictation_lock.acquire(blocking=False):
+            return
+        try:
+            state = global_dictation_state()
+            path = self._global_dictation_path
+            if path is None:
+                if state == "transcribing":
+                    return
+                if state == "recording":
+                    cancel_global_dictation()
+                    _notify(
+                        "Dictation was cancelled",
+                        "The active recording had no owned input target.",
+                    )
+                    return
+                target = active_input_target()
+                if target is None:
+                    return
+                path = new_dictation_path()
+                if not start_global_dictation(path):
+                    cleanup_dictation_path(path)
+                    return
+                self._global_dictation_target = target
+                self._global_dictation_path = path
+                return
+
+            target = self._global_dictation_target
+            if target is None:
+                if cancel_global_dictation():
+                    cleanup_dictation_path(path)
+                    _notify(
+                        "Dictation was cancelled",
+                        "Its original input target was no longer available.",
+                    )
+                else:
+                    _notify(
+                        "Dictation needs recovery",
+                        f"The recording could not be cancelled; recovery file: {path}",
+                    )
+                self._global_dictation_target = None
+                self._global_dictation_path = None
+                return
+            if state == "transcribing":
+                return
+            done_path = Path(str(path) + ".done")
+            result = 0 if path.is_file() and done_path.is_file() else stop_global_dictation(path)
+            if result == 3:
+                cleanup_dictation_path(path)
+                self._global_dictation_target = None
+                self._global_dictation_path = None
+                return
+            if result != 0:
+                _notify(
+                    "Dictation needs recovery",
+                    f"The transcript was not inserted; recovery file: {path}",
+                )
+                self._global_dictation_target = None
+                self._global_dictation_path = None
+                return
+            try:
+                transcript = read_dictation_transcript(path)
+            except (OSError, ValueError) as error:
+                log.error(f"Could not read the dictation transcript: {error}")
+                _notify(
+                    "Dictation needs recovery",
+                    f"The transcript was not inserted; recovery file: {path}",
+                )
+                self._global_dictation_target = None
+                self._global_dictation_path = None
+                return
+            if not deliver_dictation(target, transcript):
+                _notify(
+                    "Dictation target was lost",
+                    f"Insertion was not confirmed; recovery file: {path}",
+                )
+                self._global_dictation_target = None
+                self._global_dictation_path = None
+                return
+            cleanup_dictation_path(path)
+            self._global_dictation_target = None
+            self._global_dictation_path = None
+        finally:
+            self._global_dictation_lock.release()
 
     def _toggle_dictation(self):
         with self._dictation_lock:

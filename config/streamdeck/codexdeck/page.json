@@ -1,0 +1,19 @@
+{
+  "keys": {
+    "0x0": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 0}}]} }},
+    "1x0": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 1}}]} }},
+    "2x0": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 2}}]} }},
+    "3x0": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 3}}]} }},
+    "4x0": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 4}}]} }},
+    "0x1": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 5}}]} }},
+    "1x1": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 6}}]} }},
+    "2x1": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 7}}]} }},
+    "3x1": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 8}}]} }},
+    "4x1": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::CodexPane", "settings": {"slot": 9}}]} }},
+    "0x2": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::GlobalDictation", "settings": {}}]} }},
+    "1x2": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::SendEnter", "settings": {}}]} }},
+    "2x2": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::NewCodex", "settings": {}}]} }},
+    "3x2": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::MediaPlayPause", "settings": {}}]} }},
+    "4x2": {"states": {"0": {"actions": [{"id": "com_sluongng_CodexDeck::AirPods", "settings": {}}]} }}
+  }
+}

@@ -4,24 +4,64 @@ StreamController 1.5 plugin for the 15-key Stream Deck MK.2.
 
 Layout:
 
-- Top row: a deterministic list of up to five Codex tmux panes, ordered by tmux
-  session, window, and pane index. Focus and completion state never reorder the
-  keys. Unacknowledged completed turns pulse in place until pressed; pressing
-  any key selects its exact tmux pane and focuses Ghostty.
+- Top two rows: a deterministic list of up to ten Codex tmux panes, ordered by
+  tmux session, window, and pane index. Focus and completion state never reorder
+  the keys. Unacknowledged completed turns pulse in place until pressed;
+  pressing any key selects its exact tmux pane and focuses Ghostty.
   `WORKING` reflects a real Codex active-turn inhibitor; the selected tmux pane
-  is indicated by color instead of a potentially misleading text status.
-- Middle row: the four most recently active ChatGPT tasks, ordered
-  oldest-to-newest from left to right. New activity rotates the four-key window;
-  each key remains bound to the exact task it rendered even if the database
-  updates before the press is handled. Task keys show the project name on top,
-  their plain slot number in the center, and the task title at the bottom. The
-  fifth key toggles ChatGPT dictation:
-  first press starts recording, and the next press stops, transcribes, and
-  submits the composer. Recording can continue while another app is focused;
-  submission restores the originating ChatGPT task instead of cancelling when
-  the foreground app or visible task changes.
-- Bottom row: volume down/up, output mute, microphone mute, and a manual
-  AirPods connect/disconnect toggle.
+  is indicated by color instead of a potentially misleading text status. The
+  selected idle pane has a slow breathing edge-light, working panes use a
+  faster circulating highlight, and completed turns use a distinct double
+  pulse. Empty and inactive panes stay static so the deck does not become a
+  wall of motion. Occupied keys show the thread's current working-directory
+  name in the center.
+- Bottom row:
+  1. Toggle local, system-wide dictation. The first press records from the
+     default PipeWire/ALSA microphone; the second press transcribes locally with
+     Whisper and inserts the result into the input where recording began. You
+     can move through other tmux panes or applications while speaking. A tmux
+     origin receives the transcript directly in its exact pane without changing
+     the current desktop focus. Dictation must begin in a Ghostty/tmux input;
+     Chrome and other applications can be used as references while recording,
+     but are not accepted as destinations because Wayland cannot reliably
+     restore an exact child input control. If the original tmux target
+     disappeared or changed commands, the transcript is withheld instead of
+     being typed into the wrong input. The action starts the `voxtype` user
+     service if necessary, reflects recording/transcription state on the key,
+     and never injects Enter, so dictated text remains editable. Multiline or
+     tabbed text requires the original application to have enabled bracketed
+     paste; otherwise the transcript is retained for recovery. Terminal control
+     characters are also withheld instead of being sent as keyboard commands.
+  2. Send a physical Enter key through `ydotool` to the currently focused
+     input. This is deliberately separate from dictation so the transcript can
+     be reviewed or edited before submitting it in Codex CLI/tmux, Chrome, a
+     game, or another application.
+  3. Choose a trusted project from the private
+     `~/.codex/projects.local.toml` file, create a zsh window in the most
+     recently active attached tmux session, start Codex in that directory, and
+     select its exact pane before focusing Ghostty. Project paths are read only
+     at runtime and never copied into this repo.
+  4. Toggle play/pause for the active MPRIS media player.
+  5. Manually connect or disconnect AirPods.
+
+The checked-in `page.json` is the canonical 15-key layout. The live
+StreamController page is
+`~/.var/app/com.core447.StreamController/data/pages/first.json`.
+Run `./install-page.sh` from this directory to back up that live page, install
+the canonical layout, and restart StreamController.
+
+Dictation uses the AVX-512 Voxtype release binary at `~/.local/bin/voxtype`, the
+tracked configuration at `~/.config/voxtype/config.toml`, and the tracked
+`voxtype.service` user unit. `./install-dictation.sh` installs the pinned,
+checksum-verified binary, links the tracked files, downloads the local
+`base.en` model, and enables the daemon. Each Stream Deck recording writes to a
+mode-`0700` runtime directory instead of typing globally. The plugin then pastes
+the finished text directly into the exact captured tmux pane. Clipboard fallback
+is disabled so clipboard history cannot retain dictated text. Successful and
+empty recordings are removed; a transcript is retained only when delivery
+fails, with a local recovery notification. The user service denies all IP
+networking, suppresses process logs, and disables core dumps, keeping normal
+dictation local and ephemeral.
 
 Codex's top-level `notify` command invokes `notify.py` after each completed
 turn. The callback stores only identifiers, cwd, pane ID, and timestamp under

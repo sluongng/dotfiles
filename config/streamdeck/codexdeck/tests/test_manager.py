@@ -17,6 +17,25 @@ SPEC.loader.exec_module(manager)
 
 
 class ManagerTest(unittest.TestCase):
+    def test_transcript_framing_preserves_original_trailing_newlines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "transcript.txt"
+            for text in ("hello café", "hello café\n", "first\nsecond\n\n"):
+                with self.subTest(text=text):
+                    path.write_text(text if text.endswith("\n") else text + "\n")
+                    Path(str(path) + ".done").write_text(json.dumps({"status": "ok", "chars": len(text)}))
+                    self.assertEqual(manager.read_dictation_transcript(path), text)
+
+    def test_invalid_transcript_completion_is_not_delivered(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "transcript.txt"
+            path.write_text("hello\n")
+            for outcome in ({"status": "ok", "chars": 99}, {"status": "error", "chars": 5}, [], {"status": "ok", "chars": True}):
+                with self.subTest(outcome=outcome):
+                    Path(str(path) + ".done").write_text(json.dumps(outcome))
+                    with self.assertRaises(ValueError):
+                        manager.read_dictation_transcript(path)
+
     def test_parse_volume(self):
         self.assertEqual(manager.parse_volume("Volume: 0.45"), (45, False))
         self.assertEqual(manager.parse_volume("Volume: 0.07 [MUTED]"), (7, True))
@@ -650,6 +669,503 @@ class ManagerTest(unittest.TestCase):
                 mock.call(["wpctl", "set-volume", "-l", "1.0", "@DEFAULT_AUDIO_SINK@", "5%+"]),
                 mock.call(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]),
                 mock.call(["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", "toggle"]),
+            ],
+        )
+
+    def test_bottom_row_actions_use_existing_desktop_tools(self):
+        state = manager.DeckStateManager()
+        with (
+            mock.patch.object(manager, "control_media") as control_media,
+            mock.patch.object(
+                manager, "send_enter_to_focused_input"
+            ) as send_enter,
+            mock.patch.object(manager, "start_new_codex") as start_new_codex,
+            mock.patch.object(state, "_toggle_global_dictation") as toggle_dictation,
+        ):
+            state._handle("global_dictation", 0)
+            state._handle("send_enter", 0)
+            state._handle("new_codex", 0)
+            state._handle("media_play_pause", 0)
+        control_media.assert_called_once_with("play-pause")
+        toggle_dictation.assert_called_once_with()
+        send_enter.assert_called_once_with()
+        start_new_codex.assert_called_once_with()
+
+    def test_local_codex_projects_come_from_private_overlay(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            alpha = root / "alpha"
+            beta = root / "beta"
+            alpha.mkdir()
+            beta.mkdir()
+            config = root / "projects.local.toml"
+            config.write_text(
+                f'[projects."{beta}"]\ntrust_level = "trusted"\n'
+                f'[projects."{alpha}"]\ntrust_level = "trusted"\n'
+                f'[projects."{root / "missing"}"]\ntrust_level = "trusted"\n'
+            )
+            with mock.patch.object(manager, "CODEX_PROJECTS_LOCAL", config):
+                self.assertEqual(manager.local_codex_projects(), (alpha, beta))
+
+    def test_start_new_codex_uses_selected_project_as_an_argument(self):
+        project = Path("/work/project with spaces")
+        with (
+            mock.patch.object(manager, "local_codex_projects", return_value=(project,)),
+            mock.patch.object(manager, "choose_codex_project", return_value=project),
+            mock.patch.object(
+                manager, "active_tmux_client", return_value=("/dev/pts/8", "main")
+            ),
+            mock.patch.object(
+                manager,
+                "_run",
+                side_effect=["main\t3\t%9", "", "", "", "", "", ""],
+            ) as run,
+        ):
+            self.assertTrue(manager.start_new_codex())
+        self.assertEqual(
+            run.call_args_list,
+            [
+                mock.call(
+                    [
+                        "tmux",
+                        "new-window",
+                        "-d",
+                        "-P",
+                        "-F",
+                        "#{session_name}\t#{window_index}\t#{pane_id}",
+                        "-t",
+                        "main:",
+                        "-c",
+                        "/work/project with spaces",
+                        "/usr/bin/zsh",
+                    ],
+                    timeout=10,
+                    check=True,
+                ),
+                mock.call(["tmux", "send-keys", "-t", "%9", "-l", "codex"], check=True),
+                mock.call(["tmux", "send-keys", "-t", "%9", "Enter"], check=True),
+                mock.call(["tmux", "select-window", "-t", "main:3"], check=True),
+                mock.call(["tmux", "select-pane", "-t", "%9"], check=True),
+                mock.call(
+                    ["tmux", "switch-client", "-c", "/dev/pts/8", "-t", "main"],
+                    check=True,
+                ),
+                mock.call(
+                    [
+                        "hyprctl",
+                        "eval",
+                        'return hl.dispatch(hl.dsp.focus({window = "class:^(com.mitchellh.ghostty)$"}))',
+                    ],
+                    timeout=3,
+                    check=True,
+                ),
+            ],
+        )
+
+    def test_start_new_codex_reports_invalid_tmux_target(self):
+        project = Path("/work/project")
+        with (
+            mock.patch.object(manager, "local_codex_projects", return_value=(project,)),
+            mock.patch.object(manager, "choose_codex_project", return_value=project),
+            mock.patch.object(
+                manager, "active_tmux_client", return_value=("/dev/pts/8", "main")
+            ),
+            mock.patch.object(manager, "_run", return_value="not a pane"),
+            mock.patch.object(manager, "_notify") as notify,
+        ):
+            self.assertFalse(manager.start_new_codex())
+        notify.assert_called_once_with(
+            "Could not start Codex",
+            "tmux returned an unexpected window target.",
+        )
+
+    def test_active_tmux_client_uses_most_recent_activity(self):
+        with mock.patch.object(
+            manager,
+            "_run",
+            return_value="/dev/pts/1\t10\told\n/dev/pts/8\t20\tmain",
+        ):
+            self.assertEqual(manager.active_tmux_client(), ("/dev/pts/8", "main"))
+
+    def test_global_dictation_starts_with_owned_file_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            voxtype = Path(directory) / "voxtype"
+            voxtype.touch()
+            transcript = Path(directory) / "transcript.txt"
+            with (
+                mock.patch.object(manager, "VOXTYPE", voxtype),
+                mock.patch.object(manager, "ensure_voxtype_service", return_value=True),
+                mock.patch.object(manager, "_run", return_value="") as run,
+            ):
+                self.assertTrue(manager.start_global_dictation(transcript))
+        run.assert_called_once_with(
+            [
+                str(voxtype),
+                "record",
+                "start",
+                f"--file={transcript}",
+                "--no-auto-submit",
+                "--no-smart-auto-submit",
+            ],
+            timeout=10,
+            check=True,
+        )
+
+    def test_global_dictation_service_is_reused_when_active(self):
+        with tempfile.TemporaryDirectory() as directory:
+            voxtype = Path(directory) / "voxtype"
+            voxtype.touch()
+            with (
+                mock.patch.object(manager, "VOXTYPE", voxtype),
+                mock.patch.object(manager, "_run", side_effect=["active", ""]) as run,
+            ):
+                self.assertTrue(manager.ensure_voxtype_service())
+        run.assert_called_once_with(
+            ["systemctl", "--user", "is-active", "voxtype.service"]
+        )
+
+    def test_global_dictation_starts_voxtype_service_when_inactive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            voxtype = Path(directory) / "voxtype"
+            voxtype.touch()
+            with (
+                mock.patch.object(manager, "VOXTYPE", voxtype),
+                mock.patch.object(
+                    manager, "_run", side_effect=["inactive", ""]
+                ) as mocked_run,
+            ):
+                self.assertTrue(manager.ensure_voxtype_service())
+        self.assertEqual(
+            mocked_run.call_args_list,
+            [
+                mock.call(
+                    ["systemctl", "--user", "is-active", "voxtype.service"]
+                ),
+                mock.call(
+                    ["systemctl", "--user", "start", "voxtype.service"],
+                    timeout=10,
+                    check=True,
+                ),
+            ],
+        )
+
+    def test_global_dictation_reports_missing_local_binary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "voxtype"
+            with (
+                mock.patch.object(manager, "VOXTYPE", missing),
+                mock.patch.object(manager, "_run") as run,
+                mock.patch.object(manager, "_notify") as notify,
+            ):
+                self.assertFalse(manager.ensure_voxtype_service())
+        run.assert_not_called()
+        notify.assert_called_once_with(
+            "Dictation is not installed",
+            "Expected the local Voxtype binary at ~/.local/bin/voxtype.",
+        )
+
+    def test_capture_ghostty_input_includes_exact_focused_tmux_pane(self):
+        window = {
+            "address": "0xabc",
+            "class": manager.GHOSTTY_CLASS,
+            "pid": 123,
+            "acceptsInput": True,
+        }
+        tmux = "/dev/pts/8\t789\tattached,focused,UTF-8\tmain\t3\t%9\t456\tcodex"
+        with (
+            mock.patch.object(manager, "_run", side_effect=[json.dumps(window), tmux]),
+            mock.patch.object(manager, "ancestor_root", return_value=123) as ancestor,
+            mock.patch.object(
+                manager, "foreground_process_identity", return_value=(900, 12345)
+            ),
+        ):
+            target = manager.active_input_target()
+        ancestor.assert_called_once_with(789, {123})
+        self.assertEqual(
+            target,
+            manager.InputTarget(
+                "0xabc",
+                manager.GHOSTTY_CLASS,
+                123,
+                manager.TmuxInputTarget(
+                    "/dev/pts/8", "main", "3", "%9", 456, "codex", 900, 12345
+                ),
+            ),
+        )
+
+    def test_capture_rejects_non_tmux_destinations(self):
+        window = {
+            "address": "0xabc",
+            "class": "google-chrome",
+            "pid": 123,
+            "acceptsInput": True,
+        }
+        with (
+            mock.patch.object(manager, "_run", return_value=json.dumps(window)),
+            mock.patch.object(manager, "_notify") as notify,
+        ):
+            self.assertIsNone(manager.active_input_target())
+        notify.assert_called_once_with(
+            "Could not start dictation",
+            "The currently focused input could not be identified safely.",
+        )
+
+    def test_foreground_process_identity_uses_pid_and_kernel_start_time(self):
+        with mock.patch.object(
+            manager,
+            "process_stat",
+            side_effect=[(900, 111), (900, 12345)],
+        ) as process_stat:
+            self.assertEqual(manager.foreground_process_identity(456), (900, 12345))
+        self.assertEqual(
+            process_stat.call_args_list,
+            [mock.call(456), mock.call(900)],
+        )
+
+    def test_tmux_target_rejects_restarted_foreground_process(self):
+        target = manager.TmuxInputTarget(
+            "/dev/pts/8", "main", "3", "%9", 456, "codex", 900, 12345
+        )
+        with (
+            mock.patch.object(
+                manager,
+                "_run",
+                side_effect=[
+                    "main\t3\t%9\t456\tcodex",
+                    "/dev/pts/8\tmain",
+                ],
+            ),
+            mock.patch.object(
+                manager, "foreground_process_identity", return_value=(901, 23456)
+            ),
+        ):
+            self.assertFalse(manager.tmux_target_exists(target))
+
+    def test_tmux_delivery_uses_stdin_and_exact_original_pane(self):
+        target = manager.TmuxInputTarget(
+            "/dev/pts/8", "main", "3", "%9", 456, "codex", 900, 12345
+        )
+        with (
+            mock.patch.object(manager, "tmux_target_exists", return_value=True) as exists,
+            mock.patch.object(manager.uuid, "uuid4") as uuid4,
+            mock.patch.object(manager.subprocess, "run") as run,
+            mock.patch.object(manager, "_run", return_value="codex-deck-pasted") as manager_run,
+        ):
+            uuid4.return_value.hex = "abc123"
+            self.assertTrue(manager.paste_into_tmux(target, "private transcript"))
+        run.assert_called_once_with(
+            ["tmux", "load-buffer", "-b", "codex-deck-dictation-abc123", "-"],
+            input="private transcript", text=True, capture_output=True,
+            timeout=10, check=True,
+        )
+        self.assertEqual(exists.call_count, 2)
+        self.assertEqual(manager_run.call_args_list[0].args[0], [
+            "tmux", "if-shell", "-F", "-t", "%9", "1",
+            "paste-buffer -d -p -r -b codex-deck-dictation-abc123 -t %9 ; display-message -p codex-deck-pasted",
+            "display-message -p codex-deck-paste-blocked",
+        ])
+        self.assertEqual(manager_run.call_args_list[-1].args[0],
+                         ["tmux", "delete-buffer", "-b", "codex-deck-dictation-abc123"])
+
+    def test_dictation_refuses_terminal_controls_without_loading_buffer(self):
+        target = manager.TmuxInputTarget("/dev/pts/8", "main", "3", "%9", 456, "codex", 900, 12345)
+        with mock.patch.object(manager.subprocess, "run") as run:
+            for text in ("first\rsecond", "escape\x1b[201~", "erase\x7f", "null\0"):
+                self.assertFalse(manager.paste_into_tmux(target, text))
+        run.assert_not_called()
+
+    def test_dictation_revalidates_origin_after_loading(self):
+        target = manager.TmuxInputTarget("/dev/pts/8", "main", "3", "%9", 456, "codex", 900, 12345)
+        with (
+            mock.patch.object(manager, "tmux_target_exists", side_effect=[True, False]),
+            mock.patch.object(manager.subprocess, "run"),
+            mock.patch.object(manager, "_run") as run,
+        ):
+            self.assertFalse(manager.paste_into_tmux(target, "hello"))
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[0][1], "delete-buffer")
+
+    def test_global_dictation_restores_saved_target_after_focus_changes(self):
+        state = manager.DeckStateManager()
+        tmux_target = manager.TmuxInputTarget(
+            "/dev/pts/8", "main", "3", "%9", 456, "codex", 900, 12345
+        )
+        target = manager.InputTarget(
+            "0xabc", manager.GHOSTTY_CLASS, 123, tmux_target
+        )
+        transcript = Path("/run/user/1000/codex-deck/dictation/transcript.txt")
+        with (
+            mock.patch.object(manager, "global_dictation_state", return_value="idle"),
+            mock.patch.object(manager, "active_input_target", return_value=target),
+            mock.patch.object(manager, "new_dictation_path", return_value=transcript),
+            mock.patch.object(manager, "start_global_dictation", return_value=True),
+        ):
+            state._toggle_global_dictation()
+        self.assertIs(state._global_dictation_target, target)
+        self.assertEqual(state._global_dictation_path, transcript)
+
+        with (
+            mock.patch.object(manager, "global_dictation_state", return_value="recording"),
+            mock.patch.object(manager, "stop_global_dictation", return_value=0),
+            mock.patch.object(
+                manager, "read_dictation_transcript", return_value="hello"
+            ),
+            mock.patch.object(manager, "deliver_dictation", return_value=True) as deliver,
+            mock.patch.object(manager, "cleanup_dictation_path") as cleanup,
+        ):
+            state._toggle_global_dictation()
+        deliver.assert_called_once_with(target, "hello")
+        cleanup.assert_called_once_with(transcript)
+        self.assertIsNone(state._global_dictation_target)
+        self.assertIsNone(state._global_dictation_path)
+
+    def test_failed_delivery_retains_recovery_file_and_never_retargets(self):
+        state = manager.DeckStateManager()
+        target = manager.InputTarget(
+            "0xabc",
+            manager.GHOSTTY_CLASS,
+            123,
+            manager.TmuxInputTarget(
+                "/dev/pts/8", "main", "3", "%9", 456, "codex", 900, 12345
+            ),
+        )
+        transcript = Path("/run/user/1000/codex-deck/dictation/transcript.txt")
+        state._global_dictation_target = target
+        state._global_dictation_path = transcript
+        with (
+            mock.patch.object(manager, "global_dictation_state", return_value="recording"),
+            mock.patch.object(manager, "stop_global_dictation", return_value=0),
+            mock.patch.object(
+                manager, "read_dictation_transcript", return_value="hello"
+            ),
+            mock.patch.object(manager, "deliver_dictation", return_value=False) as deliver,
+            mock.patch.object(manager, "cleanup_dictation_path") as cleanup,
+            mock.patch.object(manager, "_notify") as notify,
+        ):
+            state._toggle_global_dictation()
+        deliver.assert_called_once_with(target, "hello")
+        cleanup.assert_not_called()
+        notify.assert_called_once_with(
+            "Dictation target was lost",
+            f"Insertion was not confirmed; recovery file: {transcript}",
+        )
+
+    def test_manager_stop_retains_recovery_file_when_cancel_fails(self):
+        state = manager.DeckStateManager()
+        transcript = Path("/run/user/1000/codex-deck/dictation/transcript.txt")
+        state._global_dictation_path = transcript
+        with (
+            mock.patch.object(
+                manager, "global_dictation_state", return_value="transcribing"
+            ),
+            mock.patch.object(
+                manager, "cancel_global_dictation", return_value=False
+            ) as cancel,
+            mock.patch.object(manager, "cleanup_dictation_path") as cleanup,
+            mock.patch.object(manager, "_notify") as notify,
+        ):
+            state.stop()
+        cancel.assert_called_once_with()
+        cleanup.assert_not_called()
+        notify.assert_called_once_with(
+            "Dictation needs recovery",
+            f"Shutdown could not cancel dictation; recovery file: {transcript}",
+        )
+
+    def test_global_dictation_state_reads_voxtype_runtime_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state_path = Path(directory) / "state"
+            with mock.patch.object(manager, "VOXTYPE_STATE_PATH", state_path):
+                self.assertEqual(manager.global_dictation_state(), "stopped")
+                state_path.write_text("recording\n")
+                self.assertEqual(manager.global_dictation_state(), "recording")
+                state_path.write_text("unexpected\n")
+                self.assertEqual(manager.global_dictation_state(), "stopped")
+
+    def test_send_enter_uses_kernel_enter_key_with_existing_ydotool_socket(self):
+        with tempfile.TemporaryDirectory() as directory:
+            socket_path = Path(directory) / ".ydotool_socket"
+            socket_path.touch()
+            with (
+                mock.patch.object(manager, "YDOTOOL_SOCKET", socket_path),
+                mock.patch.object(manager, "_run", return_value="") as run,
+            ):
+                self.assertTrue(manager.send_enter_to_focused_input())
+        run.assert_called_once_with(
+            ["ydotool", "key", "28:1", "28:0"], timeout=3, check=True
+        )
+
+    def test_send_enter_starts_ydotool_service_when_socket_is_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            socket_path = Path(directory) / ".ydotool_socket"
+
+            def run_command(argv, **_kwargs):
+                if argv == ["systemctl", "--user", "start", "ydotool.service"]:
+                    socket_path.touch()
+                return ""
+
+            with (
+                mock.patch.object(manager, "YDOTOOL_SOCKET", socket_path),
+                mock.patch.object(manager, "_run", side_effect=run_command) as run,
+            ):
+                self.assertTrue(manager.send_enter_to_focused_input())
+        self.assertEqual(
+            run.call_args_list,
+            [
+                mock.call(
+                    ["systemctl", "--user", "start", "ydotool.service"],
+                    timeout=10,
+                    check=True,
+                ),
+                mock.call(
+                    ["ydotool", "key", "28:1", "28:0"],
+                    timeout=3,
+                    check=True,
+                ),
+            ],
+        )
+
+    def test_media_control_reports_when_no_player_accepts_command(self):
+        error = manager.subprocess.CalledProcessError(1, ["playerctl", "play-pause"])
+        with (
+            mock.patch.object(manager, "_run", side_effect=error),
+            mock.patch.object(manager, "_notify") as notify,
+        ):
+            self.assertFalse(manager.control_media("play-pause"))
+        notify.assert_called_once_with(
+            "No controllable media",
+            "No active MPRIS player accepted the command.",
+        )
+
+    def test_canonical_page_has_ten_panes_and_new_bottom_row(self):
+        page_path = Path(__file__).parents[1] / "page.json"
+        page = json.loads(page_path.read_text())
+
+        actions = {}
+        for position, key in page["keys"].items():
+            action = key["states"]["0"]["actions"][0]
+            actions[position] = (action["id"], action["settings"])
+
+        pane_actions = [
+            actions[f"{column}x{row}"]
+            for row in range(2)
+            for column in range(5)
+        ]
+        self.assertEqual(
+            pane_actions,
+            [
+                ("com_sluongng_CodexDeck::CodexPane", {"slot": slot})
+                for slot in range(10)
+            ],
+        )
+        self.assertEqual(
+            [actions[f"{column}x2"][0] for column in range(5)],
+            [
+                "com_sluongng_CodexDeck::GlobalDictation",
+                "com_sluongng_CodexDeck::SendEnter",
+                "com_sluongng_CodexDeck::NewCodex",
+                "com_sluongng_CodexDeck::MediaPlayPause",
+                "com_sluongng_CodexDeck::AirPods",
             ],
         )
 

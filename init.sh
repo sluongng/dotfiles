@@ -101,7 +101,7 @@ for relative_path in .zshrc .zprofile .ideavimrc .tmux.conf; do
 done
 ensure_symlink "${DOTFILES_DIR}/wezterm.lua" "${HOME}/.wezterm.lua"
 
-for config_name in nvim alacritty kitty bat git ghostty herdr metals; do
+for config_name in nvim alacritty kitty bat git ghostty herdr metals voxtype; do
   link_config_tree \
     "${DOTFILES_DIR}/config/${config_name}" \
     "${CONFIG_HOME}/${config_name}"
