@@ -8,9 +8,24 @@ Do not use `codex/` as a branch prefix.
 ## Subagents
 
 Use subagents when they can materially advance the task in parallel without
-blocking the main path. Use the default Codex subagent for independent,
-bounded codebase questions; keep urgent blocking work local, and do not
-spawn subagents for trivial lookups.
+blocking the main path. Keep the interactive agent on Astra/high and choose
+named roles according to the assignment:
+
+- `scout` (Luna/high): narrow read-only searches, call-path tracing, and evidence extraction.
+- `worker` (Terra/medium): implement a well-specified change with explicit ownership.
+- `quick-worker` (Astra/low): execute a small, decided change with several instructions or constraints; escalate unresolved design questions.
+- `advanced-worker` (Astra/medium): own a bounded implementation that still requires design judgment and integration work.
+- `investigator` (Astra/high): diagnose ambiguous failures, test competing explanations, or analyze a difficult design; return evidence without editing.
+- `reviewer` (Sol/high): independent review of ordinary changes for actionable defects.
+- `deep-reviewer` (Astra/high): independent review of security, concurrency, compatibility, or cross-cutting changes where missed defects are costly.
+
+Use `agy-consult` only for its explicit advisory scouting workflow. A default
+subagent can inherit Astra/high for assignments that do not fit a named role.
+Keep urgent blocking work local and avoid delegating trivial lookups.
+Six spawned agents is a concurrency ceiling, not a target. Assign a concrete
+deliverable and scope to each; give parallel editors disjoint file or module
+ownership. Reuse agents for follow-ups. The parent integrates results, resolves
+conflicts, and verifies completion. These roles do not delegate further.
 
 ## Google Workspace Account Separation
 
