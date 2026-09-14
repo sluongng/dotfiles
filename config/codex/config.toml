@@ -45,6 +45,8 @@ memories = true
 mentions_v2 = true
 personality = false
 prevent_idle_sleep = true
+# Opt-in CLI voice conversations; start explicitly with /voice in a new session.
+realtime_conversation = true
 runtime_metrics = true
 # Keep these disabled on macOS and Linux. The CLI and Desktop share config but
 # may ship different resource layouts, so packaged-fork support is not a safe
