@@ -28,7 +28,9 @@ schedule.
 ## Persistent Task Ledger
 
 Maintain the canonical ledger at
-`~/.codex/state/daily-chief-of-staff/tasks.md`. This local file is the durable
+`~/work/misc/chief-of-staffs/tasks.md`, with supporting notes in that workspace's
+`notes/` directory. The legacy `~/.codex/state/daily-chief-of-staff/tasks.md`
+path is a compatibility symlink to the same file. This local file is the durable
 index for work that must survive context compaction, a new Codex thread, or a
 later daily scan.
 
