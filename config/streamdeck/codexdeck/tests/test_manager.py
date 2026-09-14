@@ -816,6 +816,7 @@ class ManagerTest(unittest.TestCase):
             voxtype = Path(directory) / "voxtype"
             voxtype.touch()
             with (
+                mock.patch.object(manager, "voxtype_ready", return_value=True),
                 mock.patch.object(manager, "VOXTYPE", voxtype),
                 mock.patch.object(manager, "_run", side_effect=["active", ""]) as run,
             ):
@@ -829,6 +830,7 @@ class ManagerTest(unittest.TestCase):
             voxtype = Path(directory) / "voxtype"
             voxtype.touch()
             with (
+                mock.patch.object(manager, "voxtype_ready", return_value=True),
                 mock.patch.object(manager, "VOXTYPE", voxtype),
                 mock.patch.object(
                     manager, "_run", side_effect=["inactive", ""]
@@ -848,6 +850,53 @@ class ManagerTest(unittest.TestCase):
                 ),
             ],
         )
+
+    def test_global_dictation_waits_for_daemon_readiness(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "voxtype"
+            binary.touch()
+            with (
+                mock.patch.object(manager, "VOXTYPE", binary),
+                mock.patch.object(manager, "_run", side_effect=["inactive", ""]),
+                mock.patch.object(manager, "voxtype_ready", side_effect=[False, False, True]),
+                mock.patch.object(manager.time, "sleep") as sleep,
+            ):
+                self.assertTrue(manager.ensure_voxtype_service())
+                self.assertEqual(sleep.call_count, 2)
+
+    def test_global_dictation_readiness_timeout_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            binary = Path(directory) / "voxtype"
+            binary.touch()
+            with (
+                mock.patch.object(manager, "VOXTYPE", binary),
+                mock.patch.object(manager, "_run", return_value="active"),
+                mock.patch.object(manager, "voxtype_ready", return_value=False),
+                mock.patch.object(manager.time, "monotonic", side_effect=[0, 11]),
+                mock.patch.object(manager, "_notify") as notify,
+            ):
+                self.assertFalse(manager.ensure_voxtype_service())
+                notify.assert_called_once()
+
+    def test_voxtype_readiness_requires_live_lock_and_valid_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = Path(directory) / "state"
+            lock = Path(directory) / "voxtype.lock"
+            with mock.patch.object(manager, "VOXTYPE_STATE_PATH", state):
+                self.assertFalse(manager.voxtype_ready())
+                state.write_text("idle")
+                for invalid in ("", "bad", "0", "-1", "1"):
+                    lock.write_text(invalid)
+                    with mock.patch.object(manager.os, "kill") as kill:
+                        self.assertFalse(manager.voxtype_ready())
+                        kill.assert_not_called()
+                lock.write_text(str(os.getpid()))
+                self.assertTrue(manager.voxtype_ready())
+                state.write_text("stopped")
+                self.assertFalse(manager.voxtype_ready())
+                state.write_text("idle")
+                with mock.patch.object(manager.os, "kill", side_effect=ProcessLookupError):
+                    self.assertFalse(manager.voxtype_ready())
 
     def test_global_dictation_reports_missing_local_binary(self):
         with tempfile.TemporaryDirectory() as directory:

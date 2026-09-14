@@ -301,6 +301,19 @@ def start_new_codex() -> bool:
     return True
 
 
+def voxtype_ready() -> bool:
+    # Voxtype acquires this lock after installing its recording signal handlers.
+    # systemd's Type=simple "active" alone can precede that initialization.
+    try:
+        pid = int(VOXTYPE_STATE_PATH.with_name("voxtype.lock").read_text().strip())
+        if pid <= 1:
+            return False
+        os.kill(pid, 0)
+        return global_dictation_state() in {"idle", "recording", "transcribing"}
+    except (OSError, ValueError):
+        return False
+
+
 def ensure_voxtype_service() -> bool:
     try:
         if not VOXTYPE.is_file():
@@ -317,6 +330,11 @@ def ensure_voxtype_service() -> bool:
                 timeout=10,
                 check=True,
             )
+        deadline = time.monotonic() + 10
+        while not voxtype_ready():
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Voxtype did not become ready within 10 seconds")
+            time.sleep(0.05)
         return True
     except (OSError, subprocess.SubprocessError) as error:
         log.error(f"Failed to prepare global dictation: {error}")
@@ -465,28 +483,61 @@ def start_global_dictation(path: Path) -> bool:
 
 
 def stop_global_dictation(path: Path) -> int:
+    done_path = Path(str(path) + ".done")
+
+    def completion_result() -> int:
+        try:
+            outcome = json.loads(done_path.read_text())
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            log.error(f"Could not read dictation completion record: {error}")
+            return 1
+        if not isinstance(outcome, dict):
+            log.error("Dictation completion record is not an object")
+            return 1
+        status = outcome.get("status")
+        if status == "ok":
+            return 0
+        if status == "empty":
+            return 3
+        if status == "error":
+            return 1
+        log.error("Dictation completion record has an unknown status")
+        return 1
+
+    # A stopped recording may have completed before the key press reaches us.
+    # Do not signal Voxtype again in that case, and keep the sidecar intact so
+    # read_dictation_transcript can use its exact character count.
+    if done_path.is_file():
+        return completion_result()
+
     try:
         result = subprocess.run(
             [
                 str(VOXTYPE),
                 "record",
                 "stop",
-                "--wait",
-                "--json",
-                "--timeout",
-                "120",
-                "--wait-file",
-                str(path),
             ],
             text=True,
             capture_output=True,
-            timeout=125,
+            timeout=10,
             check=False,
         )
-        return result.returncode
     except (OSError, subprocess.SubprocessError) as error:
-        log.error(f"Failed while waiting for global dictation: {error}")
+        log.error(f"Failed to stop global dictation: {error}")
         return 1
+    if result.returncode != 0:
+        log.error(f"Failed to stop global dictation (exit {result.returncode})")
+        return 1
+
+    deadline = time.monotonic() + 120
+    while True:
+        if done_path.is_file():
+            return completion_result()
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            log.error("Timed out waiting for dictation completion record")
+            return 4
+        time.sleep(min(0.05, remaining))
 
 
 def cancel_global_dictation() -> bool:
@@ -1485,8 +1536,7 @@ class DeckStateManager:
                 return
             if state == "transcribing":
                 return
-            done_path = Path(str(path) + ".done")
-            result = 0 if path.is_file() and done_path.is_file() else stop_global_dictation(path)
+            result = stop_global_dictation(path)
             if result == 3:
                 cleanup_dictation_path(path)
                 self._global_dictation_target = None
