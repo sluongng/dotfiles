@@ -19,6 +19,13 @@ quote the rule, and explain why it applies. Keep account, publication, and
 transaction boundaries intact. Scale validation to the change and rerun passing
 checks only when new edits, failures, or unresolved concerns justify it.
 
+## Tests
+
+Prefer extending an existing test file for the affected component over creating
+another test file. Keep regression tests at the public API or observable behavior
+level; avoid tests that only exercise unexported helpers or mirror the
+implementation. For scheduler server changes, use `scheduler_server_test.go`.
+
 ## Subagents
 
 Use subagents when they can materially advance the task in parallel without
