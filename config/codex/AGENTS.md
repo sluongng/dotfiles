@@ -41,6 +41,22 @@ deliverable and scope to each; give parallel editors disjoint file or module
 ownership. Reuse agents for follow-ups. The parent integrates results, resolves
 conflicts, and verifies completion. These roles do not delegate further.
 
+## Child threads in tmux
+
+When the user requests independent child Codex threads, launch them in named
+tmux windows by default and treat the handoff as fire-and-forget. Give each
+thread a concrete brief, repository directory, deliverable, and authorization
+scope. Verify startup briefly, report the window and available thread route,
+then return to the user or continue independent parent work. Do not wait for
+the child to finish, poll its progress, or collect its results unless the user
+asks for monitoring, a summary here, or integration that depends on completion.
+The child presents its results in its own window.
+
+Use the `tmux-task-windows` skill for this workflow and for presenting saved
+results in tmux when useful. Preserve running writers and the user's selected
+window. This preference concerns user-facing child threads; internal subagents
+needed to complete the parent's task still follow that task's integration needs.
+
 ## Google Workspace Account Separation
 
 When using Google Workspace MCP servers, keep personal and work accounts
