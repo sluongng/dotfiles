@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# CLI configuration reviewed against installed codex-cli v0.155.0-alpha.3.7 on 2026-09-11.
+# CLI configuration reviewed against codex-cli v0.156.0-alpha.14 on 2026-09-21 (prepared; activation separate).
 # Shared App configuration is rendered here too; App runtime parity is checked separately.
 
 model = "gpt-6-astra"
@@ -52,7 +52,6 @@ runtime_metrics = true
 # may ship different resource layouts, so packaged-fork support is not a safe
 # cross-runtime assumption.
 shell_zsh_fork = false
-transcript_v2 = false
 unified_exec = true
 
 # Notes/history round trips verified with Astra parent and Luna/Terra/Sol roles.
@@ -77,6 +76,7 @@ max_depth = 2
 
 [tui]
 alternate_screen = "never"
+fullscreen_transcript = false
 notifications = false # Completion popups are emitted by the top-level notify hook.
 status_line = ["model-with-reasoning", "project-root", "git-branch", "context-used", "five-hour-limit", "weekly-limit", "codex-version"]
 session_picker_view = "dense"
