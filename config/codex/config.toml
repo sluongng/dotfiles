@@ -88,10 +88,10 @@ terminal_title = ["thread-id"]
 # built-in Browser for local web apps. For a deliberate Chrome DevTools session,
 # temporarily enable the local ${CODEX_HOME:-~/.codex}/config.local.toml stanza.
 
-[plugins."gmail@openai-curated"]
+[plugins."gmail@openai-curated-remote"]
 enabled = true
 
-[plugins."github@openai-curated"]
+[plugins."github@openai-curated-remote"]
 enabled = true
 
 # Keep desired state for tracked personal plugins here so regenerating the live
