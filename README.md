@@ -51,6 +51,19 @@ tmux session automatically. SSH shells, detected Emacs, Vim, IntelliJ, and Zed
 terminals, existing tmux panes, and manually started Herdr panes are not nested.
 Set `TMUX_AUTOSTART=0` before starting zsh for an ordinary shell outside tmux.
 
+The One Dark bottom-right status area shows a yellow `REBOOT` badge when
+CachyOS core packages have been installed or updated since boot. It follows the
+installed `cachyos-reboot-required.hook` package list, ignores inactive kernels
+and unused filesystem tools, and also respects `/run/reboot-required` on systems
+that provide it. This is a reboot **recommendation**, matching the distro's
+upgrade notification, not a claim that every package change requires a reboot.
+The badge is otherwise absent and clears automatically after reboot; tmux
+refreshes it every 15 seconds by default. To see the matching packages, run:
+
+```sh
+python3 ~/.dotfiles/config/tmux/reboot-required.py --explain
+```
+
 Herdr remains installed and available manually with `herdr`, but it is no
 longer started by the shell. Its tracked config retains the same primary
 workflow:
