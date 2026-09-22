@@ -1218,41 +1218,154 @@ class ManagerTest(unittest.TestCase):
             ],
         )
 
-    def test_airpods_connect_uses_bluez_then_a2dp_and_default_sink(self):
-        state = manager.DeckStateManager()
+    def press_airpods(self):
+        # Exercise the public button entry point, retaining the real worker but
+        # joining it so all effects are observed before mocks are removed.
+        worker = threading.Thread
+        threads = []
+
+        def create_worker(*args, **kwargs):
+            thread = worker(*args, **kwargs)
+            threads.append(thread)
+            return thread
+
+        with (
+            mock.patch.object(manager.threading, "Thread", side_effect=create_worker),
+            mock.patch.object(manager.threading, "excepthook") as worker_error,
+        ):
+            manager.DeckStateManager().handle("airpods", 0)
+            for thread in threads:
+                thread.join(timeout=2)
+                self.assertFalse(thread.is_alive())
+            worker_error.assert_not_called()
+
+    def airpods_objects(self, adapter, connected=False, powered=True):
+        path = f"/org/bluez/{adapter}/dev_7C_F3_4D_84_BF_F9"
+        return json.dumps({"data": [{
+            f"/org/bluez/{adapter}": {"org.bluez.Adapter1": {
+                "Powered": {"type": "b", "data": powered},
+            }},
+            f"/org/bluez/{adapter}/dev_00_11_22_33_44_55": {
+                "org.bluez.Device1": {
+                    "Address": {"type": "s", "data": "00:11:22:33:44:55"},
+                    "Connected": {"type": "b", "data": not connected},
+                },
+            },
+            path: {"org.bluez.Device1": {
+                "Address": {"type": "s", "data": manager.AIRPODS_MAC},
+                "Adapter": {"type": "o", "data": f"/org/bluez/{adapter}"},
+                "Connected": {"type": "b", "data": connected},
+            }},
+        }]})
+
+    def test_airpods_connect_uses_current_adapter_then_a2dp_and_default_sink(self):
         card = "bluez_card.7C_F3_4D_84_BF_F9"
         sink = "bluez_output.7C_F3_4D_84_BF_F9.1"
-        with (
-            mock.patch.object(manager, "airpods_connected", return_value=False),
-            mock.patch.object(manager.time, "sleep"),
-            mock.patch.object(
-                manager,
-                "_run",
-                side_effect=["", card, "", f"70\t{sink}\tmodule", ""],
-            ) as run,
-        ):
-            state._toggle_airpods()
-        self.assertEqual(
-            run.call_args_list,
-            [
-                mock.call(
-                    [
-                        "busctl",
-                        "call",
-                        "org.bluez",
-                        manager.AIRPODS_DBUS_PATH,
-                        "org.bluez.Device1",
-                        "Connect",
-                    ],
-                    timeout=20,
-                    check=True,
-                ),
+        for adapter in ("hci0", "hci1", "hci12"):
+            with (
+                self.subTest(adapter=adapter),
+                mock.patch.object(manager.time, "sleep"),
+                mock.patch.object(
+                    manager, "_run",
+                    side_effect=[self.airpods_objects(adapter), "", card, "",
+                                 f"70\t{sink}\tmodule", ""],
+                ) as run,
+            ):
+                self.press_airpods()
+            self.assertEqual(run.call_args_list, [
+                mock.call([
+                    "busctl", "--json=short", "call", "org.bluez", "/",
+                    "org.freedesktop.DBus.ObjectManager", "GetManagedObjects",
+                ], check=True),
+                mock.call([
+                    "busctl", "call", "org.bluez",
+                    f"/org/bluez/{adapter}/dev_7C_F3_4D_84_BF_F9",
+                    "org.bluez.Device1", "Connect",
+                ], timeout=20, check=True),
                 mock.call(["pactl", "list", "cards", "short"]),
                 mock.call(["pactl", "set-card-profile", card, "a2dp-sink"]),
                 mock.call(["pactl", "list", "sinks", "short"]),
                 mock.call(["pactl", "set-default-sink", sink]),
-            ],
+            ])
+
+    def test_airpods_disconnect_uses_discovered_connected_device(self):
+        with mock.patch.object(manager, "_run", side_effect=[
+            self.airpods_objects("hci1", connected=True), "",
+        ]) as run:
+            self.press_airpods()
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(run.call_args.args[0], [
+            "busctl", "call", "org.bluez",
+            "/org/bluez/hci1/dev_7C_F3_4D_84_BF_F9",
+            "org.bluez.Device1", "Disconnect",
+        ])
+
+    def test_airpods_status_tracks_adapter_changes(self):
+        with mock.patch.object(manager, "_run", side_effect=[
+            self.airpods_objects("hci0", connected=False),
+            self.airpods_objects("hci1", connected=True),
+        ]):
+            self.assertFalse(manager.airpods_connected())
+            self.assertTrue(manager.airpods_connected())
+
+    def test_airpods_prefers_connected_device_across_adapters(self):
+        objects = json.loads(self.airpods_objects("hci0"))["data"][0]
+        objects.update(json.loads(self.airpods_objects("hci1", connected=True))["data"][0])
+        snapshot = json.dumps({"data": [objects]})
+        with mock.patch.object(manager, "_run", return_value=snapshot):
+            self.assertTrue(manager.airpods_connected())
+        with mock.patch.object(manager, "_run", side_effect=[snapshot, ""]) as run:
+            self.press_airpods()
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(run.call_args.args[0], [
+            "busctl", "call", "org.bluez",
+            "/org/bluez/hci1/dev_7C_F3_4D_84_BF_F9",
+            "org.bluez.Device1", "Disconnect",
+        ])
+
+    def test_airpods_connect_skips_unpowered_adapter(self):
+        objects = json.loads(self.airpods_objects("hci0", powered=False))["data"][0]
+        objects.update(json.loads(self.airpods_objects("hci1"))["data"][0])
+        with (
+            mock.patch.object(manager.time, "sleep"),
+            mock.patch.object(manager, "_run", side_effect=[
+                json.dumps({"data": [objects]}), "",
+                "bluez_card.7C_F3_4D_84_BF_F9", "",
+                "70\tbluez_output.7C_F3_4D_84_BF_F9.1\tmodule", "",
+            ]) as run,
+        ):
+            self.press_airpods()
+        self.assertEqual(run.call_args_list[1].args[0], [
+            "busctl", "call", "org.bluez",
+            "/org/bluez/hci1/dev_7C_F3_4D_84_BF_F9",
+            "org.bluez.Device1", "Connect",
+        ])
+
+    def test_airpods_missing_or_failed_discovery_does_not_connect(self):
+        for response in ('{"data": [{}]}', 'invalid json',
+                         self.airpods_objects("hci0", powered=False)):
+            with (
+                self.subTest(response=response),
+                mock.patch.object(manager, "_run", return_value=response) as run,
+                mock.patch.object(manager.log, "error") as error,
+            ):
+                self.press_airpods()
+                self.assertEqual(run.call_count, 1)
+                error.assert_called_once()
+
+    def test_airpods_connection_failure_logs_bluez_reason(self):
+        failure = manager.subprocess.CalledProcessError(
+            1, ["busctl"], stderr="Call failed: br-connection-page-timeout"
         )
+        with (
+            mock.patch.object(manager, "_run", side_effect=[
+                self.airpods_objects("hci1"), failure,
+            ]) as run,
+            mock.patch.object(manager.log, "error") as error,
+        ):
+            self.press_airpods()
+        self.assertEqual(run.call_count, 2)
+        self.assertIn("br-connection-page-timeout", error.call_args.args[0])
 
 
 if __name__ == "__main__":

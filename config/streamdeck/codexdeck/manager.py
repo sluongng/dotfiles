@@ -22,7 +22,6 @@ from loguru import logger as log
 
 
 AIRPODS_MAC = "7C:F3:4D:84:BF:F9"
-AIRPODS_DBUS_PATH = "/org/bluez/hci0/dev_7C_F3_4D_84_BF_F9"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "codex-deck"
 EVENTS_PATH = STATE_DIR / "events.jsonl"
 ACK_PATH = STATE_DIR / "acknowledged.json"
@@ -1192,20 +1191,41 @@ def resolve_event_pane(event: dict, panes: tuple[Pane, ...]) -> str | None:
     return matches[0] if len(matches) == 1 else None
 
 
-def airpods_connected() -> bool:
-    try:
-        return _run(
+def airpods_device() -> tuple[str, bool] | None:
+    # Adapter indices can change after a reboot or USB reset. Resolve both the
+    # path and connection state from the same live BlueZ snapshot.
+    objects = json.loads(
+        _run(
             [
                 "busctl",
-                "get-property",
+                "--json=short",
+                "call",
                 "org.bluez",
-                AIRPODS_DBUS_PATH,
-                "org.bluez.Device1",
-                "Connected",
+                "/",
+                "org.freedesktop.DBus.ObjectManager",
+                "GetManagedObjects",
             ],
             check=True,
-        ).endswith(" true")
-    except (OSError, subprocess.SubprocessError):
+        )
+    )["data"][0]
+    disconnected = None
+    for path, interfaces in objects.items():
+        device = interfaces.get("org.bluez.Device1", {})
+        if device.get("Address", {}).get("data") == AIRPODS_MAC:
+            if device["Connected"]["data"] is True:
+                return path, True
+            adapter_path = device["Adapter"]["data"]
+            adapter = objects.get(adapter_path, {}).get("org.bluez.Adapter1", {})
+            if disconnected is None and adapter.get("Powered", {}).get("data") is True:
+                disconnected = (path, False)
+    return disconnected
+
+
+def airpods_connected() -> bool:
+    try:
+        device = airpods_device()
+        return device is not None and device[1]
+    except (OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError, TypeError):
         return False
 
 
@@ -1709,22 +1729,29 @@ class DeckStateManager:
             self._dictation_state = "idle"
 
     def _toggle_airpods(self):
-        method = "Disconnect" if airpods_connected() else "Connect"
+        method = "toggle"
         try:
+            device = airpods_device()
+            if device is None:
+                log.error("AirPods not found in BlueZ; no connection attempted")
+                return
+            path, connected = device
+            method = "Disconnect" if connected else "Connect"
             _run(
                 [
                     "busctl",
                     "call",
                     "org.bluez",
-                    AIRPODS_DBUS_PATH,
+                    path,
                     "org.bluez.Device1",
                     method,
                 ],
                 timeout=20,
                 check=True,
             )
-        except (OSError, subprocess.SubprocessError) as error:
-            log.error(f"AirPods {method.lower()} failed: {error}")
+        except (OSError, subprocess.SubprocessError, ValueError, KeyError, IndexError, TypeError) as error:
+            detail = getattr(error, "stderr", None) or str(error)
+            log.error(f"AirPods {method.lower()} failed: {detail}")
             return
         if method != "Connect":
             return

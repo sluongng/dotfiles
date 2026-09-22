@@ -71,7 +71,9 @@ Root sessions also post a passive desktop notification without an action that
 focuses Ghostty. Subagent and unclassified completions remain in the event log
 for diagnostics but do not post desktop notifications.
 
-The AirPods control calls BlueZ over D-Bus. It does not enable auto-connect.
+The AirPods control calls BlueZ over D-Bus and discovers the device by its
+Bluetooth address, so adapter renumbering does not break the button. It does
+not enable auto-connect.
 
 New Codex sessions use the native `notify` callback. A live tmux-pane watcher
 also records a durable attention event whenever an existing Codex process goes
