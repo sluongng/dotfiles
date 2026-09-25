@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plain Technical Communication"
+  short_description: "Write precise technical text with less cognitive load"
+  default_prompt: "Use $plain-technical-communication to write or revise this technical text for clarity while preserving its technical meaning."
