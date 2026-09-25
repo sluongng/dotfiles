@@ -33,7 +33,7 @@ blocking the main path. Keep the interactive agent on Astra/high and choose
 named roles according to the assignment:
 
 - `scout` (Luna/high): narrow read-only searches, call-path tracing, and evidence extraction.
-- `worker` (Terra/medium): implement a well-specified change with explicit ownership.
+- `worker` (Sol/medium): implement a well-specified change with explicit ownership.
 - `quick-worker` (Astra/low): execute a small, decided change with several instructions or constraints; escalate unresolved design questions.
 - `advanced-worker` (Astra/medium): own a bounded implementation that still requires design judgment and integration work.
 - `investigator` (Astra/high): diagnose ambiguous failures, test competing explanations, or analyze a difficult design; return evidence without editing.

@@ -1,7 +1,7 @@
 name = "reviewer"
 description = "Read-only Sol reviewer for ordinary changes: correctness, behavioral regressions, integration risks, and missing tests. Use deep-reviewer for difficult security, concurrency, or cross-cutting analysis."
 nickname_candidates = ["Reviewer", "Sentinel", "Auditor"]
-model = "gpt-5.6-sol"
+model = "gpt-6-sol"
 model_reasoning_effort = "high"
 # Runtime permissions are inherited from the parent; read-only scope is below.
 developer_instructions = """

@@ -1,4 +1,4 @@
-# Optional Codex experiments
+# Codex profiles
 
 The installer copies `*.config.toml` beside `~/.codex/config.toml`. Current CLI
 profiles are full configuration layers selected with `--profile NAME`.
@@ -9,15 +9,22 @@ profiles are full configuration layers selected with `--profile NAME`.
 | `codex --profile astra-classic` | Ordinary summary compaction for comparison or rollback |
 | `codex --profile astra-quick` | Astra/medium reasoning for routine work |
 | `codex --profile astra-priority` | Astra/high on the advertised priority tier, with increased usage |
+| `codex --profile sol` | GPT-6 Sol/medium for routine coding and agentic work |
+| `codex --profile luna` | GPT-6 Luna/high for focused, bounded work |
+
+The September 23 model refresh keeps Astra/high as the interactive default and
+uses GPT-6 Luna/high for `scout`, GPT-6 Sol/medium for `worker`, and GPT-6 Sol/high
+for `reviewer`. Advanced implementation, investigation, and deep review remain
+on Astra. Model context limits stay at catalog defaults.
 
 Ordinary `codex` uses Astra/high and mixed-model delegation with experimental
 context management enabled. On 2026-09-05, an actual Astra parent spawned
-Luna/high, Terra/medium, and Sol/high roles with the feature enabled. All three
+GPT-5.6 Luna/high, Terra/medium, and Sol/high roles with the feature enabled. All three
 completed a read-only calculation, recalled the result in a follow-up, wrote
 and read an exact marker through native notes, and listed their history windows
 without errors. Their saved states contained the new context-window guidance.
 
-The current catalog supplies token-budget prompts for all four models. Explicit
+That catalog supplied token-budget prompts for all four models. Explicit
 opt-in uses those defaults even though automatic activation is off. There is no
 automatic fallback to summary compaction for older models: context reset is
 selected whenever the token-budget feature is enabled. Role configuration in

@@ -1,7 +1,7 @@
 name = "scout"
 description = "Fast read-only codebase scout for narrow reconnaissance, execution-path tracing, evidence gathering, and bounded hypothesis generation before implementation."
 nickname_candidates = ["Scout", "Pathfinder", "Tracer"]
-model = "gpt-5.6-luna"
+model = "gpt-6-luna"
 model_reasoning_effort = "high"
 # Runtime permissions are inherited from the parent; read-only scope is below.
 developer_instructions = """

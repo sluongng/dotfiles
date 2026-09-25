@@ -94,15 +94,16 @@ larger than the concurrency budget so the parent can select the right mix.
 
 | Role | Model / reasoning | Assignment |
 | --- | --- | --- |
-| `scout` | Luna / high | Narrow read-only evidence gathering |
-| `worker` | Terra / medium | Well-specified implementation |
+| `scout` | GPT-6 Luna / high | Narrow read-only evidence gathering |
+| `worker` | GPT-6 Sol / medium | Well-specified implementation |
 | `quick-worker` | Astra / low | Small decided edits with multiple constraints |
 | `advanced-worker` | Astra / medium | Bounded implementation needing design judgment |
 | `investigator` | Astra / high | Read-only diagnosis and difficult design analysis |
-| `reviewer` | Sol / high | Ordinary independent change review |
+| `reviewer` | GPT-6 Sol / high | Ordinary independent change review |
 | `deep-reviewer` | Astra / high | Security, concurrency, compatibility, and complex review |
 | `agy-consult` | Inherited Codex model / medium, advisory CLI workflow | External scout with local evidence verification |
 
 Global `AGENTS.md` supplies routing and ownership guidance. The limit is a
 ceiling: useful independent work determines how many agents to spawn. Role
 files are installed as regular files; fresh sessions load the current options.
+Terra is no longer used by any role or profile.

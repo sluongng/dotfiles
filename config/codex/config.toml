@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# CLI configuration reviewed against codex-cli v0.156.0-alpha.14 on 2026-09-21 (prepared; activation separate).
+# CLI configuration reviewed against codex-cli v0.157.0-alpha.11 on 2026-09-23.
 # Shared App configuration is rendered here too; App runtime parity is checked separately.
 
 model = "gpt-6-astra"
@@ -43,7 +43,6 @@ hooks = true
 local_thread_store_compression = false
 memories = true
 mentions_v2 = true
-personality = false
 prevent_idle_sleep = true
 # Opt-in CLI voice conversations; start explicitly with /voice in a new session.
 realtime_conversation = true
@@ -54,7 +53,8 @@ runtime_metrics = true
 shell_zsh_fork = false
 unified_exec = true
 
-# Notes/history round trips verified with Astra parent and Luna/Terra/Sol roles.
+# Historical notes/history round trips used Astra and GPT-5.6 Luna/Terra/Sol.
+# Current scout/worker/reviewer roles use GPT-6 Luna/Sol; keep catalog defaults.
 # This selects the new context-reset path, not a legacy-compaction fallback.
 # Start fresh tasks; leave thresholds to model defaults. astra-classic opts out.
 # https://learn.chatgpt.com/docs/config-file/config-reference

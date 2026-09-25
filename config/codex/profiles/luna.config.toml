@@ -1,0 +1,4 @@
+# Efficient profile for focused, bounded work.
+model = "gpt-6-luna"
+model_reasoning_effort = "high"
+service_tier = "default"
