@@ -52,6 +52,8 @@ esac
         context_management: bool = True,
         local_text: str = "",
         runtime_text: str = "",
+        target_text: str | None = None,
+        render_count: int = 1,
         python_executable: str = sys.executable,
     ) -> dict:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -63,37 +65,79 @@ esac
             local.write_text(local_text)
             projects.write_text("")
             runtime.write_text(runtime_text)
-            subprocess.run(
-                [
-                    python_executable,
-                    str(RENDERER),
-                    "--shared",
-                    str(SHARED),
-                    "--local",
-                    str(local),
-                    "--projects",
-                    str(projects),
-                    "--runtime",
-                    str(runtime),
-                    "--target",
-                    str(target),
-                    "--platform",
-                    platform,
-                    "--nested-feature-tables",
-                    str(nested_features).lower(),
-                    "--context-management-table",
-                    str(context_management).lower(),
-                    "--marketplace-name",
-                    "sluongng-dotfiles",
-                    "--marketplace-source",
-                    str(ROOT / "config/codex"),
-                ],
-                check=True,
-                capture_output=True,
-                text=True,
-            )
+            if target_text is not None:
+                target.write_text(target_text)
+            command = [
+                python_executable,
+                str(RENDERER),
+                "--shared",
+                str(SHARED),
+                "--local",
+                str(local),
+                "--projects",
+                str(projects),
+                "--runtime",
+                str(runtime),
+                "--target",
+                str(target),
+                "--platform",
+                platform,
+                "--nested-feature-tables",
+                str(nested_features).lower(),
+                "--context-management-table",
+                str(context_management).lower(),
+                "--marketplace-name",
+                "sluongng-dotfiles",
+                "--marketplace-source",
+                str(ROOT / "config/codex"),
+            ]
+            for _ in range(render_count):
+                subprocess.run(command, check=True, capture_output=True, text=True)
             with target.open("rb") as rendered:
                 return tomllib.load(rendered)
+
+    def test_preserves_ui_preferences_across_rerenders_without_freezing_shared_settings(self) -> None:
+        config = self.render(
+            platform="Linux",
+            nested_features=True,
+            render_count=2,
+            target_text='''
+[tui]
+session_picker_view = "comfortable"
+screen_reader_detection_done = false
+fullscreen_transcript = true
+
+[desktop]
+open_fullscreen = true
+
+[plugins."github@openai-curated"]
+enabled = true
+''',
+            local_text='''
+[tui.model_availability_nux]
+"gpt-6-sol" = true
+''',
+        )
+        self.assertEqual(config["tui"]["session_picker_view"], "comfortable")
+        self.assertIs(config["tui"]["screen_reader_detection_done"], False)
+        self.assertFalse(config["tui"]["fullscreen_transcript"])
+        self.assertTrue(config["tui"]["model_availability_nux"]["gpt-6-sol"])
+        self.assertTrue(config["desktop"]["open_fullscreen"])
+        self.assertNotIn("github@openai-curated", config["plugins"])
+        self.assertTrue(config["plugins"]["github@openai-curated-remote"]["enabled"])
+
+    def test_restores_ui_preferences_from_runtime_overlay_on_first_render(self) -> None:
+        config = self.render(
+            platform="Linux",
+            nested_features=True,
+            runtime_text='''
+[tui]
+session_picker_view = "comfortable"
+screen_reader_detection_done = true
+''',
+        )
+        self.assertEqual(config["tui"]["session_picker_view"], "comfortable")
+        self.assertTrue(config["tui"]["screen_reader_detection_done"])
 
     def test_preserves_app_managed_runtime_tables(self) -> None:
         config = self.render(

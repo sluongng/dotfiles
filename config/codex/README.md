@@ -14,6 +14,9 @@ The deploy script manages these paths under `${CODEX_HOME:-~/.codex}`:
 - preserves App-managed desktop, hook trust, bundled plugin, `node_repl`, and
   trusted Browser shell-environment tables in `runtime.local.toml`, then renders
   `config.toml` from the tracked shared config plus local overlays
+- preserves the live TUI `session_picker_view` preference and
+  `screen_reader_detection_done` marker through the same runtime overlay;
+  other TUI settings remain controlled by the shared config
 - tracked global `AGENTS.md`
 - tracked files under `agents/`
 - tracked `profiles/*.config.toml` as named profile files beside `config.toml`
@@ -66,7 +69,8 @@ config in this directory, or use one of these machine-local files instead:
 - `${CODEX_HOME:-~/.codex}/projects.local.toml` for local trust entries (`[projects]`)
 - `${CODEX_HOME:-~/.codex}/runtime.local.toml` for App-managed desktop, hook
   trust, bundled plugin, `node_repl`, and trusted Browser shell-environment
-  state; the deploy script updates this file automatically
+  state, plus the two UI-owned TUI values above; the deploy script updates this
+  file from the live config automatically
 
 These files live outside the checkout. The matching `*.local.toml` names are
 also ignored under this directory so a copied local overlay cannot be added by
