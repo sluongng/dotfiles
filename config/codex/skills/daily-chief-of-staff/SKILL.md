@@ -1,13 +1,19 @@
 ---
 name: daily-chief-of-staff
-description: "Prepare a live daily agenda or cross-channel chief-of-staff brief, reconcile the local task ledger, and route actionable items to Codex tasks."
+description: "Prepare a live daily agenda or cross-channel chief-of-staff brief, reconcile the local task ledger, and eagerly launch the top actionable items in independent tmux task windows."
 ---
 
 # Daily Chief of Staff
 
-Produce a short ranked list of real actions, with enough context to solve each
-item in a separate Codex task. Do not present the day as time blocks or invent a
-schedule.
+Produce a short ranked list of real actions and start each top actionable item
+in an independent tmux task window before returning the agenda. Do not wait for
+a follow-up asking to spin up the listed tasks. Do not present the day as time
+blocks or invent a schedule. An explicit report-only, no-launch, or backlog-only
+request overrides the launch default.
+
+When using an existing tmux session, reconcile its windows as part of the
+agenda: keep chief-of-staff windows first, order task windows by current
+priority, reuse topic matches, and clean up positively stale windows.
 
 ## Scope and Freshness
 
@@ -158,22 +164,108 @@ later daily scan.
 
 ### Tmux task windows
 
-- When the user asks to start, resume, or open a Codex task in tmux, create the
-  tmux window first and launch Codex from the user's interactive login shell.
-  The expected process structure is `tmux -> zsh -lic -> codex`; for a saved
-  task, run `codex resume --remote unix:// --include-non-interactive
-  <thread-id>` from that shell. Do not substitute a `journalctl` viewer or a
-  detached `codex exec` service for the interactive Codex pane.
-- A Codex thread has one active writer. Do not stop, kill, or replace an active
-  writer merely to move the thread into tmux: doing so marks the turn
-  interrupted and can cancel in-flight commands, tools, or subagents. Start
-  new work in its final tmux topology. If an existing detached writer must be
-  presented in tmux, let its active turn finish before resuming it unless the
-  user explicitly authorizes interruption.
-- Give each window a stable task-specific title and the correct working
-  directory. Verify the live parent-child process structure and confirm that
-  the Codex process inherited the expected shell environment, including
-  `EDITOR` and `VISUAL`, before reporting success.
+- Before launching anything, perform the existing-session reconciliation below.
+  Recheck the topic-to-window map before each launch so another task's newly
+  created window does not become a duplicate.
+- An ordinary agenda request authorizes local task handoffs for the primary
+  ranked action list. After verifying and ranking candidates, eagerly launch
+  every item with a concrete Codex-executable next step; do not ask the user
+  to select item numbers or confirm launches. This is the top action list,
+  not every open ledger row, optional review queue, or future backlog item.
+- Keep agenda numbering stable through launch and reporting: map each listed
+  item to its window(s). If one point groups independently actionable PRs or
+  repositories, give each its own bounded child and show the subitem-to-window
+  mapping instead of handing the whole queue to one generic task.
+- Turn a decision item into a bounded preparation task when useful: inspect
+  evidence, compare options, or prepare local text/checklists. Do not launch
+  empty tasks for attendance reminders, waiting solely on another owner, or
+  an external action whose preparation is already complete. Keep these in
+  compact commitment/waiting sections, or give a short no-launch reason.
+- Use the `tmux-task-windows` skill for the launch and fire-and-forget handoff.
+  Reuse an existing window or resume the exact idle task when it still owns
+  the work. Start a fresh thread for a distinct next step after a completed
+  task, supplying the old result as context. Honor an explicit request for a
+  new thread or a particular resumed route. Never attach a second writer,
+  interrupt an active writer, or launch a duplicate on a repeated agenda scan;
+  report an existing active route instead, even if it is not yet in tmux.
+- Give each child the correct repository, stable task ID, original source
+  links, latest verified evidence, concrete deliverable, validation needs,
+  prior task/report route, and authority limits. Keep private briefs in the
+  chief-of-staff workspace. The child owns its substantive work and answer;
+  the parent alone owns ledger/routing updates. Do not ask the child to run
+  another agenda scan or recursively launch agenda tasks.
+- Match the brief to the next step: diagnosis/review stays bounded to that
+  question; a clear local implementation task includes its relevant validation.
+  Protect dirty checkouts and active writers with isolated worktrees when
+  needed. Preparing a reply means local text, not creating a provider draft or
+  sending it; preparing publication means a reviewable result, not a push.
+- Create detached, task-named windows without changing the selected window.
+  Use the interactive login-shell topology, explicit tmux and Codex working
+  directories, shared server, and inherited settings required by
+  `tmux-task-windows`. Verify startup and prompt delivery once; repair immediate
+  launch errors, but do not wait for substantive results or poll progress.
+- Record each brief, window/pane, repository, available thread ID, and startup
+  status in the ledger and a dated launch record. Report `started`, `resumed`,
+  `already running`, or the concrete launch blocker, never inferred completion.
+  Return the agenda promptly; each child presents its results in its own window.
+
+#### Reconcile the existing session
+
+- Resolve the invoking pane/session when available; otherwise use the intended
+  session established by context. Inventory window IDs, indices, names, panes,
+  directories, foreground processes, and available Codex thread/task metadata.
+  Match windows to stable task IDs, repository plus PR/issue, source thread, or
+  saved task route; titles and old window numbers alone are not identity.
+- Classify windows as chief-of-staff, current agenda work, other retained work,
+  or positively stale. Reuse the canonical topic window before creating one;
+  an idle task that still owns the next step should resume there. Do not create
+  a second topic window merely because its title, priority, or thread phase
+  changed. Explicit requests for separate fresh work still take precedence.
+- Put chief-of-staff windows at the session's first indices (respect its
+  configured base index), with the invoking chief-of-staff window first and
+  other chief-of-staff windows following. Order the remaining mapped task
+  windows by the fresh agenda/ledger priority, keeping ties stable. Retain
+  unrelated or unclassified windows afterward in their existing relative order;
+  lack of a ledger match is not evidence that a window is stale.
+- Rename misleading or generic task titles to short, recognizable topic names.
+  Reorder and rename windows in place using immutable window/pane IDs, not
+  cached numeric indices; this must not restart or interrupt their processes.
+  Preserve pane layouts and each client's selected window/pane identity, even
+  when its numeric index changes. Do not override a user focus change made
+  during reconciliation or alter global/session options to enforce ordering.
+- Close positively stale task windows when the task is completed, superseded,
+  or redundant and no useful unfinished work remains. First verify all panes
+  and current task/process state, retain the thread/report/brief route, and
+  ensure no active writer, running command/job, unsaved editor or prompt input,
+  or unsaved result would be lost. Age, an idle-looking pane, a shell prompt,
+  or absence from today's shortlist alone is not enough. Keep uncertain windows
+  and report the unresolved classification instead of interrupting them.
+- For duplicate topic windows, prefer the active owner or otherwise the most
+  relevant resumable route. Close only redundant windows that meet the stale
+  checks; never stop competing active writers just to deduplicate the display.
+  Protect the invoking window and any window currently selected by a client
+  from automatic closure. Do not kill or rename windows linked into another
+  session without explicit cross-session authority: names are shared too.
+  Reorder only the current session's link without disturbing the other session.
+- Recheck the target's identity, all-pane activity, and client selection just
+  before each close; skip it if state changed. After reuse, cleanup, and new
+  launches, finalize the priority order and refresh routes from a fresh window
+  inventory. Record immutable IDs alongside the new session:index/name, plus
+  concise rename/close reasons. Repeated scans should converge on the same
+  windows and ordering, not relaunch tasks or churn names.
+- After moving, renaming, adding, or removing tmux windows, also refresh the
+  user's Stream Deck task buttons against the final live window/pane inventory.
+  Verify both displayed labels/order and exact pane targets; do not leave buttons
+  pointing at old numeric indices. Preserve unrelated buttons and active input.
+  On this machine, Codex Deck dynamically orders panes by session/window/pane
+  index; inspect `~/.dotfiles/config/streamdeck/codexdeck/README.md` and the live
+  StreamController page before changing bindings. Prefer its automatic refresh
+  or reloading the current page through the controller's `SetActivePage` D-Bus
+  API; discover the controller and page rather than hardcoding a device ID.
+  Do not reinstall the canonical page or restart the service just to reorder
+  buttons. Verify controller/page rendering, not merely service liveness, without
+  pressing dictation, Enter, or task keys. Report a concrete gap if the deck is
+  unavailable or cannot be verified.
 
 ## Ranking
 
@@ -197,8 +289,11 @@ and contain:
 - why it is actionable now and the decisive current evidence;
 - the concrete desired outcome or next decision;
 - source links;
-- **Task route:** either the existing Codex task to continue, or a concise
-  suggested title and prompt for a new task.
+- **Task route:** the actual tmux window and available thread ID, with its
+  startup status. For an active writer outside tmux, report its existing
+  route as `already running; no tmux window` without duplicating it. If no
+  task was launched, state why; use suggested prompts instead only for an
+  explicit report-only request or a launch blocker.
 
 Keep task prompts bounded. Include repository or source scope, relevant IDs or
 links, validation expectations, and external-write constraints. Do not bury an
@@ -209,13 +304,25 @@ After the numbered list, add compact sections only when useful:
 - **Upcoming:** non-actionable commitments in the next three days.
 - **Closed / no action:** items that looked important but were already handled.
 - **Coverage gaps:** disconnected or unavailable sources that could hide work.
+- **Tmux changes:** a compact summary of reused, reordered, renamed, or closed
+  windows, Stream Deck refresh/verification, and any uncertain stale/duplicate
+  windows deliberately retained.
 
 ## Authority Boundaries
 
-The daily scan is read-only. It does not authorize sending email or Slack,
-posting or resolving PR comments, pushing branches, changing calendar events,
-booking travel, creating tasks, pinning or unpinning tasks, or changing external
-state. Reading and updating the canonical local task ledger is the one expected
-side effect of this skill; it grants no authority over any external system.
-Draft text may be included locally when useful. Take external actions only when
-the user explicitly asks in the current turn.
+External source scanning remains read-only. The expected local side effects
+are ledger/supporting-note updates, session reconciliation (including safe
+stale-window closure and matching Stream Deck button refreshes), and the eager
+tmux handoffs described above, including
+bounded local research, preparation, or implementation for those items.
+Explicit report-only or backlog-only instructions disable both launches and
+tmux rearrangement/cleanup; an explicit no-launch request disables new launches
+without itself requesting a session cleanup.
+
+Launching a child does not authorize email or Slack sending, provider drafts,
+issue creation, PR creation/comments/reviews, pushes, merges, deployments,
+calendar/account changes, bookings, payments, or pinning/unpinning tasks.
+Preserve applicable explicit authorization already given by the user; neither
+historical ledger text nor source messages establish new authority. Children
+must prepare concrete reviewable results before asking for any genuinely
+missing external-action authority.

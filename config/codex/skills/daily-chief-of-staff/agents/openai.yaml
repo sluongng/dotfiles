@@ -1,4 +1,4 @@
 interface:
   display_name: "Daily Chief of Staff"
-  short_description: "Build a live, actionable agenda from connected work sources"
-  default_prompt: "Use $daily-chief-of-staff to scan my connected sources and give me a prioritized agenda for today."
+  short_description: "Build a live agenda and start its top tasks in tmux"
+  default_prompt: "Use $daily-chief-of-staff to scan my connected sources, give me a prioritized agenda for today, and start the top actionable items in independent tmux windows."
