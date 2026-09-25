@@ -66,10 +66,13 @@ serves Browser/JavaScript MCP, while CLI code mode uses
 `codex-code-mode-host`. The first-party package should supply native Linux builds
 of both; the legacy path may source them separately.
 
-Do not install, switch the active desktop entry, migrate a profile, or restart
-the app by default. Prefer a side-by-side first-party installation and distinct
+An upgrade request authorizes updating the existing App package through
+[installation.md](installation.md), with runtime restarts subject to the strict
+idle guard. It does not authorize switching distributions or migrating profiles.
+For a separately authorized migration, prefer a side-by-side first-party installation and distinct
 profile for initial parity testing only after checking app IDs, single-instance
 locks, DBus names, URL/MIME handlers, and profile paths for collisions. If those
 cannot be isolated, use an extracted-package probe instead of simultaneous
-activation. Report the generated Arch artifact, the channel used, and only
-installation/switch commands verified from the repository or package metadata.
+activation. Report the generated Arch artifact, the channel used, installation
+and activation results, and any deferred commands verified from the repository
+or package metadata.

@@ -100,6 +100,19 @@ authorized the disruption.
 
 When an authorized CLI upgrade or restart requires an ownership handoff:
 
+A full upgrade request supplies restart authorization under the skill's scope;
+do not ask again. It does not waive the idle check. Immediately before disruption,
+run:
+
+```sh
+/home/nb/work/misc/codex/scripts/codex-remote-control-status --json --require-idle
+```
+
+Require command success and `idleCheck.safeToInterrupt=true`, with no active
+turns or background terminals. Do not use `--allow-single-active` to pass this
+gate, including for the current upgrade task. Defer activation if it fails and
+report the blocker separately from installation status.
+
 1. Inventory active turns, SSH proxies, relay state, the exact socket owner, its
    executable, parent process, and cgroup.
 2. Do not interrupt the server while a remote turn is active.

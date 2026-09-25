@@ -18,4 +18,9 @@ pacman -Qip ./<package-file>
 pacman -Qlp ./<package-file>
 ```
 
-Extract the built package into a temporary directory, run its embedded `codex --version`, and inspect helper binary types. Report the exact artifact path, version, package layout result, and deferred `sudo pacman -U ...` command.
+Extract the built package into a temporary directory, run its embedded
+`codex --version` as the unprivileged user, and inspect helper binary types.
+For an upgrade, continue through [installation.md](installation.md); do not
+stop at a deferred direct-pacman command when the dedicated installer is usable.
+For build-only requests or a concrete installation blocker, report the validated
+artifact and the exact remaining step.

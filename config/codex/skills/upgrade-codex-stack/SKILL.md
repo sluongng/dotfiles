@@ -31,8 +31,26 @@ Before editing:
 4. Use official upstream release metadata, source, documentation, and artifacts as primary evidence.
 5. Never print credentials, cookies, tokens, or unredacted authentication payloads.
 
-Build and update the scoped repositories when the user requests an upgrade. Do not use `sudo`, install a built package, replace the installed desktop app, register package repositories, run foreign-package maintainer scripts, restart services, or overwrite live config unless the user explicitly requests that disruptive action. Existing explicit authorization remains valid; do not ask again. Otherwise,
-finish the scoped build and validation and return exact deferred commands.
+On this workstation, a request to upgrade the Codex stack authorizes building,
+validating, and installing the scoped CLI and existing ChatGPT App packages
+through the dedicated root installer without another confirmation. It also
+authorizes the necessary runtime restart only after proving that no active
+turns or background terminals would be interrupted. Audit-only, build-only,
+and narrower requests retain their stated limits.
+
+Use [references/installation.md](references/installation.md) for the exact
+privilege check, candidate staging, and installation boundary. Do not infer
+missing permission from `sudo -n true`: general sudo access and permission to
+start the fixed installer are different. Existing authorization persists; an
+idle or validation failure is a technical blocker, not a reason to ask for the
+same permission again.
+
+This authorization does not include broadening sudoers, registering package
+repositories, running foreign-package maintainer scripts, distribution/profile
+migration, or overwriting unrelated live configuration. Preserve explicit
+authorization for separately requested configuration changes. If the approved
+installation path is unavailable or unsafe, finish preparation and report the
+specific blocker and smallest next action; do not silently widen privileges.
 
 The first-party Linux app is the unified ChatGPT desktop app and includes Codex.
 Treat its native Linux package and the repository's Arch wrapper for that payload
@@ -56,6 +74,8 @@ building unchanged packages or activating services.
 - For CLI package changes, use [references/cli-package.md](references/cli-package.md).
 - For desktop packaging or compatibility work, use
   [references/desktop-package.md](references/desktop-package.md).
+- Before installation or activation, use
+  [references/installation.md](references/installation.md).
 - For release capability changes or a requested feature review, use
   [references/feature-radar.md](references/feature-radar.md).
 - After a full upgrade, or a change crossing package/runtime boundaries, use

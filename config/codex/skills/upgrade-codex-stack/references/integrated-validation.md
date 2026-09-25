@@ -26,7 +26,9 @@ Repeat version and configuration checks against the newly built artifacts. Confi
   with unperformed actual-device checks labeled as such;
 - an authorized App restart preserves or reconnects the saved SSH connection;
 - no unrelated dirty files were overwritten;
-- no required install or restart was silently performed.
+- installation used the validated candidate and approved privilege path;
+- necessary restarts followed the strict idle guard, with installed/running
+  differences and deferred activation reported explicitly.
 
 For an upgrade that changes the CLI, desktop App, app-server service, or
 connection state, include the matrix from
