@@ -40,6 +40,11 @@ local commits.
   files, dependency declarations, imports, config includes, and local overlay
   files. Put prerequisites before dependents or move the prerequisite into the
   earliest commit that needs it.
+- When the requested migration temporarily disables a checker or gate before
+  fixing source, keep those steps separately reviewable when requested and
+  order the restoring fix after its prerequisites. Verify the final tree
+  re-enables the check; unrelated cleanup does not complete that migration.
+  If restoration is blocked, report the incomplete migration explicitly.
 - For topic-only restacks, verify final tree equivalence against the safety ref
   unless the user explicitly asked for content changes.
 - If per-commit validation requires hiding local-only config or artifacts, save
