@@ -10,6 +10,7 @@ from pathlib import Path
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("observe", Path(__file__).with_name("observe.py"))
 observe = importlib.util.module_from_spec(spec)
@@ -45,6 +46,11 @@ class ObserveTest(unittest.TestCase):
         with closing(sqlite3.connect(self.db)) as c, c:
             c.execute("CREATE TABLE threads (id TEXT PRIMARY KEY, rollout_path TEXT, source TEXT, updated_at INTEGER, created_at INTEGER, first_user_message TEXT, agent_path TEXT)")
         self.args = observe.parser().parse_args(["--state-dir", str(self.state), "--codex-home", str(self.home), "--source-root", str(self.source)])
+        self.aton_config = self.base / "aton-config"
+        self.aton_state = self.base / "aton-state"
+        (self.aton_config / "automations").mkdir(parents=True)
+        self.args.aton_config_dir = str(self.aton_config)
+        self.args.aton_state_dir = str(self.aton_state)
 
     def thread(self, tid="root", entries=None, *, source="cli", first="", created=NOW, updated=NOW):
         path = self.home / (tid + ".jsonl")
@@ -234,6 +240,107 @@ class ObserveTest(unittest.TestCase):
         self.run_collector()
         self.assertEqual(len(self.events()), 1)
         self.assertEqual(self.run_collector()["events_created"], 0)
+
+    def test_scheduler_receipts_timer_drift_and_stable_evidence(self):
+        jobs = self.aton_config / "automations"
+        (jobs / "daily.toml").write_text('id="daily"\nstatus="ACTIVE"\non_calendar="*-*-* 09:00:00"\nprompt="PRIVATE-PROMPT"\n')
+        (jobs / "dormant.toml").write_text('id="dormant"\nstatus="ACTIVE"\non_calendar="*-*-* 08:00:00"\n')
+        (jobs / "old-once.toml").write_text('id="old-once"\nstatus="ACTIVE"\non_calendar="2026-01-01 09:00:00"\n')
+        receipts = self.aton_state / "daily"
+        receipts.mkdir(parents=True)
+        (receipts / "attempts.jsonl").write_text(json.dumps({"recorded_unix": NOW - 86400, "state": "COMPLETED", "infrastructure": {"outcome": "completed"}, "semantic": {"outcome": "no_change"}, "private": "SECRET"}) + "\n")
+        (receipts / "last-run.json").write_text(json.dumps({"id": "daily", "ok": True, "exit_code": 0, "finished_unix": NOW - 86400, "secret": "DO-NOT-REPORT"}))
+        os.utime(receipts / "last-run.json", (NOW - 86400, NOW - 86400))
+
+        def systemd(command, **kwargs):
+            unit = command[3]
+            if unit.endswith("daily.timer"):
+                output = "LoadState=loaded\nActiveState=active\nUnitFileState=enabled\nNextElapseUSecRealtime=Tue 2026-09-08 09:00:00 CEST\n"
+            else:
+                output = "LoadState=not-found\nActiveState=inactive\nUnitFileState=\nNextElapseUSecRealtime=\n"
+            return type("Result", (), {"stdout": output})()
+
+        with patch.object(observe.subprocess, "run", side_effect=systemd):
+            first = self.run_collector()
+            second = self.run_collector(NOW + 86400)
+        self.assertEqual(first["events_created"], 1)
+        self.assertEqual(second["events_created"], 0)
+        report = json.loads((self.state / "observation.json").read_text())["scheduler"]
+        self.assertEqual({f["check"] for f in report["findings"]}, {"active_without_enabled_timer", "expired_active_schedule"})
+        self.assertEqual(report["jobs"][0]["last_attempt"]["semantic_outcome"], "no_change")
+        self.assertNotIn("PRIVATE-PROMPT", json.dumps(report))
+        self.assertNotIn("SECRET", json.dumps(report))
+        self.assertNotIn("DO-NOT-REPORT", json.dumps(report))
+
+    def test_scheduler_capability_failure_is_not_timer_absence(self):
+        (self.aton_config / "automations/daily.toml").write_text('id="daily"\nstatus="ACTIVE"\non_calendar="*-*-* 09:00:00"\n')
+        with patch.object(observe.subprocess, "run", side_effect=FileNotFoundError):
+            result = self.run_collector()
+        self.assertEqual(result["events_created"], 1)
+        scheduler = json.loads((self.state / "observation.json").read_text())["scheduler"]
+        self.assertEqual(scheduler["status"], "unavailable")
+        findings = scheduler["findings"]
+        self.assertEqual(findings, [{"check": "scheduler_systemd_unavailable", "id": "daily", "error": "FileNotFoundError"}])
+
+    def test_scheduler_missing_and_stale_result_receipts(self):
+        jobs = self.aton_config / "automations"
+        for job_id in ("missing", "stale"):
+            (jobs / f"{job_id}.toml").write_text(f'id="{job_id}"\nstatus="ACTIVE"\non_calendar="*-*-* 09:00:00"\n')
+            directory = self.aton_state / job_id
+            directory.mkdir(parents=True)
+            age = 15 * 86400 if job_id == "stale" else 86400
+            (directory / "attempts.jsonl").write_text(json.dumps({"recorded_unix": NOW - age, "state": "COMPLETED", "infrastructure": {"outcome": "completed"}}) + "\n")
+        artifact = self.aton_state / "stale/last-run.json"
+        artifact.write_text(json.dumps({"id": "stale", "ok": True, "exit_code": 0, "finished_unix": NOW - 15 * 86400}))
+        os.utime(artifact, (NOW - 15 * 86400, NOW - 15 * 86400))
+        systemd = type("Result", (), {"stdout": "LoadState=loaded\nActiveState=active\nUnitFileState=enabled\nNextElapseUSecRealtime=tomorrow\n"})()
+        with patch.object(observe.subprocess, "run", return_value=systemd):
+            self.run_collector()
+        findings = json.loads((self.state / "observation.json").read_text())["scheduler"]["findings"]
+        self.assertEqual({(f["check"], f["id"]) for f in findings},
+                         {("scheduler_result_missing", "missing"), ("scheduler_result_stale", "stale")})
+
+    def test_scheduler_failure_not_masked_by_copied_old_result_or_new_running_attempt(self):
+        (self.aton_config / "automations/daily.toml").write_text('id="daily"\nstatus="ACTIVE"\non_calendar="*-*-* 09:00:00"\n')
+        directory = self.aton_state / "daily"
+        directory.mkdir(parents=True)
+        attempts = directory / "attempts.jsonl"
+        entries = [
+            {"attempt_id": "one", "recorded_unix": NOW - 100, "state": "COMPLETED", "infrastructure": {"outcome": "completed"}},
+            {"attempt_id": "two", "recorded_unix": NOW - 10, "state": "FAILED", "infrastructure": {"outcome": "failed"}},
+        ]
+        attempts.write_text("".join(json.dumps(entry) + "\n" for entry in entries))
+        result = directory / "last-run.json"
+        result.write_text(json.dumps({"id": "daily", "ok": True, "exit_code": 0, "finished_unix": NOW - 100}))
+        os.utime(result, (NOW, NOW))  # Fresh file mtime must not mask its old receipt.
+        systemd = type("Result", (), {"stdout": "LoadState=loaded\nActiveState=active\nUnitFileState=enabled\n"})()
+        with patch.object(observe.subprocess, "run", return_value=systemd):
+            report = observe.scheduler_health(self.aton_config, self.aton_state, now=NOW)
+            self.assertEqual({f["check"] for f in report["findings"]},
+                             {"scheduler_latest_attempt_failed", "scheduler_result_outdated_attempt"})
+            self.assertTrue(report["jobs"][0]["last_result"]["ok"])
+            self.assertEqual(report["jobs"][0]["last_attempt"]["state"], "FAILED")
+            result.write_text(json.dumps({"id": "daily", "ok": True, "exit_code": 0, "finished_unix": NOW - 10}))
+            mismatch = observe.scheduler_health(self.aton_config, self.aton_state, now=NOW)
+            self.assertIn("scheduler_result_mismatch", {f["check"] for f in mismatch["findings"]})
+            entries.append({"attempt_id": "three", "recorded_unix": NOW - 10, "state": "RUNNING"})
+            attempts.write_text("".join(json.dumps(entry) + "\n" for entry in entries))
+            running = observe.scheduler_health(self.aton_config, self.aton_state, now=NOW)
+        self.assertEqual(running["jobs"][0]["last_attempt"]["state"], "RUNNING")
+        self.assertNotIn("scheduler_latest_attempt_failed", {f["check"] for f in running["findings"]})
+
+    def test_scheduler_enabled_timer_without_next_trigger(self):
+        (self.aton_config / "automations/daily.toml").write_text('id="daily"\nstatus="ACTIVE"\non_calendar="*-*-* 09:00:00"\n')
+        def systemd(command, **kwargs):
+            if command[3].endswith(".timer"):
+                output = "LoadState=loaded\nActiveState=active\nUnitFileState=enabled\nNextElapseUSecRealtime=n/a\n"
+            else:
+                output = "ActiveState=inactive\n"
+            return type("Result", (), {"stdout": output})()
+        with patch.object(observe.subprocess, "run", side_effect=systemd):
+            report = observe.scheduler_health(self.aton_config, self.aton_state, now=NOW)
+        self.assertEqual(report["findings"], [{"check": "scheduler_next_trigger_missing", "id": "daily"}])
+        self.assertEqual(report["jobs"][0]["timer"]["service_active"], "inactive")
 
 
 if __name__ == "__main__":

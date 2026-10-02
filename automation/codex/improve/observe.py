@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 import re
 import sqlite3
+import subprocess
 import tempfile
 import time
 import tomllib
@@ -311,6 +312,134 @@ def health(codex_home: Path, source_root: Path) -> dict:
             "models": snapshots, "roles_checked": role_count}
 
 
+def scheduler_health(config_dir: Path, aton_state_dir: Path, *, now: float) -> dict:
+    """Read Aton definitions, runtime receipts and systemd state without exposing prompts.
+
+    Findings contain stable classifications only, so an unresolved condition
+    produces one immutable evidence event rather than a new event every day.
+    """
+    findings, jobs = [], []
+    definitions_dir = config_dir / "automations"
+    if not definitions_dir.is_dir():
+        return {"status": "unavailable", "findings": [{"check": "scheduler_definitions_unavailable"}], "jobs": []}
+    definitions = sorted(definitions_dir.glob("*.toml"))
+    for path in definitions:
+        try:
+            definition = tomllib.loads(path.read_text())
+            job_id = definition["id"]
+            if not isinstance(job_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", job_id) or path.stem != job_id:
+                raise ValueError("invalid job id")
+            declared = definition["status"]
+            if declared not in ("ACTIVE", "PAUSED", "DISABLED"):
+                raise ValueError("invalid job status")
+        except (OSError, ValueError, KeyError) as exc:
+            findings.append({"check": "scheduler_definition_invalid", "id": path.stem, "error": type(exc).__name__})
+            continue
+        row = {"id": job_id, "declared_status": declared}
+        calendar = definition.get("on_calendar", "")
+        match = re.match(r"^(\d{4}-\d{2}-\d{2})\s", calendar) if isinstance(calendar, str) else None
+        expired = False
+        if declared == "ACTIVE" and match:
+            try:
+                expired = dt.date.fromisoformat(match[1]) < dt.datetime.fromtimestamp(now, dt.UTC).date()
+                if expired:
+                    findings.append({"check": "expired_active_schedule", "id": job_id})
+            except ValueError:
+                findings.append({"check": "scheduler_calendar_invalid", "id": job_id})
+        row["expired"] = expired
+        try:
+            result = subprocess.run(
+                ["systemctl", "--user", "show", f"codex-automaton@{job_id}.timer",
+                 "-p", "LoadState", "-p", "ActiveState", "-p", "UnitFileState",
+                 "-p", "NextElapseUSecRealtime", "--no-pager"],
+                capture_output=True, text=True, timeout=5, check=True)
+            values = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
+            if "LoadState" not in values or "ActiveState" not in values:
+                raise ValueError("incomplete systemd response")
+            row["timer"] = {"load": values["LoadState"], "active": values["ActiveState"],
+                            "unit_file": values.get("UnitFileState", ""),
+                            "next": values.get("NextElapseUSecRealtime", "")}
+            if declared == "ACTIVE" and not expired and (values["LoadState"] != "loaded" or
+                                          values["ActiveState"] != "active" or
+                                          values.get("UnitFileState") != "enabled"):
+                findings.append({"check": "active_without_enabled_timer", "id": job_id})
+            elif declared == "ACTIVE" and not expired and values.get("NextElapseUSecRealtime", "").lower() in {"", "n/a", "0"}:
+                service = subprocess.run(
+                    ["systemctl", "--user", "show", f"codex-automaton@{job_id}.service",
+                     "-p", "ActiveState", "--no-pager"],
+                    capture_output=True, text=True, timeout=5, check=True)
+                service_state = dict(line.split("=", 1) for line in service.stdout.splitlines() if "=" in line).get("ActiveState")
+                row["timer"]["service_active"] = service_state
+                if service_state not in {"active", "activating"}:
+                    findings.append({"check": "scheduler_next_trigger_missing", "id": job_id})
+        except (OSError, subprocess.SubprocessError, ValueError) as exc:
+            row["timer"] = {"status": "unavailable"}
+            findings.append({"check": "scheduler_systemd_unavailable", "id": job_id, "error": type(exc).__name__})
+        run_dir = aton_state_dir / job_id
+        attempts = run_dir / "attempts.jsonl"
+        latest = terminal = None
+        try:
+            records = [json.loads(line) for line in attempts.read_text().splitlines() if line.strip()] if attempts.exists() else []
+            if any(not isinstance(record, dict) for record in records):
+                raise ValueError("invalid attempt")
+            # Aton appends transitions; order resolves same-second timestamps.
+            latest = records[-1] if records else None
+            terminal = next((r for r in reversed(records) if r.get("state") in
+                             {"COMPLETED", "FAILED", "INTERRUPTED"}), None)
+            success = next((r for r in reversed(records) if r.get("state") == "COMPLETED" and
+                            (r.get("infrastructure") or {}).get("outcome") == "completed"), None)
+            row["last_attempt"] = ({"recorded_at": utc(latest["recorded_unix"]),
+                                    "state": latest.get("state"),
+                                    "infrastructure_outcome": (latest.get("infrastructure") or {}).get("outcome"),
+                                    "semantic_outcome": (latest.get("semantic") or {}).get("outcome")}
+                                   if latest else None)
+            row["last_success_at"] = utc(success["recorded_unix"]) if success else None
+            row["last_terminal_at"] = utc(terminal["recorded_unix"]) if terminal else None
+            if (declared == "ACTIVE" and not expired and terminal and
+                    terminal.get("state") != "COMPLETED" and
+                    (not latest or latest.get("attempt_id") == terminal.get("attempt_id"))):
+                findings.append({"check": "scheduler_latest_attempt_failed", "id": job_id,
+                                 "state": terminal["state"]})
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            findings.append({"check": "scheduler_attempts_unreadable", "id": job_id, "error": type(exc).__name__})
+            row["last_attempt"] = row["last_success_at"] = row["last_terminal_at"] = None
+        for name in ("last-run.json", "last-message.md"):
+            artifact = run_dir / name
+            row[name.replace("-", "_").replace(".", "_") + "_at"] = utc(artifact.stat().st_mtime) if artifact.is_file() else None
+        result_file = run_dir / "last-run.json"
+        receipt = None
+        if result_file.is_file():
+            try:
+                raw_receipt = json.loads(result_file.read_text())
+                if (not isinstance(raw_receipt, dict) or
+                        not isinstance(raw_receipt.get("finished_unix"), (int, float)) or
+                        not isinstance(raw_receipt.get("ok"), bool) or
+                        raw_receipt.get("id") != job_id):
+                    raise ValueError("invalid result receipt")
+                receipt = {"finished_at": utc(raw_receipt["finished_unix"]), "ok": raw_receipt["ok"],
+                           "exit_code": raw_receipt.get("exit_code") if isinstance(raw_receipt.get("exit_code"), int) else None}
+            except (OSError, ValueError, TypeError) as exc:
+                findings.append({"check": "scheduler_result_invalid", "id": job_id, "error": type(exc).__name__})
+        row["last_result"] = receipt
+        if declared == "ACTIVE" and not expired and terminal and not result_file.is_file():
+            findings.append({"check": "scheduler_result_missing", "id": job_id})
+        elif declared == "ACTIVE" and not expired and receipt and terminal and abs(
+                timestamp(receipt["finished_at"]) - terminal["recorded_unix"]) > 2:
+            findings.append({"check": "scheduler_result_outdated_attempt", "id": job_id})
+        elif declared == "ACTIVE" and not expired and receipt and terminal and receipt["ok"] != (
+                terminal.get("state") == "COMPLETED" and
+                (terminal.get("infrastructure") or {}).get("outcome") == "completed"):
+            findings.append({"check": "scheduler_result_mismatch", "id": job_id})
+        elif declared == "ACTIVE" and not expired and receipt and not terminal:
+            findings.append({"check": "scheduler_result_orphan", "id": job_id})
+        if declared == "ACTIVE" and not expired and receipt and now - timestamp(receipt["finished_at"]) > 14 * 86400:
+            findings.append({"check": "scheduler_result_stale", "id": job_id})
+        jobs.append(row)
+    unavailable = bool(jobs) and all(row["timer"].get("status") == "unavailable" for row in jobs)
+    return {"status": "unavailable" if unavailable else "attention" if findings else "ok",
+            "findings": findings, "jobs": jobs}
+
+
 def collect(args, *, now: float | None = None) -> dict:
     now = time.time() if now is None else now
     state_dir, codex_home, source_root = map(lambda p: Path(p).expanduser(), (args.state_dir, args.codex_home, args.source_root))
@@ -370,14 +499,19 @@ def collect(args, *, now: float | None = None) -> dict:
                 failures.append({"thread_id": tid, "error": type(exc).__name__})
                 # Neither read cursor nor success acknowledgement advances on error.
         check = health(codex_home, source_root)
-        if check["findings"]:
-            item = event("collector-health", "health", "Codex source/render model or role health needs attention.", utc(now),
-                         {"path": str(codex_home / "config.toml"), "line": 1}, check)
+        aton_config = Path(args.aton_config_dir).expanduser()
+        aton_state = Path(args.aton_state_dir).expanduser()
+        scheduler = scheduler_health(aton_config, aton_state, now=now)
+        combined_findings = check["findings"] + scheduler["findings"]
+        if combined_findings:
+            item = event("collector-health", "health", "Codex configuration or automation scheduler health needs attention.", utc(now),
+                         {"path": str(codex_home / "config.toml"), "line": 1},
+                         {"findings": combined_findings})
             # Distinct deterministic findings must not collapse into one health event.
-            item["id"] = digest(["health", check])
+            item["id"] = digest(["health", combined_findings])
             counts["events_created"] += atomic_json(state_dir / "events" / (item["id"] + ".json"), item, immutable=True)
-        observation = {"version": 1, "timestamp": utc(now), "status": "attention" if failures or check["findings"] else "ok",
-                       "counts": counts, "health": check, "errors": failures, "bootstrap_cutoff": utc(state["cutoff"])}
+        observation = {"version": 1, "timestamp": utc(now), "status": "attention" if failures or combined_findings else "ok",
+                       "counts": counts, "health": check, "scheduler": scheduler, "errors": failures, "bootstrap_cutoff": utc(state["cutoff"])}
         atomic_json(state_file, state)
         atomic_json(state_dir / "observation.json", observation)
         return {"status": observation["status"], **counts, "errors": len(failures)}
@@ -388,6 +522,8 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--state-dir", default="~/.local/state/codex-improve")
     p.add_argument("--codex-home", default="~/.codex")
     p.add_argument("--source-root", default="~/.dotfiles")
+    p.add_argument("--aton-config-dir", default="~/.config/codex-automaton")
+    p.add_argument("--aton-state-dir", default="~/.local/state/codex-automaton")
     p.add_argument("--exclude-root", action="append", default=[])
     p.add_argument("--bootstrap-days", type=int, default=7)
     p.add_argument("--max-threads", type=int, default=32)
