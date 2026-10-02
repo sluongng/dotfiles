@@ -3,6 +3,7 @@
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -136,6 +137,40 @@ def write_private_json(path: Path, payload: dict[str, Any]) -> None:
         json.dump(payload, output, ensure_ascii=False, indent=2)
         output.write("\n")
     os.chmod(path, 0o600)
+
+
+def write_private_state(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        write_private_json(temporary, payload)
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def load_state(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    payload = load_json_object(path)
+    if payload.get("schema_version") != SCHEMA_VERSION or not isinstance(payload.get("threads"), dict):
+        raise ValueError("unsupported organizer state")
+    threads = payload["threads"]
+    if any(not isinstance(key, str) or not isinstance(value, str) for key, value in threads.items()):
+        raise ValueError("invalid organizer state fingerprints")
+    return threads
+
+
+def dialogue_fingerprint(dialogue: list[dict[str, str]]) -> str:
+    encoded = json.dumps(dialogue, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def positive_int(value: str) -> int:
+    number = int(value)
+    if number < 1:
+        raise argparse.ArgumentTypeError("must be positive")
+    return number
 
 
 def load_json_object(path: Path) -> dict[str, Any]:
@@ -309,6 +344,7 @@ def is_automation_thread(
 
 def collect_command(args: argparse.Namespace) -> int:
     cutoff = None if args.all else utc_now() - dt.timedelta(hours=args.since_hours)
+    state = load_state(Path(args.state_file).expanduser()) if args.state_file else {}
     skipped = {
         "before_cutoff": 0,
         "generated_thread": 0,
@@ -316,6 +352,8 @@ def collect_command(args: argparse.Namespace) -> int:
         "without_user_prompt": 0,
         "read_error": 0,
         "summary_fallback": 0,
+        "already_processed": 0,
+        "limit": 0,
     }
     candidates = []
     with AppServerClient(args.codex_bin) as client:
@@ -328,6 +366,10 @@ def collect_command(args: argparse.Namespace) -> int:
             thread_source = thread.get("threadSource")
             if thread_source in GENERATED_THREAD_SOURCES - {"automation"}:
                 skipped["generated_thread"] += 1
+                continue
+
+            if args.limit is not None and len(candidates) >= args.limit:
+                skipped["limit"] += 1
                 continue
 
             thread_id = thread.get("id")
@@ -351,6 +393,10 @@ def collect_command(args: argparse.Namespace) -> int:
             if not recent_turns:
                 skipped["without_user_prompt"] += 1
                 continue
+            fingerprint = dialogue_fingerprint(recent_turns)
+            if state.get(thread_id) == fingerprint:
+                skipped["already_processed"] += 1
+                continue
 
             candidates.append(
                 {
@@ -361,6 +407,7 @@ def collect_command(args: argparse.Namespace) -> int:
                     "thread_source": thread_source,
                     "recency_at": timestamp,
                     "recent_turns": recent_turns[-args.max_turns :],
+                    "dialogue_fingerprint": fingerprint,
                 }
             )
 
@@ -468,18 +515,45 @@ def apply_command(args: argparse.Namespace) -> int:
             f"proposals are missing {len(missing_ids)} candidate thread(s)"
         )
 
+    state_path = Path(args.state_file).expanduser() if args.state_file else None
+    state = load_state(state_path) if state_path else {}
+
     renamed = []
     unchanged = []
     failures = []
+    acknowledged: list[str] = []
     with AppServerClient(args.codex_bin) as client:
         existing_names: dict[str, set[str]] = {}
-        for thread in list_threads(client):
+        live_threads = {thread.get("id"): thread for thread in list_threads(client)}
+        for thread in live_threads.values():
             name = thread.get("name")
             thread_id = thread.get("id")
             if isinstance(name, str) and isinstance(thread_id, str):
                 existing_names.setdefault(name.casefold(), set()).add(thread_id)
 
         for thread_id, name, current_name in validated:
+            live_thread = live_threads.get(thread_id)
+            if not isinstance(live_thread, dict) or live_thread.get("name") != current_name:
+                failures.append({"thread_id": thread_id, "error": "thread name changed since collection"})
+                continue
+            fingerprint = candidates[thread_id].get("dialogue_fingerprint")
+            if fingerprint is not None:
+                try:
+                    dialogue, _ = recent_dialogue(client, thread_id)
+                except RpcError as exc:
+                    failures.append({"thread_id": thread_id, "error": str(exc)})
+                    continue
+                if is_automation_thread(live_thread, dialogue):
+                    dialogue = dialogue[1:]
+                max_turns = candidates_payload.get("max_turns", DEFAULT_MAX_TURNS)
+                if not isinstance(max_turns, int) or not 1 <= max_turns <= DEFAULT_MAX_TURNS:
+                    raise ValueError("invalid candidates max_turns")
+                if dialogue_fingerprint(dialogue[-max_turns:]) != fingerprint:
+                    failures.append({"thread_id": thread_id, "error": "thread dialogue changed since collection"})
+                    continue
+            elif state_path:
+                failures.append({"thread_id": thread_id, "error": "candidate lacks dialogue fingerprint"})
+                continue
             if current_name == name:
                 unchanged.append(thread_id)
                 continue
@@ -523,6 +597,26 @@ def apply_command(args: argparse.Namespace) -> int:
                 {"thread_id": thread_id, "old_name": current_name, "new_name": name}
             )
 
+        if state_path and not args.dry_run:
+            for thread_id in unchanged + [row["thread_id"] for row in renamed]:
+                try:
+                    dialogue, _ = recent_dialogue(client, thread_id)
+                    if is_automation_thread(live_threads[thread_id], dialogue):
+                        dialogue = dialogue[1:]
+                    max_turns = candidates_payload.get("max_turns", DEFAULT_MAX_TURNS)
+                    if dialogue_fingerprint(dialogue[-max_turns:]) != candidates[thread_id]["dialogue_fingerprint"]:
+                        raise ValueError("thread dialogue changed during apply")
+                except (RpcError, ValueError) as exc:
+                    failures.append({"thread_id": thread_id, "error": f"not acknowledged: {exc}"})
+                    continue
+                acknowledged.append(thread_id)
+
+    if state_path and not args.dry_run:
+        for thread_id in acknowledged:
+            state[thread_id] = candidates[thread_id]["dialogue_fingerprint"]
+        if acknowledged:
+            write_private_state(state_path, {"schema_version": SCHEMA_VERSION, "threads": state})
+
     print(
         json.dumps(
             {
@@ -555,12 +649,15 @@ def build_parser() -> argparse.ArgumentParser:
     collect.add_argument("--output", required=True)
     collect.add_argument("--batch-dir")
     collect.add_argument("--batch-size", type=int, default=4, choices=range(1, 9))
+    collect.add_argument("--limit", type=positive_int, help="maximum candidates to export")
+    collect.add_argument("--state-file", help="private durable processed-dialogue state")
     collect.set_defaults(func=collect_command)
 
     apply_parser = subparsers.add_parser("apply", help="validate and apply names")
     apply_parser.add_argument("--candidates", required=True)
     apply_parser.add_argument("--proposals", required=True)
     apply_parser.add_argument("--dry-run", action="store_true")
+    apply_parser.add_argument("--state-file", help="private durable processed-dialogue state")
     apply_parser.add_argument(
         "--max-name-columns",
         type=int,

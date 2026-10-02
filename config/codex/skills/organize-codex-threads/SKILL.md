@@ -20,6 +20,14 @@ write path for this workflow.
      --batch-dir "$work_dir/batches"
    ```
 
+   For the nightly run, add `--limit 50 --state-file
+   "$HOME/.local/state/codex/thread-organizer/processed.json"` to `collect`
+   and pass the same `--state-file` to both `apply` commands. Keep this state
+   file across runs; remove only the temporary candidate directory. The file
+   records fingerprints only after successful apply, so unchanged dialogue is
+   skipped on later nights and changed threads become eligible again. A nightly
+   run may export fewer than 50 candidates even when more threads were listed.
+
    Use `--all` only for an explicit full-library reorganization. The helper
    includes at most the five most recent turns per eligible thread, with only
    the user prompt and final model response from each turn. Read the numbered
@@ -79,10 +87,12 @@ write path for this workflow.
   mode `0600`, rejects duplicate or overlong names, and permits writes only for
   thread ids present in the candidate file.
 - A failed preflight means no renames. During apply, report any per-thread RPC
-  failure and do not retry it with direct database or JSONL edits.
+  failure and do not retry it with direct database or JSONL edits. The helper
+  checks dialogue and name freshness before any write, then verifies dialogue
+  again before recording successful processing in the state file.
 
 ## Nightly automation
 
-Use a 36-hour lookback so the daily run covers threads the user recently
-interacted with without renaming the entire library every night. A first-time
-full cleanup should be a separate, explicit `collect --all` run.
+Use a 36-hour lookback and a 50-candidate cap. Carry the private state file
+between runs; a first-time full cleanup should be a separate, explicit
+`collect --all` run without the nightly cap.
