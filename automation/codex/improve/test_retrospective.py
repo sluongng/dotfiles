@@ -85,8 +85,8 @@ class RetrospectiveTest(unittest.TestCase):
         self.assertEqual(status["status"], "completed")
         self.assertNotIn("pending_events", status)
 
-    def test_transcript_only_full_text_phases_locators_compressed_forks(self):
-        entries = [record("session_meta", {"cwd": "/native", "forked_from_id": "old"}),
+    def test_transcript_only_full_text_phases_locators_compressed(self):
+        entries = [record("session_meta", {"cwd": "/native"}),
                    message("user", "Copied prefix", -8 * 86400),
                    record("event_msg", {"type": "user_message", "message": "Duplicate"}, -20),
                    message("user", "# AGENTS.md instructions injected", -19),
@@ -112,8 +112,30 @@ class RetrospectiveTest(unittest.TestCase):
         self.assertEqual([x["source"]["line"] for x in artifact["messages"]], [8, 9, 10])
         self.assertEqual(artifact["cwd"], "/native")
         self.assertEqual(artifact["title"], "Example chat")
-        self.assertEqual(artifact["fork"], {"forked_from_id": "old"})
+        self.assertEqual(artifact["fork"], {})
         self.assertEqual(Path(run["chats"][0]["path"]).stat().st_mode & 0o777, 0o600)
+
+    def test_unverified_fork_history_does_not_capture_private_parent_messages(self):
+        self.thread()
+        self.thread("private")
+        (self.state / "excluded-roots.json").write_text('["private"]')
+        cases = [
+            {"name": "direct-parent", "metadata": {"forked_from_id": "private"}},
+            {"name": "referenced-history", "metadata": {"history_base": "private"}},
+            {"name": "unexcluded-parent", "metadata": {"forked_from_id": "other"}},
+        ]
+        for case in cases:
+            for compressed in (False, True):
+                with self.subTest(history=case["name"], compressed=compressed):
+                    self.thread(case["name"] + ("-compressed" if compressed else "-plain"),
+                                entries=[record("session_meta", case["metadata"]),
+                                         message("user", "Private inherited correction", -20),
+                                         message("user", "New fork message", -10)],
+                                compressed=compressed)
+        run = self.cli("prepare")
+        self.assertEqual([chat["id"] for chat in run["chats"]], ["root"])
+        for chat in run["chats"]:
+            self.assertNotIn("Private inherited correction", Path(chat["path"]).read_text())
 
     def test_event_fallback_only_for_legacy_without_response_messages(self):
         self.thread(entries=[record("event_msg", {"type": "user_message", "message": "Legacy question"}, -2),

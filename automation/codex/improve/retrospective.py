@@ -105,6 +105,9 @@ def transcript(thread, since, through):
                 excluded |= payload.get("agent_path") not in (None, "", "/root")
                 cwd = payload.get("cwd", cwd)
                 fork = {key: payload[key] for key in ("forked_from_id", "history_base") if key in payload}
+                # Copied history may contain excluded parent or ancestor chats.
+                # Without a verified native-message boundary, omit the fork.
+                excluded |= bool(payload.get("forked_from_id") or payload.get("history_base"))
             elif kind == "turn_context":
                 cwd = payload.get("cwd", cwd)
             role, text, target = None, "", primary

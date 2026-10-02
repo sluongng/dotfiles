@@ -16,7 +16,9 @@ successful model process alone is not proof of a completed retrospective.
 
 Default transcripts contain user/assistant chat messages, including commentary,
 with timestamps, cwd, and source record locators. Injected instruction wrappers,
-subagent threads, excluded private roots, and this meta-job are omitted. Tool
+subagent threads, excluded private roots, forks with unverified copied-history
+boundaries, and this meta-job are omitted. Forks are skipped entirely, including
+their new messages, so inherited private text cannot enter the review. Tool
 calls, tool output, and reasoning are not part of the default review. The agent
 may inspect specific original records when a concrete uncertainty needs tool
 evidence. Plain and compressed rollouts are supported.
