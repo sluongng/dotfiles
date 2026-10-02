@@ -46,6 +46,15 @@ the local-only BuildBuddy Dev plugin.
   writes, remote downloader paths, and request metadata forwarding explicitly.
 - Filecache or OCI reports: separate local executor state, OS behavior, isolation
   flags, and server-visible cache request data.
+- Slow input preparation with high file-cache hit rates: trace the timer boundary
+  in the affected executor version before interpreting it as network-transfer
+  time. Separate input-tree metadata RPCs, directory/symlink creation, setup-limit
+  waits, local link/copy operations, and cache-miss transfers where the timer
+  includes them. Compare downloaded bytes/files and total input-tree size for
+  representative slow actions with executor setup/file-cache latency and app RPC
+  latency from the same workload window. A high hit rate alone rules out neither
+  expensive local materialization nor large misses; near-zero transferred bytes
+  warrant inspecting local setup, without proving a filesystem bottleneck.
 
 ## Output
 
