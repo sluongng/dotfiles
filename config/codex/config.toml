@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# CLI configuration reviewed against codex-cli v0.157.0-alpha.11 on 2026-09-23.
+# CLI configuration reviewed against codex-cli v0.161.0-alpha.3 on 2026-09-30.
 # Shared App configuration is rendered here too; App runtime parity is checked separately.
 
 model = "gpt-6.1-sol"
@@ -27,6 +27,9 @@ personality = "none"
 service_tier = "default"
 analytics.enabled = false
 notify = ["/home/nb/.dotfiles/config/streamdeck/codexdeck/notify.py"]
+
+[realtime]
+voice = "sol"
 
 [tools.experimental_request_user_input]
 enabled = false
