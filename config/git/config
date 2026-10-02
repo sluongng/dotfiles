@@ -64,3 +64,5 @@
 	provider = generic
 [http]
 	cookiefile = /home/nb/.gitcookies
+[maintenance]
+	repo = /home/nb/work/gerrit-review/gerrit
