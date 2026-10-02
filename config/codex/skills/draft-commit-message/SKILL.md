@@ -1,6 +1,6 @@
 ---
 name: draft-commit-message
-description: "Draft or review Git commit messages and PR titles and bodies from diffs or task context, following Git contribution guidance and repository conventions."
+description: "Draft or review reader-friendly Git commit messages and PR titles and bodies from diffs or task context, following Git contribution guidance and repository conventions."
 ---
 
 # Draft Commit Message
@@ -8,8 +8,10 @@ description: "Draft or review Git commit messages and PR titles and bodies from 
 ## Goal
 
 Turn staged changes, diffs, commit ranges, or plain-English summaries into
-commit messages and PR title/body source text that follow the Git project's
-`MyFirstContribution` guidance without inventing missing rationale.
+commit messages and PR title/body source text that help readers understand what
+changes and why it matters, following the Git project's `MyFirstContribution`
+guidance without inventing missing rationale. Explain the change, not the
+investigation that led to it.
 
 ## Workflow
 
@@ -59,46 +61,47 @@ git log --format=%s -- path/to/area | head -n 20
 - Keep the subject at 50 characters or fewer.
 - Write in imperative mood, as if instructing the codebase: `add`, `teach`,
   `fix`, `remove`, `refactor`.
-- Avoid repeating low-level implementation details that fit better in the
-  body.
+- Describe the behavior or purpose rather than listing low-level code changes.
 - When used as a PR title, use this subject as the title unless repo-local PR
   conventions clearly require a different shape.
 
-4. Draft the body to explain why and surrounding context.
+4. Bring the reader onboard with the change.
 
-- Insert one blank line after the subject.
-- Put the bulk of the context in the body.
-- Explain motivation, user impact, tradeoffs, constraints, and review-relevant
-  evidence that are not obvious from the diff.
-- Use as much context as a reviewer needs to understand why this should merge.
-  Do not truncate the story to an artificially short body when the change
-  needs more detail to be convincing.
-- Keep that context disciplined: prefer several short direct paragraphs over a
-  dense wall of text, and remove trivia that does not affect review.
-- Start the first body paragraph with the concrete reason for the change when
-  it is knowable from the task or diff, such as a user request, regression,
-  missing support, broken workflow, or review feedback being addressed.
-- When fixing a regression, flake, or other incident, lead with the concrete
-  failure or user-visible symptom before explaining the mechanism.
-- When this text is likely to be reused for a PR body, write the opening
-  paragraph so it can be copied verbatim with little or no rewriting.
-- If a reproducer command or short error excerpt is central to the why,
-  include the real command or a brief concrete snippet. Do not leave
-  placeholders such as `<probe>` or `<failure log>` in the final message.
-- Include the root cause, chosen approach, important alternatives rejected,
-  compatibility constraints, rollout concerns, and intentionally omitted work
-  whenever those points help reviewers trust the change.
-- Include validation or reproduction details when they are part of the
-  reviewer-facing argument. Keep routine validation out if repo or PR guidance
-  says CI/final response should carry it instead.
+- Do not assume readers are technical users or know the code, prior discussion,
+  or project vocabulary. Follow a stated audience; otherwise use an opening
+  that someone unfamiliar with the implementation can understand.
+- Start with the affected workflow or behavior: what happens today, why that
+  is a problem, and what changes for users. For a feature or cleanup, explain
+  its purpose without inventing a failure or user benefit. Use a concrete
+  example when it makes the change easier to understand.
+- Give enough context to understand the change on first read. The goal is
+  accessible explanation, not the fewest words or a fixed paragraph count.
+  A subject alone is enough only when it also makes the purpose clear.
+- Explain how the change addresses the problem at a high level. Leave code
+  mechanics that readers can learn from the diff out of the prose unless they
+  are needed to understand the behavior or assess a decision. Do not narrate
+  the investigation, list discarded attempts, or add routine test reports.
+- Include compatibility constraints, tradeoffs, or scope limits when they
+  matter to readers. Preserve qualifications that prevent a misleading claim;
+  do not turn these topics into a checklist that every message must cover.
+- Apply [plain-technical-communication](../plain-technical-communication/SKILL.md):
+  use common words, name the actor, and write short, direct sentences. Keep
+  precise technical terms, code identifiers, conditions, and uncertainty when
+  needed, and explain unfamiliar terms before relying on them. Remove filler,
+  repetition, and unnecessary acronyms. Scale this to the message, without a
+  separate prose-review ceremony.
+- If a command, error excerpt, or validation result is essential to explain
+  the problem or support a claim, include it briefly and concretely. Do not
+  leave placeholders such as `<probe>` or `<failure log>` in the final text.
 - When citing upstream commits to explain when behavior changed, pair the hash
   with a stable release version when that gives the reader a better sense of
   time.
-- Wrap prose to 72 columns. Before finalizing a permanent commit message, use
+- Insert one blank line after the subject when a body or trailers follow.
+  Wrap prose to 72 columns. Before finalizing a permanent commit message, use
   `scripts/format_commit_message.py` instead of manually reflowing long
   paragraphs.
-- If the repository context does not reveal the why, say that explicitly
-  instead of fabricating a justification.
+- If the repository context does not reveal the why, flag the missing context
+  outside the draft instead of fabricating a justification.
 - Do not turn the commit body into a PR template. Avoid Markdown headings such
   as `Summary`, `Testing`, or `Checklist` in the permanent message unless the
   user explicitly asks for that format.
@@ -124,9 +127,8 @@ git log --format=%s -- path/to/area | head -n 20
 
 6. Handle single-patch submissions as self-contained units.
 
-- Make the commit message meaningful enough that a single-patch PR does not
-  need a repeated description. A reviewer should be able to understand the
-  problem, approach, and merge rationale from the message alone.
+- Make a single-patch commit message understandable without the chat history.
+  Do not repeat it in a separate PR narrative unless extra context is needed.
 - Keep the permanent commit message readable as plain text. If the user wants
   long logs, many links, or reviewer-only reference material, prefer a short
   appendix below `---` or move that material into the PR body.
@@ -137,16 +139,12 @@ git log --format=%s -- path/to/area | head -n 20
 
 - Return the final commit message in a fenced `text` block unless the user
   explicitly asks for a different format.
-- If the same change will also drive PR metadata, use this draft as the source
-  of truth for the PR title and body. Keep the technical story synchronized,
-  but do not force GitHub Markdown conventions into the permanent commit
-  message unless the user explicitly asks for that.
-- If the commit and PR should match closely, draft the commit body first and
-  treat it as the source text for the PR description rather than writing two
-  separate narratives from scratch.
-- When asked specifically for PR metadata, return the PR title and body derived
-  from the same subject/body rules. Add GitHub Markdown only where it makes the
-  reviewer-facing story clearer.
+- For PR metadata, derive the title and body from the same subject and body.
+  Keep claims synchronized. Respect required PR templates, but do not expand
+  the description just because GitHub permits more space or copy its headings
+  into the permanent commit message.
+- Return the requested draft without a preamble, checklist, or explanation of
+  the drafting process. Honor the user's requested length and format.
 - When confidence is low, add one short sentence after the block describing
   the missing context.
 - When reviewing an existing message, list the concrete violations first and
@@ -157,17 +155,15 @@ git log --format=%s -- path/to/area | head -n 20
 - Subject is 50 characters or fewer.
 - Subject starts with a repo-appropriate component prefix.
 - Subject uses imperative mood.
-- Line 2 is blank.
+- Line 2 is blank when a body or trailers follow.
 - Body prose stays within 72 columns; structured text remains unchanged.
-- Body adds why/context that is not obvious from the diff.
-- Body includes enough reviewer-facing context to sell the change without
-  padding it with irrelevant details.
-- Opening body paragraph names the regression, failure, or motivation when the
-  change fixes a concrete problem.
-- Root cause, approach, tradeoffs, and intentionally omitted work are included
-  when they are material to review.
-- Body reads as plain prose, not a GitHub template.
-- Body uses short direct sentences when that makes the why easier to scan.
+- A reader unfamiliar with the implementation can understand the affected
+  behavior, purpose, and expected change without reading the diff first.
+- Body explains the approach at a high level; it does not repeat code mechanics
+  or narrate the investigation.
+- Detail helps readers understand the change or assess its limits, rather than
+  merely making the message longer. Necessary qualifications remain intact.
+- Prose uses common words and short, direct sentences, not a GitHub template.
 - Any embedded commands or log excerpts are concrete and brief, not
   placeholders.
 - Commit and PR text contains no user, customer, or organization-identifying
@@ -193,7 +189,8 @@ git log --format=%s -- path/to/area | head -n 20
   workflows, or when a draft is close to the line-length limits.
 - Treat validator `WARN` output as a prompt to review the message. Its
   why/context check matches a small keyword list, so a warning can be a false
-  positive; do not add filler solely to silence it.
+  positive; do not add filler solely to silence it. A missing-body warning is
+  acceptable when the subject alone explains the change sufficiently.
 
 ```bash
 python3 scripts/format_commit_message.py --write .git/COMMIT_EDITMSG
