@@ -140,6 +140,20 @@ class PipelineTest(unittest.TestCase):
         self.assertEqual(status["proposal_progress"]["overdue_candidates"][0]["candidate_id"], candidate_id)
         self.assertEqual(status["completed_review_outcomes"], {"reviewed": 1})
 
+    def test_applied_candidate_can_be_checked_without_false_baseline_failure(self):
+        self.prepare()
+        output = self.finish(self.result())
+        self.args.candidate_id = output["candidate_ids"][0]
+        (self.root / self.target).write_text(self.original.replace("Always read every reference.", "Read references only when relevant."))
+        self.args.status = "applied"
+        p.decision(self.args)
+        verified = p.check(self.args)
+        self.assertEqual(verified["status"], "applied_state_verified")
+        self.assertIn("not performed", verified["behavioral_validation"])
+        p.decision(self.args)  # verification preserves applied decision compatibility
+        (self.root / self.target).write_text(self.original)
+        self.assertEqual(p.check(self.args)["status"], "failed")
+
     def test_batch_stable_and_ack_only_snapshot(self):
         first = self.prepare()
         self.event("b" * 64)
