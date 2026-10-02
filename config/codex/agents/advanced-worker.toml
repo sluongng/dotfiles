@@ -1,7 +1,7 @@
 name = "advanced-worker"
-description = "Astra/medium implementation owner for a bounded change requiring design judgment, multiple coordinated edits, or integration. Use investigator when root cause or requirements are still unclear."
+description = "GPT-6.1 Sol/medium implementation owner for a bounded change requiring design judgment, multiple coordinated edits, or integration. Use investigator when root cause or requirements are still unclear."
 nickname_candidates = ["Implementer", "Integrator"]
-model = "gpt-6-astra"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "medium"
 developer_instructions = """
 Own the bounded implementation assigned by the parent, including local design

@@ -1,7 +1,7 @@
 name = "deep-reviewer"
-description = "Read-only Astra/high reviewer for difficult security, concurrency, compatibility, or cross-cutting changes. Trace failure scenarios and verify material findings; use reviewer for ordinary change review."
+description = "Read-only GPT-6.1 Sol/high reviewer for difficult security, concurrency, compatibility, or cross-cutting changes. Trace failure scenarios and verify material findings; use reviewer for ordinary change review."
 nickname_candidates = ["Deep Reviewer", "Sentinel"]
-model = "gpt-6-astra"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 developer_instructions = """
 Independently review the exact change and assumptions assigned by the parent.

@@ -29,19 +29,19 @@ implementation. For scheduler server changes, use `scheduler_server_test.go`.
 ## Subagents
 
 Use subagents when they can materially advance the task in parallel without
-blocking the main path. Keep the interactive agent on Astra/high and choose
+blocking the main path. Keep the interactive agent on GPT-6.1 Sol/high and choose
 named roles according to the assignment:
 
 - `scout` (Luna/high): narrow read-only searches, call-path tracing, and evidence extraction.
-- `worker` (Sol/medium): implement a well-specified change with explicit ownership.
-- `quick-worker` (Astra/low): execute a small, decided change with several instructions or constraints; escalate unresolved design questions.
-- `advanced-worker` (Astra/medium): own a bounded implementation that still requires design judgment and integration work.
-- `investigator` (Astra/high): diagnose ambiguous failures, test competing explanations, or analyze a difficult design; return evidence without editing.
-- `reviewer` (Sol/high): independent review of ordinary changes for actionable defects.
-- `deep-reviewer` (Astra/high): independent review of security, concurrency, compatibility, or cross-cutting changes where missed defects are costly.
+- `worker` (GPT-6.1 Sol/medium): implement a well-specified change with explicit ownership.
+- `quick-worker` (GPT-6.1 Sol/low): execute a small, decided change with several instructions or constraints; escalate unresolved design questions.
+- `advanced-worker` (GPT-6.1 Sol/medium): own a bounded implementation that still requires design judgment and integration work.
+- `investigator` (GPT-6.1 Sol/high): diagnose ambiguous failures, test competing explanations, or analyze a difficult design; return evidence without editing.
+- `reviewer` (GPT-6.1 Sol/high): independent review of ordinary changes for actionable defects.
+- `deep-reviewer` (GPT-6.1 Sol/high): independent review of security, concurrency, compatibility, or cross-cutting changes where missed defects are costly.
 
 Use `agy-consult` only for its explicit advisory scouting workflow. A default
-subagent can inherit Astra/high for assignments that do not fit a named role.
+subagent can inherit GPT-6.1 Sol/high for assignments that do not fit a named role.
 Keep urgent blocking work local and avoid delegating trivial lookups.
 Six spawned agents is a concurrency ceiling, not a target. Assign a concrete
 deliverable and scope to each; give parallel editors disjoint file or module

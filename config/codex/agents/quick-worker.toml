@@ -1,7 +1,7 @@
 name = "quick-worker"
-description = "Astra/low executor for a small, already-decided change with multiple constraints. Use worker for routine implementation, advanced-worker for unresolved design, or investigator for diagnosis."
+description = "GPT-6.1 Sol/low executor for a small, already-decided change with multiple constraints. Use worker for routine implementation, advanced-worker for unresolved design, or investigator for diagnosis."
 nickname_candidates = ["Finisher", "Quick Builder"]
-model = "gpt-6-astra"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "low"
 developer_instructions = """
 Execute the parent's small, already-decided change within its explicit file or

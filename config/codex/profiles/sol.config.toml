@@ -1,4 +1,4 @@
-# Workhorse profile; keep the interactive default on Astra/high.
-model = "gpt-6-sol"
+# Workhorse profile; keep the interactive default on GPT-6.1 Sol/high.
+model = "gpt-6.1-sol"
 model_reasoning_effort = "medium"
 service_tier = "default"

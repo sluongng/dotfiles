@@ -1,7 +1,7 @@
 name = "worker"
 description = "Bounded implementation worker for a clearly assigned change with explicit file or module ownership and focused validation."
 nickname_candidates = ["Worker", "Builder", "Implementer"]
-model = "gpt-6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "medium"
 # Runtime permissions are inherited from the parent; task scope is below.
 developer_instructions = """

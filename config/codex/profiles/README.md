@@ -5,19 +5,19 @@ profiles are full configuration layers selected with `--profile NAME`.
 
 | Command | Experiment |
 | --- | --- |
-| `codex --profile astra-notes` | Explicit notes/history mode with mixed-model delegation; also the shared default |
-| `codex --profile astra-classic` | Ordinary summary compaction for comparison or rollback |
-| `codex --profile astra-quick` | Astra/medium reasoning for routine work |
-| `codex --profile astra-priority` | Astra/high on the advertised priority tier, with increased usage |
-| `codex --profile sol` | GPT-6 Sol/medium for routine coding and agentic work |
+| `codex --profile sol-notes` | Explicit notes/history mode with mixed-model delegation; also the shared default |
+| `codex --profile sol-classic` | Ordinary summary compaction for comparison or rollback |
+| `codex --profile sol-quick` | GPT-6.1 Sol/medium reasoning for routine work |
+| `codex --profile sol-priority` | GPT-6.1 Sol/high on the advertised priority tier, with increased usage |
+| `codex --profile sol` | GPT-6.1 Sol/medium for routine coding and agentic work |
 | `codex --profile luna` | GPT-6 Luna/high for focused, bounded work |
 
-The September 23 model refresh keeps Astra/high as the interactive default and
-uses GPT-6 Luna/high for `scout`, GPT-6 Sol/medium for `worker`, and GPT-6 Sol/high
-for `reviewer`. Advanced implementation, investigation, and deep review remain
-on Astra. Model context limits stay at catalog defaults.
+The September 30 model refresh uses GPT-6.1 Sol/high as the interactive default.
+All prior GPT-6 Astra/Sol roles and profiles now use GPT-6.1 Sol at their existing
+reasoning effort; `scout` remains GPT-6 Luna/high. The former `astra-*` profiles
+are now named `sol-*`. Model context limits stay at catalog defaults.
 
-Ordinary `codex` uses Astra/high and mixed-model delegation with experimental
+Ordinary `codex` uses GPT-6.1 Sol/high and mixed-model delegation with experimental
 context management enabled. On 2026-09-05, an actual Astra parent spawned
 GPT-5.6 Luna/high, Terra/medium, and Sol/high roles with the feature enabled. All three
 completed a read-only calculation, recalled the result in a follow-up, wrote

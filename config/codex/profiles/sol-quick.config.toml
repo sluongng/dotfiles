@@ -1,0 +1,4 @@
+# Compare ordinary tasks with the default GPT-6.1 Sol/high workflow.
+model = "gpt-6.1-sol"
+model_reasoning_effort = "medium"
+service_tier = "default"
