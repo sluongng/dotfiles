@@ -151,6 +151,29 @@ class ObserveTest(unittest.TestCase):
         self.run_collector()
         self.assertEqual([e["text"] for e in self.events()], ["The user correction"])
 
+    def test_skill_and_internal_context_are_not_human_corrections(self):
+        injected = [
+            "  <skill>\n<name>demo</name>\n<path>skills/demo/SKILL.md</path>\nFix the implementation.\n</skill>",
+            '<codex_internal_context source="goal">\nKeep going until complete.\n</codex_internal_context>',
+            '<codex_internal_context source="user_goal">\nKeep going until complete.\n</codex_internal_context>',
+            '<codex_internal_context source="extension">\nImprove the implementation.\n</codex_internal_context>',
+        ]
+        correction = "Do not mistake <skill> or <codex_internal_context> for my correction."
+        for compressed in (False, True):
+            with self.subTest(compressed=compressed):
+                tid = "compressed" if compressed else "plain"
+                entries = [context(), *[user(text) for text in injected], user(correction)]
+                entries.extend(record("response_item", {"type": "message", "role": "user", "content": [{"type": "input_text", "text": text}]}) for text in injected)
+                entries.extend(record("event_msg", {"type": "item_completed", "item": {"type": "UserMessage", "content": [{"type": "Text", "text": text}]}}) for text in injected)
+                path = self.thread(tid, entries=entries)
+                if compressed:
+                    with compression.zstd.open(Path(str(path) + ".zst"), "wb") as stream:
+                        stream.write(path.read_bytes())
+                    path.unlink()
+                self.assertEqual(self.run_collector()["events_created"], 1)
+                self.assertEqual([e["text"] for e in self.events() if e["thread_id"] == tid], [correction])
+                self.assertTrue(all(e["metadata"]["human"] for e in self.events()))
+
     def test_bad_read_never_acknowledges_and_recovers(self):
         path = self.thread()
         self.run_collector()

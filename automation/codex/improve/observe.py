@@ -30,7 +30,8 @@ META_JOB = re.compile(r"(?:Aton\s+)?Automation\s+ID:\s*(codex-improve|codex-obse
 AUTOMATION = re.compile(r"(?:Aton\s+)?Automation\s+ID:", re.I)
 INJECTED = ("# AGENTS.md instructions", "<environment_context>", "<permissions instructions>",
             "<skills_instructions>", "<available_skills>", "<recommended_plugins>",
-            "<subagent_notification>", "<INSTRUCTIONS>")
+            "<subagent_notification>", "<INSTRUCTIONS>", "<skill>",
+            "<codex_internal_context")
 MAX_TEXT = 16000
 
 
