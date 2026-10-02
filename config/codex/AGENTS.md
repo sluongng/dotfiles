@@ -5,6 +5,10 @@
 When creating local Git branches for the user, use the `sluongng/` prefix.
 Do not use `codex/` as a branch prefix.
 
+Never include customer names or other customer-identifying information in Git
+branch names, including local branches. Use neutral, technical names describing
+the component or change so branch publication cannot reveal a customer identity.
+
 ## Skill scope and completion
 
 Use skills for task-specific knowledge. The user's explicit instructions and
@@ -19,12 +23,28 @@ quote the rule, and explain why it applies. Keep account, publication, and
 transaction boundaries intact. Scale validation to the change and rerun passing
 checks only when new edits, failures, or unresolved concerns justify it.
 
+For routine dependency or toolchain support additions, do not add a
+version-specific README section merely to announce the new version or repeat
+existing selection instructions. Update documentation when the change introduces
+new setup, migration, or compatibility requirements, or makes existing guidance
+incorrect. Keep the documentation change scoped to that need.
+
+## Language
+
+Keep conversation in English unless the user requests otherwise. The language
+of a form or deliverable is independent: use the requested local language in
+its fields or prose without switching the conversation language.
+
 ## Tests
 
 Prefer extending an existing test file for the affected component over creating
 another test file. Keep regression tests at the public API or observable behavior
 level; avoid tests that only exercise unexported helpers or mirror the
 implementation. For scheduler server changes, use `scheduler_server_test.go`.
+
+Name table-driven cases by the behavior or domain concept they exercise, not
+opaque ordinals or low-level identifiers. Put each case's differing inputs and
+expectations in explicit fields instead of branching on its position or name.
 
 ## Subagents
 
