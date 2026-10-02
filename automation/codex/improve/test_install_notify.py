@@ -51,6 +51,91 @@ class InstallNotifyTest(unittest.TestCase):
             self.assertFalse(any("enable" in call.args for call in run.call_args_list))
             dropin = (home / ".config/systemd/user/codex-automaton@codex-improve.service.d/improvement.conf").read_text()
             self.assertIn(str(home / ".local/state/codex-automaton/codex-improve/last-message.md"), dropin)
+            self.assertIn("retrospective.py", dropin)
+            self.assertNotIn("ExecCondition=", dropin)
+            self.assertTrue(any(call.args == ('systemctl', '--user', 'disable', '--now', 'codex-observe.timer')
+                                for call in run.call_args_list))
+
+    def test_retrospective_notifies_applied_changes_without_legacy_proposal_queue(self):
+        with tempfile.TemporaryDirectory(prefix="retrospect-notify-test-") as folder:
+            state = Path(folder)
+            (state / "retrospective/run").mkdir(parents=True)
+            (state / "retrospective/history").mkdir()
+            (state / "retrospective/run/manifest.json").write_text(json.dumps({"run_id": "run"}))
+            history = state / "retrospective/history/run.json"
+            (state / "pipeline-state.json").write_text(json.dumps({"reviewed": {}, "candidates": {
+                "legacy": {"status": "needsreview", "created_at": "2020-01-01T00:00:00Z"}}}))
+            with (patch.object(sys, "argv", ["notify.py", "--state-dir", str(state)]),
+                  patch.object(notify.shutil, "which", return_value="/fake/notify-send"),
+                  patch.object(notify.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run):
+                history.write_text(json.dumps({"result": {"changed_files": []}}))
+                notify.main()
+                self.assertEqual(run.call_count, 0)
+                history.write_text(json.dumps({"result": {"changed_files": ["/example/AGENTS.md"]}}))
+                notify.main()
+                notify.main()
+                self.assertEqual(run.call_count, 1)
+                self.assertIn("Codex retrospective: 1 file(s) improved", run.call_args.args[0])
+
+    def test_failed_first_snapshot_does_not_read_legacy_proposal_state(self):
+        with tempfile.TemporaryDirectory(prefix="retrospect-notify-test-") as folder:
+            state = Path(folder)
+            (state / "retrospective/run").mkdir(parents=True)
+            (state / "pipeline-state.json").write_text("corrupt legacy state")
+            with (patch.object(sys, "argv", ["notify.py", "--state-dir", str(state), "--service-result", "exit-code"]),
+                  patch.object(notify.shutil, "which", return_value="/fake/notify-send"),
+                  patch.object(notify.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run):
+                notify.main()
+                self.assertEqual(run.call_count, 1)
+                self.assertIn("Codex improvement review failed", run.call_args.args[0])
+
+    def test_failure_before_manifest_and_overdue_notices_do_not_repeat(self):
+        with tempfile.TemporaryDirectory(prefix="improve-notify-test-") as folder:
+            state = Path(folder)
+            candidate_id = "a" * 24
+            data = {"reviewed": {}, "candidates": {candidate_id: {
+                "status": "needsreview", "created_at": "2020-01-01T00:00:00Z"}}}
+            (state / "pipeline-state.json").write_text(json.dumps(data))
+            with (patch.object(sys, "argv", ["notify.py", "--state-dir", str(state), "--service-result", "exit-code"]),
+                  patch.object(notify.shutil, "which", return_value="/fake/notify-send"),
+                  patch.object(notify.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run):
+                notify.main()
+                self.assertEqual(run.call_count, 2)
+                notify.main()
+                self.assertEqual(run.call_count, 2)
+                data["candidates"][candidate_id]["status"] = "accepted"
+                (state / "pipeline-state.json").write_text(json.dumps(data))
+                notify.main()
+                self.assertEqual(run.call_count, 3)
+                notify.main()
+                self.assertEqual(run.call_count, 3)
+                data["candidates"][candidate_id]["status"] = "applied"
+                (state / "pipeline-state.json").write_text(json.dumps(data))
+                notify.main()
+                self.assertEqual(run.call_count, 3)
+
+    def test_failure_recurrence_after_success_is_notified_again(self):
+        with tempfile.TemporaryDirectory(prefix="improve-notify-test-") as folder:
+            state = Path(folder)
+            with (patch.object(notify.shutil, "which", return_value="/fake/notify-send"),
+                  patch.object(notify.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run):
+                for result, expected in (("exit-code", 1), ("exit-code", 1),
+                                         ("exec-condition", 1), ("exit-code", 1),
+                                         ("success", 1), ("exit-code", 2)):
+                    with patch.object(sys, "argv", ["notify.py", "--state-dir", str(state), "--service-result", result]):
+                        notify.main()
+                    self.assertEqual(run.call_count, expected)
+
+    def test_failed_notification_delivery_remains_retryable(self):
+        with tempfile.TemporaryDirectory(prefix="improve-notify-test-") as folder:
+            state = Path(folder)
+            with (patch.object(sys, "argv", ["notify.py", "--state-dir", str(state), "--service-result", "timeout"]),
+                  patch.object(notify.shutil, "which", return_value="/fake/notify-send"),
+                  patch.object(notify.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)) as run):
+                notify.main()
+                notify.main()
+                self.assertEqual(run.call_count, 2)
+                self.assertFalse((state / "last-notification.json").exists())
 
     def test_notifications_count_host_admissions_not_model_duplicates(self):
         with tempfile.TemporaryDirectory(prefix="improve-notify-test-") as folder:

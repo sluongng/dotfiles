@@ -70,7 +70,8 @@ def main() -> None:
             raise SystemExit('Invalid excluded thread ID.')
         exclusions = sorted(excluded_roots(state) | set(args.exclude_root))
         atomic_install(state / 'excluded-roots.json', json.dumps(exclusions) + '\n', backup)
-    prefix = f'/usr/bin/python3 {unit_arg(scripts / "pipeline.py")} --state-dir {unit_arg(state)} --source-root {unit_arg(source)} --codex-home {unit_arg(home / ".codex")}'
+    prefix = f'/usr/bin/python3 {unit_arg(scripts / "retrospective.py")} --state-dir {unit_arg(state)} --source-root {unit_arg(source)} --codex-home {unit_arg(home / ".codex")} --aton-state-dir {unit_arg(home / ".local/state/codex-automaton")}'
+    legacy_prefix = f'/usr/bin/python3 {unit_arg(scripts / "pipeline.py")} --state-dir {unit_arg(state)} --source-root {unit_arg(source)} --codex-home {unit_arg(home / ".codex")}'
     files = {
         'codex-observe.service': f'''[Unit]
 Description=Collect incremental Codex evidence and local setup health
@@ -98,9 +99,8 @@ WantedBy=timers.target
         'codex-automaton@codex-improve.service.d/improvement.conf': f'''[Service]
 UMask=0077
 Nice=10
-TimeoutStartSec=20min
+TimeoutStartSec=2h
 Environment=CODEX_HOME={unit_arg(home / '.codex')}
-ExecCondition={prefix} gate
 ExecStartPre={prefix} prepare
 ExecStartPost={prefix} finish --result {unit_arg(home / '.local/state/codex-automaton/codex-improve/last-message.md')}
 ExecStopPost=-/usr/bin/python3 {unit_arg(scripts / 'notify.py')} --state-dir {unit_arg(state)} --service-result ${{SERVICE_RESULT}}
@@ -114,7 +114,7 @@ UMask=0077
 Nice=10
 TimeoutStartSec=5min
 KillMode=control-group
-ExecStart={prefix} check %i
+ExecStart={legacy_prefix} check %i
 ''',
     }
     for name, content in files.items():
@@ -123,9 +123,9 @@ ExecStart={prefix} check %i
     template = (source / 'config/codex/automations/codex-improve.toml.in').read_text()
     replacements = {
         '@SOURCE@': json.dumps(str(source)),
-        '@SCHEMA@': json.dumps(str(state / 'review/result.schema.json')),
+        '@SCHEMA@': json.dumps(str(state / 'retrospective/run/result.schema.json')),
         '@CODEX@': json.dumps(shutil.which('codex') or '/usr/bin/codex'),
-        '@PROMPT_PATH@': str(state / 'review/prompt.md'),
+        '@PROMPT_PATH@': str(state / 'retrospective/run/prompt.md'),
     }
     for key, value in replacements.items():
         template = template.replace(key, value)
@@ -146,10 +146,13 @@ ExecStart={prefix} check %i
     run('systemctl', '--user', 'daemon-reload')
     run('systemd-analyze', '--user', 'verify', 'codex-observe.service', 'codex-observe.timer', 'codex-improvement-check@sample.service', 'codex-automaton@codex-improve.service')
     cli = home / '.local/bin/codex-improve'
-    atomic_install(cli, '#!/bin/sh\nexec /usr/bin/python3 ' + "'" + str(scripts / 'pipeline.py').replace("'", "'\\''") + "'" + ' "$@"\n', backup)
+    atomic_install(cli, '#!/bin/sh\nexec /usr/bin/python3 ' + "'" + str(scripts / 'retrospective.py').replace("'", "'\\''") + "'" + ' "$@"\n', backup)
     cli.chmod(0o700)
     if args.enable:
-        run('systemctl', '--user', 'enable', '--now', 'codex-observe.timer', 'codex-automaton@codex-improve.timer')
+        run('systemctl', '--user', 'enable', '--now', 'codex-automaton@codex-improve.timer')
+    # The retrospective snapshots chats directly. Keep the legacy event history,
+    # but stop producing an independent event queue.
+    run('systemctl', '--user', 'disable', '--now', 'codex-observe.timer')
     print(json.dumps({'installed': True, 'enabled': args.enable, 'state_dir': str(state), 'backup': str(backup)}))
 
 
