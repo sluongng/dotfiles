@@ -15,6 +15,13 @@ Record the current state before changing anything:
 - relevant repository commits, branches, dirty files, and upstream remotes;
 - enabled/default feature flags and plugin state.
 
+For a release-freshness audit, inspect any configured updater timer/service and
+its latest terminal result, receipt, and relevant failure logs before explaining
+why installed versions lag. Separate the observed scheduled-run failure from
+other defects found during the audit. An enabled timer does not prove a
+successful build, installation, or runtime activation. This inspection is
+read-only; it does not authorize triggering or changing the scheduler.
+
 Select the latest packageable CLI alpha by checking both the npm registry metadata for `@openai/codex` and the matching official GitHub release. Do not select a tag merely because it sorts newest. Require the release assets consumed by the package, including the Linux musl CLI package and responses API proxy. If the newest alpha lacks required assets, choose the newest complete alpha and explain the gap.
 
 Determine the desktop app target from current official Linux release metadata and
