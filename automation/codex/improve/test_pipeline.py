@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("pipeline", Path(__file__).with_name("pipeline.py"))
 p = importlib.util.module_from_spec(SPEC)
@@ -55,6 +56,89 @@ class PipelineTest(unittest.TestCase):
         p.atomic_json(self.args.result, result)
         with p.locked(self.state):
             return p.finish(self.args)
+
+    def dated_event(self, event_id, when, root, text="Ordinary task detail", kind="user_message"):
+        self.event(event_id, text)
+        path = self.state / "events" / f"{event_id}.json"
+        event = p.read_json(path)
+        event.update(timestamp=when, root_id=root, kind=kind)
+        p.atomic_json(path, event)
+
+    def test_selection_reserves_oldest_and_groups_priority_context(self):
+        (self.state / "events" / f"{'a' * 64}.json").unlink()
+        for i in range(15):
+            self.dated_event(f"ordinary{i:02d}", "2026-09-10T00:00:00Z", f"ordinary{i}")
+        self.dated_event("zzz-oldest", "2026-08-01T00:00:00Z", "oldest")
+        self.dated_event("zzz-context", "2026-09-20T00:00:00Z", "correction")
+        self.dated_event("zzz-correction", "2026-09-21T00:00:00Z", "correction", "I asked you not to do that again")
+        self.dated_event("zzz-failed1", "2026-09-22T00:00:00Z", "failure", "Build failed", "task_outcome")
+        self.dated_event("zzz-failed2", "2026-09-23T00:00:00Z", "failure", "Build failed again", "task_outcome")
+        with patch.object(p, "MAX_EVENTS", 8):
+            self.prepare()
+        manifest = p.active(self.state)
+        ids = manifest["event_ids"]
+        self.assertEqual(len(ids), 8)
+        for key in ("zzz-oldest", "zzz-correction", "zzz-context", "zzz-failed1", "zzz-failed2"):
+            self.assertIn(key, ids)
+        self.assertEqual(ids.index("zzz-context") + 1, ids.index("zzz-correction"))
+        self.assertFalse(next(g for g in manifest["selection"]["task_groups"] if g["task_id"] == "correction")["partial"])
+
+    def test_priority_tasks_get_round_robin_turns_without_mutating_evidence(self):
+        (self.state / "events" / f"{'a' * 64}.json").unlink()
+        for i in range(30):
+            self.dated_event(f"dominant{i:02d}", "2026-09-01T00:00:00Z", "dominant",
+                             "prefix " * 100 + " You should not do this again " + " suffix" * 100)
+        self.dated_event("later-correction", "2026-09-20T00:00:00Z", "second", "Do not repeat this again")
+        events = list(p.eligible(self.state, {}))
+        original = json.dumps(events, sort_keys=True)
+        before = p.backlog_metrics(events)
+        with patch.object(p, "MAX_EVENTS", 24):
+            selected, _ = p.select_events(events)
+        self.assertEqual(len(selected), 24)
+        self.assertIn("later-correction", [event["id"] for event in selected])
+        self.assertEqual(json.dumps(events, sort_keys=True), original)
+        self.assertEqual(p.backlog_metrics(events)["high_signal_pending_events"], before["high_signal_pending_events"])
+        self.assertTrue(any(event["text_truncated"] for event in selected))
+
+    def test_status_distinguishes_backlogs_slos_and_legacy_proposal_age(self):
+        self.dated_event("correction", "2026-09-10T00:00:00Z", "correction", "Do not do this again")
+        self.dated_event("unknown", "invalid", "unknown")
+        self.prepare()
+        output = self.finish(self.result())
+        candidate_id = output["candidate_ids"][0]
+        data = p.ledger(self.state)
+        data["candidates"][candidate_id].pop("created_at")
+        p.atomic_json(self.state / "pipeline-state.json", data)
+        path = self.state / "candidates" / candidate_id / "candidate.json"
+        candidate = p.read_json(path)
+        candidate["created_at"] = "2026-09-01T00:00:00Z"
+        p.atomic_json(path, candidate)
+        self.dated_event("new-correction", "2026-09-10T00:00:00Z", "new", "Stop doing that again")
+        self.dated_event("new-unknown", "invalid", "unknown")
+        p.atomic_json(self.state / "observation.json", {
+            "timestamp": "2026-09-27T00:00:00Z", "counts": {"pending": 17},
+            "scheduler": {"status": "attention", "findings": [{"check": "active_without_enabled_timer", "id": "job"}],
+                          "jobs": [{"id": "job", "declared_status": "ACTIVE", "timer": {"active": "inactive"},
+                                    "last_success_at": "2026-09-01T00:00:00Z", "prompt": "private task content"}],
+                          "prompt": "private task content"}})
+        captured = io.StringIO()
+        with patch.object(p, "now", return_value="2026-09-28T00:00:00Z"), patch.object(p.subprocess, "run", side_effect=AssertionError("status must not invoke systemctl")), contextlib.redirect_stdout(captured):
+            self.assertEqual(p.main(["--state-dir", str(self.state), "status"]), 0)
+        status = json.loads(captured.getvalue())
+        self.assertEqual(status["review_event_backlog"]["pending_events"], 2)
+        self.assertEqual(status["collector_thread_backlog"]["pending_threads"], 17)
+        self.assertTrue(status["scheduler"]["cached"])
+        self.assertEqual(status["scheduler"]["observed_at"], "2026-09-27T00:00:00Z")
+        self.assertEqual(status["scheduler"]["status"], "attention")
+        self.assertEqual(status["scheduler"]["findings"][0]["check"], "active_without_enabled_timer")
+        self.assertEqual(status["scheduler"]["jobs"][0]["last_success_at"], "2026-09-01T00:00:00Z")
+        self.assertNotIn("private task content", captured.getvalue())
+        self.assertEqual(status["oldest_pending_age_days"], 18)
+        self.assertEqual(status["unknown_timestamp_events"], 1)
+        self.assertEqual(status["high_signal_over_7_days"], 1)
+        self.assertEqual(status["events_over_14_days"], 1)
+        self.assertEqual(status["proposal_progress"]["overdue_candidates"][0]["candidate_id"], candidate_id)
+        self.assertEqual(status["completed_review_outcomes"], {"reviewed": 1})
 
     def test_batch_stable_and_ack_only_snapshot(self):
         first = self.prepare()

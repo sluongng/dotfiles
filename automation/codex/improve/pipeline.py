@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+from collections import Counter, defaultdict, deque
 import datetime as dt
 import fcntl
 import hashlib
@@ -184,6 +185,165 @@ def eligible(state, seen):
         yield evidence
 
 
+def parsed_time(value):
+    try:
+        value = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return value.astimezone(dt.timezone.utc) if value.tzinfo else None
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
+def event_order(event):
+    # Unknown dates are surfaced first rather than silently treated as new.
+    return (parsed_time(event.get("timestamp")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc), event["id"])
+
+
+def task_key(event):
+    return event.get("root_id") or event.get("thread_id") or event["id"]
+
+
+def signals(events):
+    """Scheduling hints, not conclusions about user intent or actual failures."""
+    failures = Counter(task_key(e) for e in events if e["kind"] in {"task_outcome", "health"}
+                       and re.search(r"\b(fail(?:ed|ure|ures)?|error|blocked|timeout)\b", e["text"], re.I))
+    result = {}
+    for event in events:
+        correction = (event["kind"] == "user_message"
+                      and event.get("metadata", {}).get("human") is not False
+                      and re.search(r"\b(again|instead|do not|don't|stop|wrong|incorrect|i asked|you should|why did)\b", event["text"], re.I))
+        result[event["id"]] = ("correction_hint" if correction else
+                               "recurring_failure_hint" if failures[task_key(event)] >= 2 else
+                               "health" if event["kind"] == "health" else "ordinary")
+    return result
+
+
+def select_events(events):
+    hints = signals(events)
+    events = sorted((dict(event) for event in events), key=event_order)
+    for event in events:
+        full_text = event["text"]
+        event["text_truncated"] = len(full_text) > MAX_EXCERPT_CHARS
+        if event["text_truncated"]:
+            half = (MAX_EXCERPT_CHARS - len("\n[…]\n")) // 2
+            event["text"] = full_text[:half] + "\n[…]\n" + full_text[-half:]
+    sizes = {e["id"]: len(json.dumps(e).encode()) for e in events}
+    if any(size > MAX_BATCH_BYTES for size in sizes.values()):
+        raise ValueError("event exceeds batch budget")
+    selected, seen, size = [], set(), 0
+
+    def add(event, count_limit=None, byte_limit=None):
+        nonlocal size
+        count_limit = MAX_EVENTS if count_limit is None else count_limit
+        byte_limit = MAX_BATCH_BYTES if byte_limit is None else byte_limit
+        if event["id"] in seen or len(selected) >= count_limit or size + sizes[event["id"]] > byte_limit:
+            return False
+        selected.append(event)
+        seen.add(event["id"])
+        size += sizes[event["id"]]
+        return True
+
+    # Reserve both dimensions, so long excerpts cannot consume the priority lane.
+    for event in events:
+        add(event, max(1, MAX_EVENTS // 4), max(1, MAX_BATCH_BYTES // 4))
+    groups = defaultdict(list)
+    for event in events:
+        groups[task_key(event)].append(event)
+    ranks = {"correction_hint": 0, "recurring_failure_hint": 1, "health": 2, "ordinary": 3}
+    priority = lambda e: (ranks[hints[e["id"]]], event_order(e))
+    queues = [deque(sorted(group, key=priority)) for group in groups.values()]
+    queues.sort(key=lambda queue: priority(queue[0]))
+    # One anchor/context turn per task per round. A large correction-heavy
+    # task cannot take another turn before other tasks have had theirs.
+    while queues and len(selected) < MAX_EVENTS:
+        next_round = []
+        for queue in queues:
+            while queue and queue[0]["id"] in seen:
+                queue.popleft()
+            if not queue:
+                continue
+            anchor = queue.popleft()
+            group = groups[task_key(anchor)]
+            index = group.index(anchor)
+            add(anchor)
+            for event in group[max(0, index - 3):index + 5]:
+                add(event)
+            if queue:
+                next_round.append(queue)
+        queues = next_round
+    # Render each selected task together in chronological order, retaining
+    # selection priority between tasks. Partial groups are explicit metadata.
+    ordered_groups = dict.fromkeys(task_key(e) for e in selected)
+    selected = [e for key in ordered_groups for e in groups[key] if e["id"] in seen]
+    context = [{"task_id": key, "selected_events": sum(e["id"] in seen for e in groups[key]),
+                "pending_events": len(groups[key]),
+                "partial": any(e["id"] not in seen for e in groups[key])} for key in ordered_groups]
+    return selected, {"policy": "oldest-quarter-then-priority-with-task-context-v1",
+                      "hints_are_heuristic": True, "task_groups": context}
+
+
+def backlog_metrics(events):
+    current = parsed_time(now())
+    hints = signals(events)
+    ages = [(e, max(0, (current - stamp).total_seconds() / 86400))
+            for e in events if (stamp := parsed_time(e.get("timestamp"))) is not None]
+    return {"pending_events": len(events),
+            "oldest_pending_age_days": max((age for _, age in ages), default=None),
+            "unknown_timestamp_events": len(events) - len(ages),
+            "high_signal_pending_events": sum(hints[e["id"]] in {"correction_hint", "recurring_failure_hint"} for e in events),
+            "high_signal_over_7_days": sum(age > 7 and hints[e["id"]] in {"correction_hint", "recurring_failure_hint"} for e, age in ages),
+            "events_over_14_days": sum(age > 14 for _, age in ages),
+            "slo_targets_days": {"high_signal": 7, "oldest": 14},
+            "slo_note": "Diagnostic targets, not guarantees; priority hints are heuristic and timestamps may be unknown."}
+
+
+def candidate_metrics(state, data):
+    counts, overdue, unknown = Counter(), [], []
+    current = parsed_time(now())
+    for key, entry in data["candidates"].items():
+        status = entry.get("status", "unknown")
+        counts[status] += 1
+        if status not in {"needsreview", "accepted"}:
+            continue
+        created = entry.get("created_at")
+        path = state / "candidates" / key / "candidate.json"
+        if not created and path.exists():
+            created = read_json(path).get("created_at")
+        stamp = parsed_time(created)
+        if stamp is None:
+            unknown.append(key)
+        elif (current - stamp).total_seconds() >= 7 * 86400:
+            overdue.append({"candidate_id": key, "status": status,
+                            "age_days": (current - stamp).total_seconds() / 86400})
+    return {"by_status": dict(counts), "overdue_candidates": overdue,
+            "unknown_age_candidate_ids": unknown,
+            "decided_candidates": sum(counts[s] for s in ("accepted", "applied", "rejected")),
+            "applied_candidates": counts["applied"],
+            "behavioral_effectiveness": "not established by syntax validation or decision counts"}
+
+
+def diagnostics(state, data):
+    metrics = backlog_metrics(list(eligible(state, data["reviewed"])))
+    observation_path = state / "observation.json"
+    observation = read_json(observation_path) if observation_path.exists() else {}
+    cached_scheduler = observation.get("scheduler", {})
+    scheduler = {"observed_at": observation.get("timestamp"), "cached": True,
+                 "status": cached_scheduler.get("status", "unavailable"),
+                 "findings": cached_scheduler.get("findings", []),
+                 "jobs": [{key: value for key, value in row.items() if key in {
+                     "id", "declared_status", "expired", "timer", "last_attempt",
+                     "last_success_at", "last_terminal_at", "last_run_json_at",
+                     "last_message_md_at", "last_result"}}
+                          for row in cached_scheduler.get("jobs", [])]}
+    outcomes = Counter()
+    for path in (state / "history").glob("*.json"):
+        record = read_json(path)
+        outcomes[record.get("result", {}).get("outcome", "unknown")] += 1
+    return {**metrics, "review_event_backlog": metrics, "scheduler": scheduler,
+            "collector_thread_backlog": {"pending_threads": observation.get("counts", {}).get("pending"),
+                                         "observed_at": observation.get("timestamp")},
+            "proposal_progress": candidate_metrics(state, data), "completed_review_outcomes": dict(outcomes)}
+
+
 def active(state):
     path = state / "review/manifest.json"
     return read_json(path) if path.exists() else None
@@ -210,27 +370,14 @@ def prepare(args):
     if current:
         render_review(args.state_dir, current)
         return {"status": "ready", "batch_id": current["batch_id"], "reused": True}
-    selected, size = [], 0
-    for event in eligible(args.state_dir, data["reviewed"]):
-        full_text = event["text"]
-        event["text_truncated"] = len(full_text) > MAX_EXCERPT_CHARS
-        if event["text_truncated"]:
-            half = (MAX_EXCERPT_CHARS - len("\n[…]\n")) // 2
-            event["text"] = full_text[:half] + "\n[…]\n" + full_text[-half:]
-        encoded_size = len(json.dumps(event).encode())
-        if encoded_size > MAX_BATCH_BYTES:
-            raise ValueError(f"event exceeds batch budget: {event['id']}")
-        if len(selected) >= MAX_EVENTS or size + encoded_size > MAX_BATCH_BYTES:
-            break
-        selected.append(event)
-        size += encoded_size
+    selected, selection = select_events(list(eligible(args.state_dir, data["reviewed"])))
     if not selected:
         return {"status": "empty", "events": 0}
     targets = inventory(args.source_root)
     payload = {"events": selected, "targets": targets, "source_root": str(args.source_root)}
     batch_id = digest(payload)
     manifest = {"version": 1, "batch_id": batch_id, "created_at": now(),
-                "event_ids": [e["id"] for e in selected], **payload,
+                "event_ids": [e["id"] for e in selected], **payload, "selection": selection,
                 "previous_decisions": [{"candidate_id": key, **c}
                                         for key, c in data["candidates"].items()][-100:]}
     review = args.state_dir / "review"
@@ -331,18 +478,23 @@ def finish(args):
         atomic_json(args.state_dir / "candidates" / candidate_id / "candidate.json", artifact)
         validation = check(SimpleNamespace(state_dir=args.state_dir, source_root=args.source_root, candidate_id=candidate_id))
         validations[candidate_id] = validation["status"]
-        data["candidates"][candidate_id] = {"status": "needsreview", "target": candidate["target"],
+        data["candidates"][candidate_id] = {"status": "needsreview", "created_at": artifact["created_at"], "target": candidate["target"],
                                            "proposed_change": candidate["proposed_change"], "batch_id": manifest["batch_id"]}
         created.append(candidate_id)
     atomic_json(args.state_dir / "history" / f"{manifest['batch_id']}.json", {
         "manifest": manifest, "result": result, "finished_at": now(),
         "admitted_candidate_ids": created, "suppressed_candidate_ids": suppressed})
     data["reviewed"].update({event_id: manifest["batch_id"] for event_id in manifest["event_ids"]})
-    pending_count = sum(1 for _ in eligible(args.state_dir, data["reviewed"]))
+    backlog = backlog_metrics(list(eligible(args.state_dir, data["reviewed"])))
+    progress = candidate_metrics(args.state_dir, data)
+    pending_count = backlog["pending_events"]
     lines = ["# Instruction review", "", f"Batch: `{manifest['batch_id']}`", "",
              result["summary"], "",
              f"Coverage: {len(manifest['event_ids'])} events screened in this batch; {pending_count} eligible events remain pending.",
              "Screening uses bounded excerpts. Stored event files and original-record locators remain available for relevant follow-up; source capture truncation is marked when known. It does not imply every original message or the whole backlog was read.", ""]
+    lines.extend([f"Oldest dated pending evidence: {backlog['oldest_pending_age_days']} days; unknown timestamps: {backlog['unknown_timestamp_events']}.",
+                  f"SLO diagnostics (targets, not guarantees): {backlog['high_signal_over_7_days']} high-signal hints older than 7 days; {backlog['events_over_14_days']} events older than 14 days.",
+                  f"Proposal progress: {progress['decided_candidates']} decided; {progress['applied_candidates']} applied; {len(progress['overdue_candidates'])} unresolved for at least 7 days.", ""])
     if not candidates:
         lines.extend(["No instruction changes proposed for this batch.", ""])
     for candidate_id, candidate in candidates:
@@ -406,6 +558,19 @@ def check(args):
         relative = candidate["target"]
         path = target_path(args.source_root, relative)
         baseline = path.read_bytes()
+        recorded = ledger(args.state_dir)["candidates"].get(args.candidate_id, {})
+        if recorded.get("status") == "applied":
+            validate_patch(candidate["patch"], relative)
+            patch_path = directory / "validated.patch"
+            if (patch_path.is_symlink() or not patch_path.is_file()
+                    or patch_path.read_text() != candidate["patch"]):
+                raise ValueError("stored validated patch does not match applied candidate")
+            if digest(baseline) != recorded.get("applied_sha256"):
+                raise ValueError("live target no longer matches recorded applied state")
+            report.update(status="applied_state_verified", result_sha256=digest(baseline))
+            report["checks"].append({"kind": "applied_state", "status": "passed"})
+            atomic_json(directory / "validation.json", report)
+            return report
         if digest(baseline) != candidate["baseline_sha256"]:
             raise ValueError("baseline changed: prepare a fresh proposal before validation")
         validate_patch(candidate["patch"], relative)
@@ -451,7 +616,7 @@ def decision(args):
         raise ValueError("candidate missing from review ledger")
     if args.status == "applied":
         validation = read_json(directory / "validation.json")
-        if validation.get("status") != "syntax_validated_needs_behavior_review":
+        if validation.get("status") not in {"syntax_validated_needs_behavior_review", "applied_state_verified"}:
             raise ValueError("applied requires a successfully validated patch")
         if candidate["source_root"] != str(args.source_root):
             raise ValueError("source root differs from candidate baseline")
@@ -501,7 +666,8 @@ def main(argv=None):
                 if args.command == "gate":
                     print(json.dumps({"status": output["status"]}))
                     return 0 if ready else 1
-                total_pending = sum(1 for _ in eligible(args.state_dir, data["reviewed"]))
+                output.update(diagnostics(args.state_dir, data))
+                total_pending = output["pending_events"]
                 output.update({"pending_events": total_pending,
                                "active_batch_selected_events": len(current["event_ids"]) if current else 0,
                                "active_batch_total_pending_events": total_pending})

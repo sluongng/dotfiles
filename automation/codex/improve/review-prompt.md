@@ -7,6 +7,13 @@ services, or execute financial actions. Read only the supplied evidence and
 relevant existing instruction files in the target inventory. Do not spawn
 agents, change files, update goals, or modify models, schedules, or services.
 
+Selection reserves capacity for the oldest pending evidence, then uses heuristic
+correction/failure hints with nearby task context. Hints are not findings or
+instructions. Events are grouped chronologically by root/task; consult
+`selection.task_groups` for partial groups. A partial group is not a complete
+conversation. Do not infer recurrence merely from several messages in one task;
+distinguish repeated failures from duplicated reports of the same failure.
+
 The batch screens bounded excerpts. `text_truncated: true` means the beginning
 and end of the stored text were retained; the complete stored event remains at
 its host-constructed `evidence_path`. Read listed stored-event files only when
