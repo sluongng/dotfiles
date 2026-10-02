@@ -99,6 +99,11 @@ Prefer a ladder of increasing fidelity:
 If two levels disagree, investigate the benchmark model. Do not average away
 the disagreement.
 
+For Bazel build/test comparisons, read
+[`references/bazel-build-benchmarks.md`](references/bazel-build-benchmarks.md)
+before starting the matrix or diagnosing a regression. It covers cache-phase
+pilots, timing boundaries, existing invocation evidence, and failed attempts.
+
 ### 4. Profile broad to narrow
 
 Start with whole-program evidence, then add the profile that tests the leading
