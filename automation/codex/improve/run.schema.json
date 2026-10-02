@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "outcome", "summary", "reviewed_chat_ids", "changed_files", "validation", "assessments"],
+  "properties": {
+    "run_id": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "outcome": {"type": "string", "enum": ["completed", "incomplete"]},
+    "summary": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "reviewed_chat_ids": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+    "changed_files": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 4096}},
+    "validation": {"type": "string", "minLength": 1, "maxLength": 4000},
+    "assessments": {
+      "type": "array", "maxItems": 20,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["chat_ids", "disposition", "rationale"],
+        "properties": {
+          "chat_ids": {"type": "array", "minItems": 1, "maxItems": 20, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+          "disposition": {"type": "string", "enum": ["changed", "already_covered", "task_specific", "weak_evidence"]},
+          "rationale": {"type": "string", "minLength": 1, "maxLength": 2000}
+        }
+      }
+    }
+  }
+}
