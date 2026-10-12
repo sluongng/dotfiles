@@ -63,9 +63,25 @@ automation because it prioritizes the highest-volume flakes.
 3. For that label, inspect sample invocation IDs from the script output. If
    deeper logs are needed, use `buildbuddy-invocation-troubleshoot` on a sample
    invocation and target label.
-4. Check whether an open PR already addresses it before editing:
-   search GitHub PRs for the exact label, package path, test suite/class name,
-   and distinctive error text from logs.
+4. Before reproduction or editing, check whether a credible PR already
+   addresses the same failure signature, across open, draft, closed, and merged
+   PRs. Search for the exact label, package path, test suite/class name, and
+   distinctive error text; inspect the relevant diff or discussion rather than
+   treating PR status or a title match as proof.
+   For platform-specific timeouts, also search the affected platform and CI
+   workflow for scheduling, resource-contention, or build/test-phase changes;
+   related PR titles and descriptions may not name the slow test. Record
+   whether each candidate is active, merged (and whether the failing revision
+   contains it), or closed without merging. An abandoned experiment
+   is related evidence, not proof of a fix; explain its different mechanism
+   and follow any explicit job skip rule rather than silently treating it as
+   resolved or claiming no related PR exists.
+   For a ranked automation run, record and skip PR-handled or unchanged
+   previously handled signatures according to the job's memory and receipt
+   rules, then continue to the next ranked candidate. If only the skipped
+   target had samples, fetch samples for the new label before diagnosing it.
+   If no new actionable signature remains, report a useful no-op instead of
+   duplicating a fix or reproduction.
 5. If a fix is requested and no PR is clearly addressing it, reproduce narrowly.
    Choose the repeat count for the observed flake rate and runtime; for example:
 
