@@ -84,6 +84,17 @@ git log --format=%s -- path/to/area | head -n 20
 - Include compatibility constraints, tradeoffs, or scope limits when they
   matter to readers. Preserve qualifications that prevent a misleading claim;
   do not turn these topics into a checklist that every message must cover.
+- For a measured performance claim, include the decisive matched before/after
+  results in a compact table when useful or requested, with a signed Change %
+  column calculated from unrounded values as `(after / before - 1) * 100`.
+  In permanent commit messages, use an indented plain-text table so the required
+  prose formatter preserves its rows and columns.
+  Omit undefined percentages for a zero baseline. State units, measurement
+  scope, and material tradeoffs, especially increased per-operation memory.
+  Keep component and end-to-end results distinct, including unchanged metrics;
+  leave full distributions and experiment protocols in supporting reports so
+  the complete message remains readable. This is claim evidence, not a routine
+  testing checklist.
 - Apply [plain-technical-communication](../plain-technical-communication/SKILL.md):
   use common words, name the actor, and write short, direct sentences. Keep
   precise technical terms, code identifiers, conditions, and uncertainty when

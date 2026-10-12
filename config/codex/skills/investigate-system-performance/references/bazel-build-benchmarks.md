@@ -36,6 +36,16 @@ is not a pure transfer-speed improvement.
 
 ## Reconcile timing boundaries before assigning a cause
 
+For CI latency, align check registration, parent-pipeline start, downstream
+worker start, Bazel command intervals, and check completion. A check marked
+`RUNNING` can include queueing or provisioning before a worker starts; inspect
+the pipeline's reporting boundary instead of attributing that whole interval
+to remote execution. Separate pre-parent waiting, pre-worker waiting, and actual
+command time. Name capacity exhaustion or slow provisioning as the cause only
+when queue or agent evidence distinguishes them. If invocation access is denied,
+CI logs can still establish commands, invocation IDs, and timing, but do not
+claim server-side execution or cache analysis from those logs alone.
+
 Preserve full client command wall time, exit status, invocation URLs, profiles,
 and client/server logs. Inspect the existing artifacts before starting follow-up
 runs; use the invocation-troubleshooting workflow when BuildBuddy evidence is

@@ -74,6 +74,16 @@ Estimate before instrumenting deeply:
    fan-out, queueing, concurrency, and variance.
 4. Identify the likely dominant term and a plausible lower bound.
 
+For buffer or memory tradeoffs, distinguish retained memory per live operation,
+cumulative allocation, transient growth, native memory, and whole-process RSS.
+Bounded per input does not mean smaller memory or a bounded aggregate. Derive
+aggregate estimates from actual allocation and cleanup lifetimes, including
+fan-out, retries/backoff, and background work. Jobs, connection counts, or RPC
+slots are not live-object limits unless admission covers that full lifetime.
+Label measured high-water marks, conditional estimates, and source-derived
+bounds separately, with their exclusions; lower RSS does not negate increased
+per-operation retention.
+
 Calibrate rough operation costs on the actual hardware and environment before
 using them for a decision. Do not copy historical latency tables as current
 facts.
@@ -98,6 +108,13 @@ Prefer a ladder of increasing fidelity:
 
 If two levels disagree, investigate the benchmark model. Do not average away
 the disagreement.
+
+When a proposed timeout or retry budget lacks a trustworthy production latency
+baseline, separate behavior-preserving latency instrumentation from the budget
+change. Measure the current distribution before choosing the cap, unless an
+established safety requirement calls for an immediate bound. Local timings do
+not establish the production budget, and instrumentation does not authorize
+deployment or production experiments.
 
 For Bazel build/test comparisons, read
 [`references/bazel-build-benchmarks.md`](references/bazel-build-benchmarks.md)
