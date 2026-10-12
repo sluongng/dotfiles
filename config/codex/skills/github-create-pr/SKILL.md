@@ -114,6 +114,9 @@ for validation in the body.
 
 4. Open the PR.
    - Default to a draft PR unless the user explicitly asks for a ready PR.
+   - Add named reviewers through GitHub's reviewer-request field or API.
+     Reviewer assignment is distinct from an `@mention` in a description or
+     comment; do not substitute or add mentions unless requested.
    - Prefer the GitHub connector or app for PR creation after the branch is
      pushed.
    - Use `gh` for auth checks, repo metadata, or cross-repo `head` cases

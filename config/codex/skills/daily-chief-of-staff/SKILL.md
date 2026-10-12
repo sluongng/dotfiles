@@ -145,6 +145,12 @@ later daily scan.
 - For each retained PR, state the exact current gate: review comment, missing
   push, conflict, requested review, failed check, merge queue, or external
   owner action. Link directly to the PR or decisive comment.
+- Defer routine human reviewer requests and pings to the recipient's local
+  working days; avoid weekend outreach unless the user explicitly requests it
+  or an urgent incident requires it. Record an explicit Monday or later
+  follow-up in the ledger rather than launching it early. Marking a PR ready
+  to trigger automated review is separate from contacting human reviewers;
+  neither timing guidance nor a ledger entry grants outreach authority.
 - Low-signal subscription notifications and stale review requests should not
   displace current customer, deadline, or authored-PR work.
 
