@@ -23,6 +23,11 @@ quote the rule, and explain why it applies. Keep account, publication, and
 transaction boundaries intact. Scale validation to the change and rerun passing
 checks only when new edits, failures, or unresolved concerns justify it.
 
+Do not expand a scoped change to repair unrelated validation or CI failures
+merely to make the checks green. Establish whether the failure is caused by the
+task's diff, using baseline evidence when practical; report unrelated failures
+and leave them untouched unless the user authorizes that separate work.
+
 For routine dependency or toolchain support additions, do not add a
 version-specific README section merely to announce the new version or repeat
 existing selection instructions. Update documentation when the change introduces
@@ -45,6 +50,12 @@ implementation. For scheduler server changes, use `scheduler_server_test.go`.
 Name table-driven cases by the behavior or domain concept they exercise, not
 opaque ordinals or low-level identifiers. Put each case's differing inputs and
 expectations in explicit fields instead of branching on its position or name.
+
+Use supported user workflows and current configuration as the primary test
+fixtures, with neutral identities. Keep artificial inputs in explicitly named
+compatibility, boundary, or security cases. For routing tests, exercise the real
+resolver and assert the intended distinct destination so a default fallback
+cannot hide a regression.
 
 ## Subagents
 
