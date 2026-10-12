@@ -60,12 +60,21 @@ Report "started" separately from "completed".
 
 ## Present results in tmux
 
+- For a request to show results "next to this pane", identify the pane running
+  the task's thread from a verified thread/process mapping. The user's active
+  tmux client or window may have changed and is not a reliable task anchor.
+  Target the verified pane explicitly when splitting or moving panes; do not
+  guess the target from whichever window is currently selected.
 - If the task already has a window, identify it for the user. Select it only
   when the user asks to switch or show it now; otherwise preserve focus.
 - To show a saved report, diff, or log, open a clearly named detached result
   window at the artifact's directory, using a readable pager such as `less`.
   Keep the report's source path and freshness clear. Do not start another model
   run just to display an existing artifact, or rerun work to manufacture output.
+- Keep the canonical review artifacts ANSI-free and editor-friendly: use
+  Markdown for narrative reports and `.diff` for full patches. If terminal
+  color is requested, provide a separately labeled pager rendering (for example,
+  viewed with `less -R`), not the only copy or the file recommended for Neovim.
 - If no artifact exists and the user asks for a result view, save only the
   relevant user-facing answer to an appropriate local file and open that file.
   Do not include hidden reasoning, raw credentials, or unrelated conversation.
@@ -75,3 +84,16 @@ Report "started" separately from "completed".
 
 Verify only that the intended artifact or thread is visible, then return its
 window name and route. Never close or replace another running task's window.
+
+## Change directory for subsequent panes
+
+When the user wants new panes to open in a task's worktree, distinguish Codex's
+session working directory from the running pane's process directory and tmux's
+`pane_current_path`. Updating thread settings or using `cd` in a tool command
+does not establish that tmux will split into the new directory. Inspect the
+actual split/new-window binding and its directory selection. Prefer an explicit
+`-c <worktree>` or a pane-scoped solution without restarting an active writer or
+changing other panes' behavior. Verify the directory of an actual new pane or
+window through the intended workflow before reporting it fixed; preserve the
+user's selected window and clean up only verification panes created for this
+check.
