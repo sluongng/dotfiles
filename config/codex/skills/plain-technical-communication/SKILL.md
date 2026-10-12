@@ -108,8 +108,21 @@ a writing request into permission to publish or send the result.
   missing context materially affects the content.
 - Write directly and concisely from the start. Organize from the high-level
   concept to relevant detail, with focused, single-topic paragraphs.
+- For technical proposals, start with the problem and its impact before the
+  proposed solution. Group related use cases and explain dependencies, then
+  present the proposed change, tradeoffs, and open questions. Adapt this shape
+  to the requested format; a concise summary may still lead.
+- For conference proposals, keep the abstract short and focused on the
+  audience's problem, mechanism, and takeaways. Put adoption evidence and
+  detailed source qualifications in supporting notes. Naming the speaker's
+  employer or a demonstration tool should not turn the technical pitch into
+  a product pitch unless that is the requested purpose.
 - Introduce terminology before using it heavily. Use concrete examples when
   they help explain an abstract mechanism.
+- Keep setup and development guides focused on required setup, use, and
+  compatibility information. Put experiment protocols, parser details, and
+  internal benchmark procedures in a task report or dedicated reference unless
+  they are needed to use or troubleshoot the documented setup.
 - Distinguish what is known from what is assumed, proposed, or unresolved.
 - For requirements, use a shape such as: “Under [conditions], [subject] must
   [behavior] with [verifiable criterion].” Follow the document's chosen modal
@@ -148,6 +161,27 @@ Do not apply the format mechanically to every sentence. For large documents,
 produce a cleaned-up version and summarize the main recurring issues and any
 unresolved ambiguity. If the user requests review only, provide findings and
 suggested passages without editing the source artifact.
+
+## Iterating on technical correspondence
+
+- When editing the user's draft, preserve their tone, vocabulary, and structure
+  (such as Q&A) unless they ask for a rewrite. Make the necessary technical
+  corrections without replacing their voice with a more formal one.
+- Prefer short sentences to semicolon chains. Keep closely related clauses
+  together when splitting them would produce choppy prose or hide the causal
+  relationship.
+- State a limitation where it explains the relevant claim; do not repeat the
+  same "this does not fix the issue" caveat in every contextual paragraph.
+  Keep qualifications that distinguish genuinely different limits.
+- Before calling a provider draft the latest version, compare its read-back
+  contents with the revisions agreed in the conversation. If it is stale,
+  identify the mismatch rather than silently dropping agreed edits.
+- Once the user moves iteration to a local file, treat that file as the working
+  draft. Do not synchronize it back to the provider without instruction. Keep
+  quoted history only when requested or useful to the requested artifact.
+- For local Markdown correspondence, default to one sentence per source line
+  with blank lines between paragraphs, unless the user chooses another format.
+  This does not change commit-message wrapping or other artifact conventions.
 
 ## Examples
 
