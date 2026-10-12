@@ -40,6 +40,9 @@ local commits.
   files, dependency declarations, imports, config includes, and local overlay
   files. Put prerequisites before dependents or move the prerequisite into the
   earliest commit that needs it.
+- When a dependency upgrade tightens checks, prefer preparing source first if
+  the refactor works with the old toolchain, keeping the checker enabled at
+  each boundary. Do not introduce temporary disablement when this order works.
 - When the requested migration temporarily disables a checker or gate before
   fixing source, keep those steps separately reviewable when requested and
   order the restoring fix after its prerequisites. Verify the final tree
@@ -89,6 +92,14 @@ local commits.
    Lines starting with `-` are already present upstream and should be dropped
    from the local stack. Use `git log --cherry-pick --right-only` or stable
    patch IDs when a more detailed match is needed.
+
+   Before preparing a new repair for an upstream defect affecting the stack,
+   search pending upstream PRs or Gerrit CLs by affected file, symbol, and
+   distinctive failure text. Inspect the candidate diff and current status,
+   not just its title. An open equivalent is not landed: do not drop a needed
+   local workaround until the selected upstream base contains the fix. Report
+   whether the user can wait for it or needs a scoped local repair; do not
+   import an unrelated broader refactor merely to obtain its fix.
 
 4. Create a safety ref.
 
