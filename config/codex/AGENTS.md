@@ -40,6 +40,16 @@ Keep conversation in English unless the user requests otherwise. The language
 of a form or deliverable is independent: use the requested local language in
 its fields or prose without switching the conversation language.
 
+## Privacy-minimized documents
+
+When the user requests a privacy-minimized proof of identity or address, retain
+the evidence required by the recipient, such as identity, address, issuer, and
+date. Prefer an issuer-provided minimal document; otherwise redact unnecessary
+balances, account identifiers, and transactions in a separate copy, preserving
+the original. Use genuine redaction, then inspect rendered pages and extractable
+content, metadata, and attachments for residual private data. Preparing a
+document does not establish recipient acceptance or authorize its upload.
+
 ## Tests
 
 Prefer extending an existing test file for the affected component over creating
