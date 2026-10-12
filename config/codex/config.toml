@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# CLI configuration reviewed against codex-cli v0.161.0-alpha.3 on 2026-09-30.
+# CLI configuration reviewed against codex-cli v0.163.0-alpha.5 on 2026-10-12.
 # Shared App configuration is rendered here too; App runtime parity is checked separately.
 
 model = "gpt-6.1-sol"
@@ -50,10 +50,6 @@ prevent_idle_sleep = true
 # Opt-in CLI voice conversations; start explicitly with /voice in a new session.
 realtime_conversation = true
 runtime_metrics = true
-# Keep these disabled on macOS and Linux. The CLI and Desktop share config but
-# may ship different resource layouts, so packaged-fork support is not a safe
-# cross-runtime assumption.
-shell_zsh_fork = false
 unified_exec = true
 
 # Historical notes/history round trips used Astra and GPT-5.6 Luna/Terra/Sol.
