@@ -1,0 +1,4 @@
+interface:
+  display_name: "Present Worktree in Gerrit"
+  short_description: "Open a verified local Gerrit commit stack"
+  default_prompt: "Use $present-worktree-gerrit to publish this worktree locally and open its commit stack in my personal browser."
