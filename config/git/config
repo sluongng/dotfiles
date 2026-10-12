@@ -66,3 +66,5 @@
 	cookiefile = /home/nb/.gitcookies
 [maintenance]
 	repo = /home/nb/work/gerrit-review/gerrit
+[credential "https://gerrit-review.googlesource.com"]
+	provider = generic
