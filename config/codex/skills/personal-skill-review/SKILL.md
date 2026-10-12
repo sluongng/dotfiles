@@ -21,7 +21,7 @@ Keep the scope tight:
 4. Separate skill-related friction from generic task failures. Only count an issue when a skill would realistically prevent or shorten the failure next time.
 5. Check whether the problem is already covered by an existing personal skill or prior memory.
 6. If a fix is warranted, keep changes minimal and targeted. If a new workflow keeps recurring and does not fit an existing skill, create a new personal skill.
-7. Validate edited skills, reinstall dotfiles-managed skills, and report whether the run was a no-op or what changed.
+7. Validate edited skills, verify the installed assets resolve to the edited sources, and report whether the run was a no-op or what changed. Install only affected assets when needed.
 
 ## Evidence Rules
 
@@ -55,14 +55,12 @@ When reviewing outputs, explicitly ignore noise caused by:
 
 ## Automation Memory Path
 
-When a run needs automation memory, do not assume `CODEX_HOME` is set. Resolve the path defensively:
-
-```bash
-AUTOMATION_BASE="${CODEX_HOME:-$HOME/.codex}/automations"
-MEMORY_PATH="$AUTOMATION_BASE/<automation_id>/memory.md"
-```
-
-If the file exists, read it first. If the task requires writing the automation memory, use the resolved fallback path rather than raw `$CODEX_HOME/...`.
+Use `$automation-runner` to resolve the actual scheduler and memory path.
+An `Aton automation ID:` run uses the Aton state root, not the Codex App
+automation directory. An explicit job-memory path takes precedence. Read it
+when present; write run memory only when the job's output contract authorizes
+it. A supplied retrospective manifest and completion receipt take precedence
+over this skill's default session scan and report.
 
 ## Editing Rules
 
@@ -79,8 +77,12 @@ After editing personal skills:
 dotfiles_dir="${DOTFILES_DIR:-$HOME/.dotfiles}"
 skill_creator="${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator"
 python3 "$skill_creator/scripts/quick_validate.py" "$dotfiles_dir/config/codex/skills/<skill-name>"
-"$dotfiles_dir/automation/codex/install-codex.sh"
 ```
+
+Check the affected `~/.codex/skills/<skill-name>` link and compare its resolved
+`SKILL.md` with the canonical source. A correct symlink already exposes the edit;
+do not run the full Codex installer merely to refresh it. If deployment is
+needed, update only the affected asset without overwriting unrelated settings.
 
 If `quick_validate.py` fails with `ModuleNotFoundError: No module named 'yaml'`,
 do not stop there. Validate in a throwaway venv instead:
@@ -95,4 +97,5 @@ skill_creator="${CODEX_HOME:-$HOME/.codex}/skills/.system/skill-creator"
 rm -rf "$tmpdir"
 ```
 
-If nothing changed, say so explicitly and record the no-op in automation memory when the task is an automation run.
+If nothing changed, report the no-op through the job's requested completion
+contract; record it in run memory only when that contract calls for a write.

@@ -43,6 +43,13 @@ it. Preserve the workload's existing model/effort and permissions unless the
 user asks to change them; a global model preference does not silently rewrite
 all existing jobs.
 
+For an authorized model-version refresh, preserve each job's model family
+(for example, Luna versus Sol) and reasoning effort unless the user requests
+a family change. Verify available model IDs rather than assuming families
+share version numbers; a newer Sol does not by itself replace a Luna job.
+Include direct systemd launchers and future resume/handoff generators in the
+requested audit, while preserving paused/disabled states and schedules.
+
 For a migration or replacement, pause and verify the previous scheduler owner
 before enabling the new one. Confirm no old future timer and no live attempt or
 child process can overlap. Do not kill an active run merely to change its next
