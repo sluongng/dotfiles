@@ -40,7 +40,9 @@ path is a compatibility symlink to the same file. This local file is the durable
 index for work that must survive context compaction, a new Codex thread, or a
 later daily scan.
 
-- Read the ledger before querying live sources. Reconcile every `open`,
+- Read the workspace's applicable `AGENTS.md` and ledger before querying live
+  sources. Apply standing user exclusions to both new discoveries and historical
+  tasks or prepared results. Reconcile every `open`,
   `waiting`, or `blocked` entry during the scan; do not rely only on new
   notifications, mentions, pinned tasks, or recent-thread lists.
 - The ledger is an index, not proof of current external state. Re-open its
@@ -50,8 +52,17 @@ later daily scan.
   than silently dropping it.
 - Update the ledger before returning the brief. Add newly discovered actions,
   merge duplicate discoveries into the existing stable entry, refresh changed
-  evidence and task routes, and move resolved work to `Done` only when there is
-  positive evidence that the desired external outcome occurred.
+  evidence and task routes. Move resolved work to `Done` when there is positive
+  evidence that the desired external outcome occurred, or when the user explicitly
+  closes the item or directs no further action, including a closeout after handing
+  follow-up to a teammate. Delegation alone is not closure. For a user closeout,
+  record that reason and any named follow-up owner without implying
+  external resolution; do not keep scheduling the closed work merely because
+  its external outcome remains unverified.
+- Before each launch and the final report, recheck applicable workspace guidance
+  and ledger changes for intervening user exclusions, closeouts, or ownership
+  changes. Do not overwrite another writer's ledger update; save proposed
+  reconciliation in a supporting note and report the contention instead.
 - Use stable IDs whenever possible: `slack:<channel_id>:<thread_ts>`,
   `github:<owner>/<repo>#<number>`, `calendar:<calendar_id>:<event_id>`,
   `gmail:<thread_id>`, `codex:<thread_id>`, or another source-derived key.
@@ -64,7 +75,10 @@ later daily scan.
   connector payloads. Preserve the user's unrelated manual notes in the file.
 - A completed Codex task closes only the implementation or research route. Keep
   the ledger item open when the actual outcome still requires a reply, review,
-  merge, rollout, booking, payment, or another external action.
+  merge, rollout, booking, payment, or another external action, unless the user
+  has explicitly closed it as described above. Apply an item closeout to its
+  stable source/task identity, not every future request on the same topic;
+  verify identity and ownership before treating a later report as distinct work.
 
 ## Source Checks
 
