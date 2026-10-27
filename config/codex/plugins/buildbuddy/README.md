@@ -17,5 +17,5 @@ surface, not a replacement for the bundled API-backed skills, since it currently
 exposes fewer APIs. See `references/buildbuddy-mcp.md` for the local
 configuration shape.
 
-Keep development-only, internal, admin, or impersonation-token workflows out of
-this plugin. Those belong in the local-only `buildbuddy-dev` plugin.
+Keep development-only, internal, or admin workflows out of this plugin.
+Those belong in the local-only `buildbuddy-dev` plugin.

@@ -11,9 +11,8 @@ Use this as the umbrella entrypoint for public BuildBuddy workflows. It should
 classify the request quickly and route to the most specific bundled skill.
 
 This plugin is for workflows that are safe to keep in dotfiles. Local
-development, internal operations, admin impersonation, direct metrics access,
-database queries, and log lookup workflows belong in the local-only
-`buildbuddy-dev` plugin instead.
+development, internal operations, direct metrics access, database queries, and
+log lookup workflows belong in the local-only `buildbuddy-dev` plugin instead.
 
 BuildBuddy also has an official MCP server. Use it opportunistically when the
 requested operation is exposed by that server, but do not replace the
@@ -52,5 +51,4 @@ Route by user intent:
 - Check API key presence without printing the key.
 - Store downloaded API responses and artifacts in a temp directory.
 - Keep time windows narrow unless the user asks for a larger analysis.
-- Redact credentials, impersonation headers, and private URLs before sharing
-  output.
+- Redact credentials and private URLs before sharing output.
