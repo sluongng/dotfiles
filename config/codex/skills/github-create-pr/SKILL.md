@@ -133,8 +133,10 @@ for validation in the body.
    - Derive the base branch from the user request or the remote default
      branch when unspecified.
    - If commits were amended or squashed after the draft was first written,
-     refresh the PR title/body through `$draft-commit-message` before opening
-     or editing the PR.
+     refresh the requested metadata through `$draft-commit-message` before
+     opening or editing the PR. For existing PR updates, follow that skill's
+     preservation rules instead of recreating the PR or automatically changing
+     its title. Limit edits to the requested fields or body sections.
    - After creation, verify the PR head ref matches the branch that was pushed.
      If the local branch upstream points somewhere else, fix it with
      `git branch --set-upstream-to=<remote>/<branch>` so later `gh pr view`,

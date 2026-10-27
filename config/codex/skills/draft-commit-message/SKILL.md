@@ -62,8 +62,8 @@ git log --format=%s -- path/to/area | head -n 20
 - Write in imperative mood, as if instructing the codebase: `add`, `teach`,
   `fix`, `remove`, `refactor`.
 - Describe the behavior or purpose rather than listing low-level code changes.
-- When used as a PR title, use this subject as the title unless repo-local PR
-  conventions clearly require a different shape.
+- When creating a PR or asked to change its title, use this subject as the
+  title unless repo-local PR conventions clearly require a different shape.
 
 4. Bring the reader onboard with the change.
 
@@ -81,6 +81,9 @@ git log --format=%s -- path/to/area | head -n 20
   mechanics that readers can learn from the diff out of the prose unless they
   are needed to understand the behavior or assess a decision. Do not narrate
   the investigation, list discarded attempts, or add routine test reports.
+- Describe the complete proposed change against its intended base, not the
+  differences between successive CL patchsets or review revisions. Keep useful
+  patchset-delta notes in the review update, outside the permanent message.
 - Include compatibility constraints, tradeoffs, or scope limits when they
   matter to readers. Preserve qualifications that prevent a misleading claim;
   do not turn these topics into a checklist that every message must cover.
@@ -154,6 +157,10 @@ git log --format=%s -- path/to/area | head -n 20
   Keep claims synchronized. Respect required PR templates, but do not expand
   the description just because GitHub permits more space or copy its headings
   into the permanent commit message.
+- For an existing PR, preserve its identity and title unless the user requests
+  a replacement or title change. A push or description update does not imply
+  either. For a section-only body edit, preserve the other sections; keep
+  draft-first work local until publication is authorized.
 - Return the requested draft without a preamble, checklist, or explanation of
   the drafting process. Honor the user's requested length and format.
 - When confidence is low, add one short sentence after the block describing
