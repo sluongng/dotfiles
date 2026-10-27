@@ -53,6 +53,14 @@ Record:
 - correctness, API, complexity, memory, and rollout constraints
 - the success threshold or budget
 
+For comparisons, verify whether each candidate has a runnable implementation
+and record its readiness. A design document supports hypotheses, not measured
+comparative results. If a candidate does not exist or cannot run, distinguish
+baseline-only preparation or measurements from a two-sided benchmark; do not
+present the missing implementation as merely an input to select. Its absence
+does not by itself block independently useful baseline work within the user's
+authorized scope, but comparative wins and crossover claims remain unmeasured.
+
 Distinguish setup or cold-path work from per-request or per-item hot-path work.
 Treat reusable library code as higher leverage because many callers may pay its
 cost.
@@ -120,6 +128,10 @@ For Bazel build/test comparisons, read
 [`references/bazel-build-benchmarks.md`](references/bazel-build-benchmarks.md)
 before starting the matrix or diagnosing a regression. It covers cache-phase
 pilots, timing boundaries, existing invocation evidence, and failed attempts.
+For checkout, lazy-filesystem, or prefetch comparisons using Bazel queries, read
+[`references/bazel-query-checkout-benchmarks.md`](references/bazel-query-checkout-benchmarks.md)
+for clone-to-query timing, transport fidelity, hydration accounting, and watcher
+validation. Query results alone do not validate input-content hashing.
 
 ### 4. Profile broad to narrow
 
@@ -184,11 +196,20 @@ Run baseline and candidate under matched conditions. Check:
 
 - the primary metric and uncertainty
 - the predicted profile or counter movement
-- correctness and output equivalence
+- correctness and the required output-equivalence contract
 - CPU, memory, allocations, I/O, and code-size guardrails
 - multiple data sizes and relevant concurrency levels
 - both common and adverse cases
 - a higher-fidelity workload than the microbenchmark
+
+For generated-artifact comparisons, distinguish the properties being checked:
+functional smoke tests, semantic equivalence, cross-tool byte identity, and
+same-tool repeatability. Matched inputs/options and passing smoke tests do not
+prove the other properties. When byte identity is requested or material, use
+retained sizes to rule it out, or hashes/direct byte comparisons to check it;
+report cross-tool equality separately from repeated runs of the same tool.
+Different tools may legitimately emit different bytes. State untested properties
+without treating byte identity as a universal correctness requirement.
 
 Inspect generated code only for hot routines where the hypothesis depends on
 compiler behavior. Re-run enough samples to distinguish the effect from noise,
