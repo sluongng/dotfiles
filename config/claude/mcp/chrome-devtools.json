@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--auto-connect",
+        "--no-usage-statistics",
+        "--no-performance-crux",
+        "--redactNetworkHeaders"
+      ],
+      "env": {
+        "CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS": "true",
+        "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "true"
+      }
+    }
+  }
+}

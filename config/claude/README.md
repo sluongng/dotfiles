@@ -16,6 +16,7 @@ The deploy script manages these paths under `~/.claude` (or `$CLAUDE_CONFIG_DIR`
   preserving keys written at runtime such as hooks and theme
 - symlinks the tracked global `CLAUDE.md`, and `AGENTS.md` from `config/codex`
 - symlinks skills into `skills/` (see below)
+- symlinks `bin/claude-{personal,work,mixed}` into `~/.local/bin`
 - registers the `sluongng-dotfiles` marketplace from `config/codex` and
   installs every plugin the baseline enables
 
@@ -56,6 +57,25 @@ Validate after editing:
 ```sh
 claude plugin validate config/codex
 ```
+
+## MCP servers
+
+`mcp/` holds the Google Workspace and Chrome DevTools server definitions. As in
+Codex, none of them start by default. Start an account-scoped session with:
+
+```sh
+claude-personal   # gmail/calendar/drive-personal
+claude-work       # gmail/calendar/drive-work
+claude-mixed      # both
+```
+
+These wrappers run in `acceptEdits` mode instead of bypass mode. Read-only
+Workspace tools are allowed, and every other Workspace tool (for example
+`create_draft`) prompts, matching the Codex `approval_mode` settings. Claude
+stores the Workspace OAuth tokens, not this directory.
+
+For a deliberate Chrome DevTools session, run
+`claude --mcp-config ~/.dotfiles/config/claude/mcp/chrome-devtools.json`.
 
 ## Machine-local state
 

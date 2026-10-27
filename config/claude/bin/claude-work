@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Start Claude Code with the work Google Workspace MCP servers.
+# Workspace sessions do not bypass permissions: read-only Workspace tools are
+# allowed, and every other Workspace tool (for example create_draft) prompts.
+set -euo pipefail
+
+MCP_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../mcp" && pwd)"
+
+exec claude --permission-mode acceptEdits \
+  --mcp-config "${MCP_DIR}/google-work.json" \
+  --settings "${MCP_DIR}/google-work.settings.json" \
+  "$@"

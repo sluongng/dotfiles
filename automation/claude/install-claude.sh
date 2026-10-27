@@ -6,6 +6,7 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SOURCE_DIR="${DOTFILES_DIR}/config/claude"
 CODEX_SOURCE_DIR="${DOTFILES_DIR}/config/codex"
 CODEX_ONLY_SKILLS_FILE="${SOURCE_DIR}/codex-only-skills.txt"
+BIN_DIR="${HOME}/.local/bin"
 TARGET_DIR="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 BACKUP_DIR="${TARGET_DIR}/backups/install-claude-${TIMESTAMP}"
@@ -93,6 +94,16 @@ link_skills() {
   done < <(find "${CODEX_SOURCE_DIR}/skills" -mindepth 2 -maxdepth 2 -name SKILL.md | sort)
 }
 
+link_wrappers() {
+  local source_path=""
+
+  [ -d "${SOURCE_DIR}/bin" ] || return 0
+  mkdir -p "${BIN_DIR}"
+  while IFS= read -r source_path; do
+    ensure_symlink "${source_path}" "${BIN_DIR}/$(basename "${source_path}")"
+  done < <(find "${SOURCE_DIR}/bin" -mindepth 1 -maxdepth 1 -type f -perm -u+x | sort)
+}
+
 register_marketplace() {
   local plugin=""
 
@@ -175,6 +186,9 @@ main() {
   link_skills
 
   prune_stale_skill_links
+
+  # Workspace account wrappers (claude-personal, claude-work, claude-mixed).
+  link_wrappers
 
   # Local plugin marketplace.
   register_marketplace

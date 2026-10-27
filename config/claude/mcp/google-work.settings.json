@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "WebFetch",
+      "WebSearch",
+      "mcp__gmail-work__fetch",
+      "mcp__gmail-work__list_filters",
+      "mcp__gmail-work__list_labels",
+      "mcp__gmail-work__search",
+      "mcp__calendar-work__check_availability",
+      "mcp__calendar-work__find_free_time",
+      "mcp__calendar-work__get_calendar",
+      "mcp__calendar-work__get_event",
+      "mcp__calendar-work__list_calendars",
+      "mcp__calendar-work__list_events",
+      "mcp__calendar-work__search_events",
+      "mcp__drive-work__fetch",
+      "mcp__drive-work__search"
+    ]
+  }
+}
