@@ -24,6 +24,11 @@ Respect the requested audience, format, and repository conventions. Improve
 language within the task's scope; do not change engineering decisions or turn
 a writing request into permission to publish or send the result.
 
+When editing existing repository Markdown, preserve its source formatting,
+including padded tables, unless the user requests a formatting change or the
+repository's formatter requires one. Identical rendered HTML is not by itself
+a reason to reformat otherwise unchanged content.
+
 ## Principles
 
 1. **Prefer common words.** Use the simplest word that preserves the technical
@@ -117,13 +122,29 @@ a writing request into permission to publish or send the result.
   detailed source qualifications in supporting notes. Naming the speaker's
   employer or a demonstration tool should not turn the technical pitch into
   a product pitch unless that is the requested purpose.
-- Introduce terminology before using it heavily. Use concrete examples when
-  they help explain an abstract mechanism.
+- Introduce terminology before using it heavily. For readers outside the
+  project's ecosystem, briefly explain necessary concepts and link their
+  authoritative overview or core documentation rather than assuming familiarity.
+  Use concrete examples when they help explain an abstract mechanism.
 - Keep setup and development guides focused on required setup, use, and
-  compatibility information. Put experiment protocols, parser details, and
-  internal benchmark procedures in a task report or dedicated reference unless
-  they are needed to use or troubleshoot the documented setup.
+  compatibility information. Describe the fields and actions the operator
+  actually controls. If a default mapping or integration manages internal IDs
+  automatically, say what to retain rather than making those IDs sound like
+  values to look up or enter. Keep protocol details for API documentation or
+  troubleshooting when they affect the reader's task. Put experiment protocols,
+  parser details, and internal benchmark procedures in a task report or
+  dedicated reference unless needed to use or troubleshoot the setup.
+- For commands handed to the user across hosts, label where each command runs
+  (controlling machine or remote host). Verify the remote login user, SSH alias,
+  and host-local paths from available configuration or user-provided facts;
+  mark unresolved values as placeholders instead of guessing. Distinguish a
+  one-time interactive setup step from subsequent noninteractive commands.
 - Distinguish what is known from what is assumed, proposed, or unresolved.
+- For external or privacy-minimized technical handoffs, omit internal
+  infrastructure details and private identifiers unless the task authorizes
+  sharing them with that audience. Keep relevant public code references and
+  deployment guidance; do not turn internal tuning values into claimed defaults
+  or universal recommendations.
 - For requirements, use a shape such as: “Under [conditions], [subject] must
   [behavior] with [verifiable criterion].” Follow the document's chosen modal
   convention. Resolve or flag missing criteria rather than making them up.
@@ -164,6 +185,12 @@ suggested passages without editing the source artifact.
 
 ## Iterating on technical correspondence
 
+- When the user asks for copy-pastable Markdown, or the draft is intended to be
+  pasted into a Markdown editor such as GitHub's issue body, return one
+  self-contained fenced Markdown artifact so copying preserves headings, lists,
+  inline code, and links. Honor an explicitly requested different format or
+  direct-editor workflow. Incorporate follow-up edits into the complete artifact,
+  retaining accepted sections so the user does not have to combine fragments.
 - When editing the user's draft, preserve their tone, vocabulary, and structure
   (such as Q&A) unless they ask for a rewrite. Make the necessary technical
   corrections without replacing their voice with a more formal one.
