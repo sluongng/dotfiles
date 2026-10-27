@@ -26,6 +26,12 @@ Claude Code reads a project's `AGENTS.md` natively but ignores
 `@AGENTS.md`, then lists the few rules that differ for Claude Code. Edit shared
 guidance in `config/codex/AGENTS.md`.
 
+## Mode
+
+The baseline matches the Codex `approval_policy = "never"` and
+`sandbox_mode = "danger-full-access"` setup: `bypassPermissions` by default, no
+bypass warning, sandbox off, high effort, and telemetry off.
+
 ## Skills
 
 Every skill under `config/codex/skills` is linked into `~/.claude/skills`

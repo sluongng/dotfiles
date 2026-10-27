@@ -1,6 +1,16 @@
 {
   "model": "opus",
+  "effortLevel": "high",
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  },
   "skipDangerousModePermissionPrompt": true,
+  "sandbox": {
+    "enabled": false
+  },
+  "env": {
+    "DISABLE_TELEMETRY": "1"
+  },
   "enabledPlugins": {
     "buildbuddy@sluongng-dotfiles": true,
     "buck2@sluongng-dotfiles": true,
