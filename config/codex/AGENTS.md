@@ -52,6 +52,16 @@ document does not establish recipient acceptance or authorize its upload.
 
 ## Tests
 
+Inspect analogous existing coverage before adding tests, including relevant
+shell and integration paths. Extend an existing case or fixture when it can
+cover the regression; add lower-level cases for distinct behavior or failure
+paths not already exercised. When overlap is unclear, use focused coverage or
+baseline/candidate comparisons where useful to establish what a new case adds.
+Keep added tests proportionate to the changed behavior and material risks; a
+parallel platform or configuration addition does not by itself call for an
+exhaustive new matrix. Retain focused checks for genuinely new runtime or
+security behavior; line coverage alone does not establish assertion quality.
+
 Prefer extending an existing test file for the affected component over creating
 another test file. Keep regression tests at the public API or observable behavior
 level; avoid tests that only exercise unexported helpers or mirror the
@@ -66,6 +76,19 @@ fixtures, with neutral identities. Keep artificial inputs in explicitly named
 compatibility, boundary, or security cases. For routing tests, exercise the real
 resolver and assert the intended distinct destination so a default fallback
 cannot hide a regression.
+
+## CI credentials
+
+Select the credential from the job's trusted or untrusted run class before
+retrieving it; do not probe a privileged key first and fall back to a restricted
+one. Unknown contexts must use the restricted path or fail closed. Enforce this
+boundary in the CI provider's secret policy as well as job-selection code.
+
+For containerized jobs, prefer resolving secrets through the host CI agent's
+native secret mechanism and injecting only the selected credential. Do not pass
+secret-management tokens or agent API sockets into the container merely to fetch
+that credential. A workflow that genuinely needs that broader authority requires
+separate justification and authorization.
 
 ## Subagents
 
