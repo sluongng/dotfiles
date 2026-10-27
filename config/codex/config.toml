@@ -26,7 +26,7 @@ suppress_unstable_features_warning = true
 personality = "none"
 service_tier = "default"
 analytics.enabled = false
-notify = ["/home/nb/.dotfiles/config/streamdeck/codexdeck/notify.py"]
+notify = ["sh", "-c", 'exec "$HOME/.dotfiles/config/streamdeck/codexdeck/notify.py" "$@"', "codex-notify"]
 
 [realtime]
 voice = "sol"

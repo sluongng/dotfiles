@@ -6,8 +6,9 @@ description: "Upgrade or audit the Arch Linux Codex stack: CLI and desktop packa
 # Upgrade Codex Stack
 
 This is the Arch Linux workstation upgrade workflow. If `uname -s` is not
-`Linux`, stop before using any `/home/nb`, pacman, systemd, or Linux desktop app
-steps and use the platform's normal Codex distribution/update path instead.
+`Linux`, stop before using workstation-specific paths, pacman, systemd, or
+Linux desktop app steps and use the platform's normal Codex distribution/update
+path instead.
 
 For a full upgrade, cover the CLI package, desktop app/runtime, configuration,
 plugins, system skills, and services. For an audit or narrower request, inspect
@@ -17,10 +18,10 @@ only the relevant components and report current evidence and remaining gaps.
 
 Use these default paths unless the user supplies different ones:
 
-- Codex source and workspace: `/home/nb/work/misc/codex`
-- Arch package: `/home/nb/work/misc/codex/openai-codex-pkg`
-- Linux desktop packaging and legacy repackager: `/home/nb/work/misc/codex-app`
-- Dotfiles source of truth: `/home/nb/.dotfiles`
+- Codex source and workspace: `$HOME/work/misc/codex`
+- Arch package: `$HOME/work/misc/codex/openai-codex-pkg`
+- Linux desktop packaging and legacy repackager: `$HOME/work/misc/codex-app`
+- Dotfiles source of truth: `$HOME/.dotfiles`
 - Live Codex home: `${CODEX_HOME:-$HOME/.codex}`
 
 Before editing:
@@ -87,7 +88,7 @@ building unchanged packages or activating services.
 
 Compare configuration source, rendered state, and local overlays without exposing secrets:
 
-- `/home/nb/.dotfiles/config/codex/config.toml`;
+- `$HOME/.dotfiles/config/codex/config.toml`;
 - `${CODEX_HOME}/config.toml`;
 - `${CODEX_HOME}/config.local.toml` and project-local overlays;
 - the dotfiles Codex renderer and install script;
