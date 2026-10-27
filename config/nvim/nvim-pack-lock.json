@@ -21,7 +21,7 @@
       "src": "https://github.com/lewis6991/fileline.nvim"
     },
     "fzf-lua": {
-      "rev": "48d7c3db291a2c7c1825905c227a6bc81c83b837",
+      "rev": "5dca84ef44f37b960a128a43d044ee348ff86fb4",
       "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "indent-blankline.nvim": {
@@ -41,7 +41,7 @@
       "src": "https://github.com/hrsh7th/nvim-cmp"
     },
     "nvim-lspconfig": {
-      "rev": "6d27c288ff951e1e94cb5f91c800adeddf0dc0c2",
+      "rev": "77b7432d4770d23b277d37923e5a08a442d8bb07",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-metals": {
@@ -53,12 +53,12 @@
       "src": "https://github.com/nvim-neotest/nvim-nio"
     },
     "nvim-treesitter": {
-      "rev": "1a4f47b03dfe92d28de7d5654c67327ef008c9e6",
+      "rev": "29212d826054bb2948fa9d3a99eca9bf6a050eb2",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter",
       "version": "'main'"
     },
     "nvim-web-devicons": {
-      "rev": "58447c1fca354bbf184425e4a8d01deecbd6f3c4",
+      "rev": "ec309a0eaff6ea967e58c275996155ab5c16938d",
       "src": "https://github.com/nvim-tree/nvim-web-devicons"
     },
     "onedark.vim": {
@@ -70,7 +70,7 @@
       "src": "https://github.com/nvim-lua/plenary.nvim"
     },
     "vim-airline": {
-      "rev": "ae24f4aca06731d5d7224df1fc5415975331b214",
+      "rev": "8dc1bd0a116de527f6bc58c1d04386ba357c624f",
       "src": "https://github.com/vim-airline/vim-airline"
     },
     "vim-fugitive": {
