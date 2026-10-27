@@ -1,4 +1,11 @@
 {
   "model": "opus",
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "enabledPlugins": {
+    "buildbuddy@sluongng-dotfiles": true,
+    "buck2@sluongng-dotfiles": true,
+    "chatgpt-threads@sluongng-dotfiles": true,
+    "codex-security-cloud@sluongng-dotfiles": true,
+    "tinytree-dev@sluongng-dotfiles": false
+  }
 }

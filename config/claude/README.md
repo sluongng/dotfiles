@@ -1,7 +1,8 @@
 # Claude Code config
 
 This directory tracks non-sensitive Claude Code configuration shared via
-dotfiles. It is the Claude-side counterpart to `config/codex`.
+dotfiles. `config/codex` is the source of truth for skills and plugins; this
+directory holds only Claude-specific settings, forks, and wrappers.
 
 Deploy it with:
 
@@ -11,11 +12,12 @@ Deploy it with:
 
 The deploy script manages these paths under `~/.claude` (or `$CLAUDE_CONFIG_DIR`):
 
-- merges the tracked `settings.json` baseline into `~/.claude/settings.json`
-  (preserving Claude-managed keys such as `enabledPlugins` and theme)
+- merges the tracked `settings.json` baseline into `~/.claude/settings.json`,
+  preserving keys written at runtime such as hooks and theme
 - symlinks the tracked global `CLAUDE.md`, and `AGENTS.md` from `config/codex`
-- symlinks each tracked personal skill directory under `skills/`
-- registers the local plugin marketplace from this directory
+- symlinks skills into `skills/` (see below)
+- registers the `sluongng-dotfiles` marketplace from `config/codex` and
+  installs every plugin the baseline enables
 
 ## Instructions
 
@@ -26,49 +28,35 @@ guidance in `config/codex/AGENTS.md`.
 
 ## Skills
 
-Personal skills live under `skills/<name>/SKILL.md` and are symlinked into
-`~/.claude/skills/`. Each skill may bundle `scripts/`, `references/`, and
-`assets/` subdirectories. The skill `description` is what Claude uses to decide
-when to load the skill, so keep it specific and trigger-oriented.
+Every skill under `config/codex/skills` is linked into `~/.claude/skills`
+except those listed in `codex-only-skills.txt`, which drive Codex-only runtime
+surfaces. A directory under `skills/` here is a Claude fork. It replaces the
+same-named Codex skill, or adds a Claude-only skill such as `chrome-devtools`
+or `playwright`.
 
-A few skills carry caveats:
+Edit shared skills in `config/codex/skills`; both tools pick up the change.
 
-- `hatch-pet` targets the **Codex** pet asset format and an `imagegen`
-  image-generation skill that Claude Code does not ship. It is kept for
-  portability; substitute an available image generator.
-- `buck2` (plugin) `buildbuddy-stack-maintainer` includes a browser-linking
-  helper script that drove the Codex Chrome native host. Under Claude, use the
-  `chrome-devtools` skill (Chrome DevTools MCP) instead.
+## Plugins
 
-## Plugins and the marketplace
+`config/codex/.claude-plugin/marketplace.json` exposes the Codex plugin
+directories to Claude Code as `strict: false` plugins, so Claude reads the same
+`skills/` trees without a second manifest. Desired enabled state lives in
+`enabledPlugins` in `settings.json`, mirroring `[plugins.*]` in the Codex
+config. `etoro-api` is untracked; the installer adds it only when its source
+exists locally.
 
-Tracked plugins live under `plugins/<plugin-name>/` with a
-`.claude-plugin/plugin.json`, and `.claude-plugin/marketplace.json` lists them.
-
-The installer registers the marketplace; install plugins explicitly:
+Validate after editing:
 
 ```sh
-claude plugin marketplace add ~/.dotfiles/config/claude   # done by installer
-claude plugin install buildbuddy@sluongng-dotfiles
-claude plugin install buck2@sluongng-dotfiles
-claude plugin install tinytree-dev@sluongng-dotfiles
-claude plugin install etoro-api@sluongng-dotfiles
+claude plugin validate config/codex
 ```
-
-Validate the manifests after editing:
-
-```sh
-claude plugin validate config/claude --strict
-```
-
-Keep development-only plugins (for example `buildbuddy-dev`) and other local
-state outside dotfiles git — they are not tracked here.
 
 ## Machine-local state
 
-The script intentionally leaves `~/.claude/.credentials.json`, histories, logs,
-sessions, todos, projects/memory, and other Claude-managed runtime state as
-local machine state. Machine-specific permissions belong in
-`~/.claude/settings.local.json`, which is not tracked here.
+The script leaves `~/.claude/.credentials.json`, histories, sessions,
+projects/memory, and other Claude-managed runtime state as local machine state.
+Machine-specific permissions belong in `~/.claude/settings.local.json`, which is
+not tracked. The `local-gerrit` skill is linked from its local checkout and
+stays machine-local.
 
 Do not commit secrets or API keys.

@@ -1,0 +1,13 @@
+# Codex skills under config/codex/skills that are not linked into Claude Code.
+# Every other Codex skill is shared. A same-named directory under
+# config/claude/skills is a Claude fork and takes precedence.
+#
+# These skills drive Codex-only runtime surfaces: Codex threads, the Codex App
+# or codex-automaton schedulers, Codex package upgrades, or the Codex TUI.
+automation-runner
+buildbuddy-pr-coach
+codex-local-audit
+daily-chief-of-staff
+organize-codex-threads
+tmux-task-windows
+upgrade-codex-stack

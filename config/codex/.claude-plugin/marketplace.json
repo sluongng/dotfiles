@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json.schemastore.org/claude-plugin-marketplace.json",
+  "name": "sluongng-dotfiles",
+  "description": "Personal dotfiles plugin marketplace for Claude Code, sharing the Codex plugin sources.",
+  "owner": {
+    "name": "Sluong Ng",
+    "email": "sluongng@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "buildbuddy",
+      "source": "./plugins/buildbuddy",
+      "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, diagnose log snippets, analyze usage, and research BuildBuddy+Bazel source behavior.",
+      "version": "0.1.1+codex.20260928135346",
+      "category": "Coding",
+      "strict": false,
+      "keywords": [
+        "buildbuddy",
+        "bazel",
+        "remote-execution",
+        "invocations",
+        "usage",
+        "flakes",
+        "flaky-tests",
+        "logs",
+        "bes",
+        "sidecar",
+        "source-research",
+        "toolchains",
+        "helm",
+        "bazelisk"
+      ]
+    },
+    {
+      "name": "buck2",
+      "source": "./plugins/buck2",
+      "description": "Local Buck2 fork maintenance and adoption helpers for the BuildBuddy-backed patch stack.",
+      "version": "0.1.0+codex.20260905140758",
+      "category": "Coding",
+      "strict": false,
+      "keywords": [
+        "buck2",
+        "buildbuddy",
+        "fork",
+        "stack",
+        "bazel",
+        "bcr",
+        "workflows",
+        "release"
+      ]
+    },
+    {
+      "name": "tinytree-dev",
+      "source": "./plugins/tinytree-dev",
+      "description": "TinyTree development helpers for product-page and devtools landing-page work.",
+      "version": "0.1.0",
+      "category": "Coding",
+      "strict": false,
+      "keywords": [
+        "tinytree",
+        "devtools",
+        "landing-page",
+        "frontend"
+      ]
+    },
+    {
+      "name": "chatgpt-threads",
+      "source": "./plugins/chatgpt-threads",
+      "description": "Inspect logged-in ChatGPT threads through the local Chrome Bridge with explicit tab/profile selection.",
+      "version": "0.1.0+codex.20260712091210",
+      "category": "Productivity",
+      "strict": false
+    },
+    {
+      "name": "codex-security-cloud",
+      "source": "./plugins/codex-security-cloud",
+      "description": "Access Codex Security Cloud scan findings from local Codex credentials.",
+      "version": "0.1.0+codex.20260905140758",
+      "category": "Productivity",
+      "strict": false,
+      "keywords": [
+        "codex",
+        "security",
+        "aardvark",
+        "findings"
+      ]
+    },
+    {
+      "name": "etoro-api",
+      "source": "./plugins/etoro-api",
+      "description": "Hosted eToro plugin workflows with a credential-safe local CLI fallback for private evidence and bounded automation.",
+      "version": "0.3.0+codex.20260905140759",
+      "category": "Productivity",
+      "strict": false,
+      "keywords": [
+        "etoro",
+        "portfolio",
+        "market-data",
+        "investing",
+        "trading",
+        "decision-tree",
+        "allocation"
+      ]
+    }
+  ]
+}
