@@ -1,6 +1,6 @@
 ---
 name: desktop-incident-triage
-description: "Diagnose Framework Desktop incidents involving CachyOS, Hyprland, login, window focus, Bluetooth audio, or local services from live state."
+description: "Diagnose Framework Desktop incidents involving CachyOS, Hyprland, login, window focus, Bluetooth audio, or local services from live state, and prepare hardware-support logs."
 ---
 
 # Desktop Incident Triage
@@ -70,6 +70,22 @@ evidence.
 - Use the official Chrome plugin for tab-level browser state when it is
   available. Use `$linux-computer-use` for Chrome window placement, focus, or
   extension-connection incidents that require desktop-level evidence.
+
+## Support Log Privacy Review
+
+- Preserve the original report and prepare a separate, clearly labelled filtered
+  copy. Follow the user's requested section boundaries: if they want only
+  `journalctl` filtered, leave the opening diagnostics and `dmesg` unchanged and
+  state that their device/network identifiers remain. Do not infer that those
+  sections should remain unredacted on another request.
+- For storage-support journals, retain relevant kernel and SMART evidence while
+  excluding unrelated application/service logs, such as Codex automation, Steam,
+  and VPN services. Check retained kernel lines too: removing a Tailscale service
+  section does not remove its interface names or addresses from kernel records.
+- Scan the resulting copy for credentials and private identifiers/context within
+  the agreed scope; do not print sensitive matches. Verify untouched sections
+  against the original and report filtering limits, not a guarantee of no secrets.
+  Preparing a support attachment does not authorize sending or uploading it.
 
 ## Output
 
