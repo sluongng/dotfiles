@@ -1,4 +1,4 @@
 interface:
   display_name: "Dev Review Loop"
-  short_description: "Iterate with clean-room reviews"
-  default_prompt: "Use $dev-review-loop to finish this development task with clean-room review rounds before committing."
+  short_description: "Iterate with Codex and Claude Code reviews"
+  default_prompt: "Use $dev-review-loop to finish this development task with independent Codex and Claude Code review rounds before committing, using each tool's configured defaults."

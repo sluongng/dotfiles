@@ -3,11 +3,13 @@
 # config/claude/skills is a Claude fork and takes precedence.
 #
 # These skills drive Codex-only runtime surfaces: Codex threads, the Codex App
-# or codex-automaton schedulers, Codex package upgrades, or the Codex TUI.
+# or codex-automaton schedulers, Codex package upgrades, the Codex TUI, or
+# configured Codex agent roles.
 automation-runner
 buildbuddy-pr-coach
 codex-local-audit
 daily-chief-of-staff
+dev-review-loop
 organize-codex-threads
 tmux-task-windows
 upgrade-codex-stack
