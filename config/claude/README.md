@@ -13,9 +13,16 @@ The deploy script manages these paths under `~/.claude` (or `$CLAUDE_CONFIG_DIR`
 
 - merges the tracked `settings.json` baseline into `~/.claude/settings.json`
   (preserving Claude-managed keys such as `enabledPlugins` and theme)
-- symlinks the tracked global `CLAUDE.md`
+- symlinks the tracked global `CLAUDE.md`, and `AGENTS.md` from `config/codex`
 - symlinks each tracked personal skill directory under `skills/`
 - registers the local plugin marketplace from this directory
+
+## Instructions
+
+Claude Code reads a project's `AGENTS.md` natively but ignores
+`~/.claude/AGENTS.md`. The global `CLAUDE.md` therefore imports it with
+`@AGENTS.md`, then lists the few rules that differ for Claude Code. Edit shared
+guidance in `config/codex/AGENTS.md`.
 
 ## Skills
 

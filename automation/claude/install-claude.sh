@@ -4,6 +4,7 @@ set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SOURCE_DIR="${DOTFILES_DIR}/config/claude"
+CODEX_SOURCE_DIR="${DOTFILES_DIR}/config/codex"
 TARGET_DIR="${CLAUDE_CONFIG_DIR:-${HOME}/.claude}"
 TIMESTAMP="$(date +%Y%m%d%H%M%S)"
 BACKUP_DIR="${TARGET_DIR}/backups/install-claude-${TIMESTAMP}"
@@ -109,10 +110,12 @@ main() {
     --baseline "${SOURCE_DIR}/settings.json" \
     --target "${TARGET_DIR}/settings.json"
 
-  # Global user instructions.
+  # Global user instructions. CLAUDE.md imports the shared Codex AGENTS.md,
+  # which Claude Code does not read from ~/.claude on its own.
   if [ -f "${SOURCE_DIR}/CLAUDE.md" ]; then
     ensure_symlink "${SOURCE_DIR}/CLAUDE.md" "${TARGET_DIR}/CLAUDE.md"
   fi
+  ensure_symlink "${CODEX_SOURCE_DIR}/AGENTS.md" "${TARGET_DIR}/AGENTS.md"
 
   # Personal skills: one symlink per tracked skill directory.
   while IFS= read -r source_path; do
