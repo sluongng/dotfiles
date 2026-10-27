@@ -112,16 +112,21 @@ open_fullscreen = true
 
 [plugins."github@openai-curated"]
 enabled = true
+
+[tui.model_availability_nux]
+"gpt-6.1-sol" = 4
 ''',
             local_text='''
 [tui.model_availability_nux]
-"gpt-6-sol" = true
+"gpt-6.1-sol" = 1
+"gpt-6-astra" = 4
 ''',
         )
         self.assertEqual(config["tui"]["session_picker_view"], "comfortable")
         self.assertIs(config["tui"]["screen_reader_detection_done"], False)
         self.assertFalse(config["tui"]["fullscreen_transcript"])
-        self.assertTrue(config["tui"]["model_availability_nux"]["gpt-6-sol"])
+        self.assertEqual(config["tui"]["model_availability_nux"]["gpt-6.1-sol"], 4)
+        self.assertEqual(config["tui"]["model_availability_nux"]["gpt-6-astra"], 4)
         self.assertTrue(config["desktop"]["open_fullscreen"])
         self.assertNotIn("github@openai-curated", config["plugins"])
         self.assertTrue(config["plugins"]["github@openai-curated-remote"]["enabled"])
@@ -134,10 +139,26 @@ enabled = true
 [tui]
 session_picker_view = "comfortable"
 screen_reader_detection_done = true
+
+[tui.model_availability_nux]
+"gpt-6.1-sol" = 4
 ''',
         )
         self.assertEqual(config["tui"]["session_picker_view"], "comfortable")
         self.assertTrue(config["tui"]["screen_reader_detection_done"])
+        self.assertEqual(config["tui"]["model_availability_nux"]["gpt-6.1-sol"], 4)
+
+    def test_preserves_legacy_boolean_model_ui_state_without_parent_tui_table(self) -> None:
+        config = self.render(
+            platform="Linux",
+            nested_features=True,
+            render_count=2,
+            target_text='''
+[tui.model_availability_nux]
+"gpt-6.1-sol" = true
+''',
+        )
+        self.assertIs(config["tui"]["model_availability_nux"]["gpt-6.1-sol"], True)
 
     def test_preserves_app_managed_runtime_tables(self) -> None:
         config = self.render(
@@ -348,7 +369,7 @@ enabled = true
 ''',
         )
 
-        self.assertFalse(config["features"]["shell_zsh_fork"])
+        self.assertNotIn("shell_zsh_fork", config["features"])
         self.assertNotIn("unified_exec_zsh_fork", config["features"])
         self.assertTrue(config["features"]["multi_agent_v2"])
         self.assertTrue(config["features"]["current_time_reminder"])
@@ -363,7 +384,7 @@ enabled = true
             platform="Linux", nested_features=True
         )
 
-        self.assertFalse(config["features"]["shell_zsh_fork"])
+        self.assertNotIn("shell_zsh_fork", config["features"])
         self.assertTrue(config["features"]["multi_agent_v2"]["enabled"])
         self.assertTrue(config["features"]["current_time_reminder"]["enabled"])
         self.assertTrue(config["features"]["context_management"]["experimental_mode"])
@@ -394,7 +415,7 @@ enabled = true
             python_executable="/usr/bin/python3",
         )
 
-        self.assertFalse(config["features"]["shell_zsh_fork"])
+        self.assertNotIn("shell_zsh_fork", config["features"])
         self.assertTrue(config["features"]["current_time_reminder"])
 
     @unittest.skipUnless(Path("/usr/bin/python3").is_file(), "no system Python")

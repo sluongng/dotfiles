@@ -35,6 +35,7 @@ RUNTIME_TABLE_RE = re.compile(
     r"|marketplaces\.(?:openai-bundled|openai-primary-runtime)"
     r'|plugins\."[^"]+@(?:openai-bundled|openai-primary-runtime)"'
     r"|mcp_servers\.node_repl(?:\..+)?"
+    r"|tui\.model_availability_nux"
     r")\]$"
 )
 
@@ -179,7 +180,7 @@ def upsert_table_value(text: str, table: str, key: str, value: str) -> str:
     return "\n".join(output) + "\n"
 
 
-def remove_table(text: str, table: str) -> str:
+def remove_table(text: str, table: str, *, required: bool = True) -> str:
     output: list[str] = []
     skipping = False
     found = False
@@ -194,7 +195,7 @@ def remove_table(text: str, table: str) -> str:
         if not skipping:
             output.append(raw_line)
 
-    if not found:
+    if not found and required:
         raise SystemExit(f"shared config is missing {table}")
     return "\n".join(output).rstrip() + "\n"
 
@@ -358,12 +359,20 @@ def build_rendered_config(
         )
 
     runtime_text = ""
+    runtime_model_nux: dict | None = None
     if runtime is not None and runtime.exists():
         runtime_text = read_text(runtime)
         reject_projects_table(runtime, runtime_text)
         runtime_data = parse_toml(runtime, runtime_text)
         if "tui" in runtime_data:
             for key, value in runtime_data["tui"].items():
+                if key == "model_availability_nux":
+                    if not isinstance(value, dict) or any(
+                        type(stage) not in (int, bool) for stage in value.values()
+                    ):
+                        raise SystemExit(f"unsupported runtime model UI state in {runtime}")
+                    runtime_model_nux = value
+                    continue
                 expected_type = RUNTIME_TUI_TYPES.get(key)
                 if expected_type is None or type(value) is not expected_type:
                     raise SystemExit(f"unsupported runtime TUI setting in {runtime}: {key}")
@@ -372,7 +381,10 @@ def build_rendered_config(
                 )
             # TOML cannot append another [tui] table: merge only the UI-owned
             # keys into the shared table and keep all other runtime tables.
-            runtime_text = remove_table(runtime_text, "[tui]")
+            runtime_text = remove_table(runtime_text, "[tui]", required=False)
+            runtime_text = remove_table(
+                runtime_text, "[tui.model_availability_nux]", required=False
+            )
 
     parts = [*generated_header(local, projects), "", shared_text.strip()]
 
@@ -384,6 +396,15 @@ def build_rendered_config(
             shared_text, local_text, local
         )
         local_data = parse_toml(local, local_text)
+        if runtime_model_nux is not None:
+            # Local entries are fallback state; the live UI's latest progress wins.
+            local_nux = local_data.get("tui", {}).get("model_availability_nux", {})
+            if not isinstance(local_nux, dict):
+                raise SystemExit(f"unsupported local model UI state in {local}")
+            runtime_model_nux = {**local_nux, **runtime_model_nux}
+            local_text = remove_table(
+                local_text, "[tui.model_availability_nux]", required=False
+            )
         stripped = local_text.strip()
         if stripped:
             parts.extend(["", stripped])
@@ -406,6 +427,13 @@ def build_rendered_config(
 
     if runtime_text.strip():
         parts.extend(["", runtime_text.strip()])
+
+    if runtime_model_nux is not None:
+        parts.extend(["", "[tui.model_availability_nux]"])
+        parts.extend(
+            f"{json.dumps(model)} = {json.dumps(stage)}"
+            for model, stage in runtime_model_nux.items()
+        )
 
     if projects.exists():
         projects_text = read_text(projects)
