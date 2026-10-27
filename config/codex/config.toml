@@ -1,7 +1,7 @@
 # Source of truth for shared Codex config: this file lives in ~/.dotfiles/config/codex/config.toml.
 # automation/codex/install-codex.sh renders ${CODEX_HOME:-~/.codex}/config.toml from this file plus local overlays.
 # Do not add [projects] here; machine-local trust entries belong in the selected Codex home's projects.local.toml.
-# CLI configuration reviewed against codex-cli v0.163.0-alpha.5 on 2026-10-12.
+# CLI configuration reviewed against codex-cli v0.165.0-alpha.1 on 2026-10-26.
 # Shared App configuration is rendered here too; App runtime parity is checked separately.
 
 model = "gpt-6.1-sol"
@@ -9,7 +9,7 @@ model_reasoning_effort = "high"
 model_reasoning_summary = "none"
 model_verbosity = "medium"
 plan_mode_reasoning_effort = "xhigh"
-show_raw_agent_reasoning = true
+show_raw_agent_reasoning = false
 
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
@@ -34,6 +34,9 @@ voice = "sol"
 [tools.experimental_request_user_input]
 enabled = false
 
+# Stable defaults already enable the standalone Code Mode host and interruption,
+# multi-agent tools, plugin/skill discovery, Browser/computer use, and speed-mode availability.
+# Do not pin those defaults or enable unfinished experiments solely for freshness.
 [features]
 apply_patch_streaming_events = true
 auth_elicitation = true
@@ -47,14 +50,12 @@ local_thread_store_compression = false
 memories = true
 mentions_v2 = true
 prevent_idle_sleep = true
-# Opt-in CLI voice conversations; start explicitly with /voice in a new session.
-realtime_conversation = true
 runtime_metrics = true
 unified_exec = true
 
 # Historical notes/history round trips used Astra and GPT-5.6 Luna/Terra/Sol.
 # Current scout/worker/reviewer roles use GPT-6 Luna and GPT-6.1 Sol; keep catalog defaults.
-# This selects the new context-reset path, not a legacy-compaction fallback.
+# Model/account gated: this does not force experimental context-reset support.
 # Start fresh tasks; leave thresholds to model defaults. sol-classic opts out.
 # https://learn.chatgpt.com/docs/config-file/config-reference
 [features.context_management]
@@ -74,6 +75,7 @@ max_concurrent_threads_per_session = 6 # spawned agents; root thread is separate
 max_depth = 2
 
 [tui]
+raw_output_mode = false # Keep compact previews; Ctrl-T opens full tool details.
 alternate_screen = "never"
 fullscreen_transcript = false
 notifications = false # Completion popups are emitted by the top-level notify hook.

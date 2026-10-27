@@ -124,7 +124,29 @@ Classify findings by consequence:
 - **Optional:** deliberate opt-in or cosmetic cleanup with no current breakage.
 - **No change:** explicitly checked and compatible.
 
-Prefer changing the dotfiles source of truth and rerendering over editing generated live config directly. Do not update a version review marker alone; first perform the functional audit it represents. If a service is stale after the package build or installation, report its exact restart command and current impact.
+Prefer changing the dotfiles source of truth and rerendering over editing generated live config directly.
+For display-noise requests, distinguish answer length (`model_verbosity`) from
+reasoning and tool-trace visibility. Preserve answer verbosity unless the user
+also requests shorter answers. Check the target version's
+`show_raw_agent_reasoning` and TUI display/raw-output controls; they affect
+different content and views. When the user wants Ctrl-T inspection retained,
+verify the expanded view separately and disclose any setting that suppresses
+reasoning there too. Do not promise that a reasoning setting hides tool-call
+rows. Verify supported controls against the official configuration reference
+and target-version source before changing them.
+
+After the functional configuration audit succeeds, update the existing
+`CLI configuration reviewed against` comment in the source config to the exact
+audited CLI version and review date, even when no settings need changing or
+installation/activation is deferred. The comment records compatibility review,
+not the installed or running version; never advance it without that audit.
+Rerender through the existing config renderer, preserving local trust and
+runtime-managed state. Verify that the live comment matches the source and,
+for a comment-only update, that the parsed effective settings are unchanged.
+If rendering is blocked, report source and live marker state separately.
+
+If a service is stale after the package build or installation, report its exact
+restart command and current impact.
 
 ## Preserve shared app-server and remote-access ownership
 
