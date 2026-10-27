@@ -31,6 +31,8 @@ the local-only BuildBuddy Dev plugin.
      questions.
    - Trace Bazel client, sidecar, BuildBuddy server, executor, and proxy layers
      separately before merging symptoms into one root cause.
+   - For a source-backed support packet with missing runtime evidence, use
+     `$ask-buddy` and its bounded support-preparation workflow.
 
 ## Known Diagnostic Shapes
 
@@ -58,6 +60,8 @@ the local-only BuildBuddy Dev plugin.
 
 ## Output
 
-Return a concise root cause with source references, confidence level, symptoms
-that are separate, recommended next checks, and whether a focused BuildBuddy
-skill should take over.
+Return the established root cause, or conditional triage when the evidence does
+not establish one. Include source references, confidence level, symptoms that
+are separate, the smallest decisive next checks, and whether a focused
+BuildBuddy skill should take over. Do not label a source-supported possibility
+as an observed cause.

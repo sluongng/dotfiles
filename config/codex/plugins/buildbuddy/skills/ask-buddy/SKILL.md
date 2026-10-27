@@ -142,12 +142,42 @@ git -C "$repo" log -p -G'regex' -- path/to/area
 ```bash
 gh issue list --repo OWNER/REPO --search "terms" --limit 20
 gh issue view NUMBER --repo OWNER/REPO --comments
-gh pr list --repo OWNER/REPO --search "terms" --limit 20
+gh pr list --repo OWNER/REPO --state all --search "terms" --limit 20
 gh pr view NUMBER --repo OWNER/REPO --comments
 ```
 
 For GitHub Discussions, use `gh api graphql` and search titles/bodies for the
 topic.
+
+## Bounded Support Preparation
+
+When the task asks for a support answer or local handoff and runtime evidence
+is missing or inaccessible, prepare a source-backed conditional answer rather
+than forcing a root cause or making a speculative implementation change.
+
+- Separate implemented support, checked-in desired configuration, advertised
+  capabilities, and observed deployed behavior. Configuration or executor
+  metadata may describe intent rather than installed resources; trace how it
+  is produced before treating it as an inventory. Passing PR checks do not
+  establish rollout or availability on the affected hosts.
+- Turn the remaining uncertainty into the smallest decisive evidence request
+  or validation gate. For a cache regression, a fast/slow invocation pair and
+  one matched action may distinguish key drift, missing outputs, cache bypass,
+  and execution time. For a toolchain candidate, identify the affected host's
+  installed components and the actual failing action to rerun. Adapt the request
+  to the question; do not require every diagnostic field by default.
+- Reuse an existing implementation candidate when it addresses the question.
+  Before preparing a regression follow-up, check the relevant introducing
+  commits and PR history across open (including draft), closed-unmerged, and
+  merged states. Distinguish an active candidate, an unmerged attempt, a merged
+  predecessor, and the remaining regression. State what applicable work
+  plausibly changes and what still needs verification; do not duplicate another
+  owner's fix merely because delivery is unverified.
+- For a requested local packet, save the concise answer or UNSENT reply,
+  exact source revisions, decisive references, relevant validation results,
+  and remaining evidence or decision gates. Validate claims at the layer the
+  available evidence reaches; offline checks are not hosted reproduction.
+  Keep completed local preparation distinct from unresolved external outcomes.
 
 ## Parallelization
 
