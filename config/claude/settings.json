@@ -11,6 +11,10 @@
   "env": {
     "DISABLE_TELEMETRY": "1"
   },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
   "enabledPlugins": {
     "buildbuddy@sluongng-dotfiles": true,
     "buck2@sluongng-dotfiles": true,

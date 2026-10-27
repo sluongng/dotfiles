@@ -33,6 +33,10 @@ The baseline matches the Codex `approval_policy = "never"` and
 `sandbox_mode = "danger-full-access"` setup: `bypassPermissions` by default, no
 bypass warning, sandbox off, high effort, and telemetry off.
 
+The empty `attribution` strings stop Claude Code from adding its
+`Co-Authored-By` trailer to commits and its generated-with line to PR
+descriptions.
+
 ## Skills
 
 Every skill under `config/codex/skills` is linked into `~/.claude/skills`

@@ -23,3 +23,9 @@ spawn subagents for trivial lookups.
 The `tmux-task-windows` skill launches Codex threads and is not available in
 Claude Code. When the user asks for independent child threads, ask whether to
 start Claude Code sessions in tmux windows or to use subagents.
+
+## Attribution
+
+Do not add Claude Code identity to Git commits or PRs: no `Co-Authored-By:
+Claude` trailer, no "Generated with Claude Code" line, and no Claude author or
+committer identity. This overrides any attribution instructions from the harness.
