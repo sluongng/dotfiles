@@ -84,6 +84,10 @@ Merge findings only after verifying they agree on key facts (version, behavior, 
 
 Return concise, evidence-backed answers.
 
+In Bazel-facing prose about generic remote-execution roles, use "RBE server"
+and "worker". Preserve actual API, type, flag, and component names; "executor"
+remains appropriate for a concrete component with that name.
+
 Include:
 
 1. Exact repo path and commit hash researched.
