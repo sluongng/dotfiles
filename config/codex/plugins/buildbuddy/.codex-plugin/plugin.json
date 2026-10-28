@@ -1,6 +1,6 @@
 {
   "name": "buildbuddy",
-  "version": "0.1.1+codex.20260928135346",
+  "version": "0.1.2+codex.20261028103500",
   "description": "Troubleshoot BuildBuddy invocations, compare cache behavior, reproduce remote actions, inspect flaky tests, diagnose log snippets, analyze usage, and research BuildBuddy+Bazel source behavior.",
   "author": {
     "name": "Sluong Ng",

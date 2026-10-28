@@ -4,34 +4,20 @@ Use these as copy/paste starting points. Replace placeholders and keep API keys 
 
 ## Common shell setup
 
+Use the [shared API setup](../../../references/api-common.md#shell-setup) for
+`BASE_URL`, `API_KEY`, `GROUP_ID`, `TZ_OFFSET_MINUTES`, `OUT_DIR`, and `bb_json`.
+Choose the authorized deployment and group, then set the task inputs below.
+Use distinct cache names when invocation IDs, filters, or dates change.
+
 ```bash
-BASE_URL=${BASE_URL:-https://app.buildbuddy.io}
-API_KEY=$(git config --local buildbuddy.api-key)
-GROUP_ID=<GROUP_ID>
-INVOCATION_OLD=<INVOCATION_ID_OLD>
-INVOCATION_NEW=<INVOCATION_ID_NEW>
-TZ_OFFSET_MINUTES=-60
-OUT_DIR=${OUT_DIR:-$(mktemp -d -t bb-compare.XXXX)}
-mkdir -p "$OUT_DIR"
-
-# Cache API responses to avoid repeated calls. Set BB_FORCE=1 to refresh.
-bb_json() {
-  local name="$1"; shift
-  local path="$OUT_DIR/$name.json"
-  if [[ -s "$path" && -z "${BB_FORCE:-}" ]]; then
-    cat "$path"
-  else
-    "$@" | tee "$path"
-  fi
-}
+INVOCATION_OLD='INVOCATION_ID_OLD'
+INVOCATION_NEW='INVOCATION_ID_NEW'
 ```
-
-If `API_KEY` is empty, run `bb login` first.
 
 ## GetInvocation (metadata + structured command line)
 
 ```bash
-bb_json get_invocation_old curl "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
+bb_json get_invocation_old curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -39,7 +25,7 @@ bb_json get_invocation_old curl "$BASE_URL/rpc/BuildBuddyService/GetInvocation" 
     "lookup": {"invocationId": "'"$INVOCATION_OLD"'", "fetchChildInvocations": true}
   }'
 
-bb_json get_invocation_new curl "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
+bb_json get_invocation_new curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -79,14 +65,14 @@ If no canonical command line is present, fall back to the only `structuredComman
 ## GetCacheScoreCard (AC read misses ordered by start time)
 
 ```bash
-bb_json cache_scorecard_old curl "$BASE_URL/rpc/BuildBuddyService/GetCacheScoreCard" \
+bb_json cache_scorecard_old curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetCacheScoreCard" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
     "requestContext": {"groupId": "'"$GROUP_ID"'"},
     "invocationId": "'"$INVOCATION_OLD"'",
     "filter": {
-      "mask": {"paths": ["request_type", "response_type", "cache_type"]},
+      "mask": "requestType,responseType,cacheType",
       "requestType": "READ",
       "responseType": "NOT_FOUND",
       "cacheType": "AC"
@@ -95,14 +81,14 @@ bb_json cache_scorecard_old curl "$BASE_URL/rpc/BuildBuddyService/GetCacheScoreC
     "descending": false
   }'
 
-bb_json cache_scorecard_new curl "$BASE_URL/rpc/BuildBuddyService/GetCacheScoreCard" \
+bb_json cache_scorecard_new curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetCacheScoreCard" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
     "requestContext": {"groupId": "'"$GROUP_ID"'"},
     "invocationId": "'"$INVOCATION_NEW"'",
     "filter": {
-      "mask": {"paths": ["request_type", "response_type", "cache_type"]},
+      "mask": "requestType,responseType,cacheType",
       "requestType": "READ",
       "responseType": "NOT_FOUND",
       "cacheType": "AC"
@@ -123,7 +109,7 @@ python3 scripts/find_first_shared_ac_miss.py \
 ## GetExecution (all actions for an invocation, inline ExecuteResponse)
 
 ```bash
-bb_json get_execution_old curl "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
+bb_json get_execution_old curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -132,7 +118,7 @@ bb_json get_execution_old curl "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
     "inlineExecuteResponse": true
   }'
 
-bb_json get_execution_new curl "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
+bb_json get_execution_new curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{

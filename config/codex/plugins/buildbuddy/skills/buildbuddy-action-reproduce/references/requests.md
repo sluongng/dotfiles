@@ -21,19 +21,13 @@ Use selectors based on what you know:
 
 ## Common setup
 
-```bash
-BASE_URL=${BASE_URL:-https://app.buildbuddy.io}
-GRPC_TARGET=${GRPC_TARGET:-remote.buildbuddy.io}
-API_KEY=$(git config --local buildbuddy.api-key)
-GROUP_ID=<GROUP_ID>
-INVOCATION_INPUT='<INVOCATION_ID_OR_URL>'
-OUT_DIR=${OUT_DIR:-$(mktemp -d -t bb-action-repro.XXXX)}
-mkdir -p "$OUT_DIR"
+Use the [shared API setup](../../../references/api-common.md#shell-setup) for
+HTTP auth, selected group, the temporary output directory, and `bb_json`.
+The remaining inputs and parsing below are specific to replay preparation.
 
-if [[ -z "$API_KEY" ]]; then
-  echo "Missing BuildBuddy API key. Run: bb login" >&2
-  return 1
-fi
+```bash
+GRPC_TARGET=${GRPC_TARGET:-remote.buildbuddy.io}
+INVOCATION_INPUT='INVOCATION_ID_OR_URL'
 
 extract_invocation_id() {
   local in="$1"
@@ -52,21 +46,12 @@ INVOCATION_ID=$(extract_invocation_id "$INVOCATION_INPUT") || {
   return 1
 }
 
-bb_json() {
-  local name="$1"; shift
-  local path="$OUT_DIR/$name.json"
-  if [[ -s "$path" && -z "${BB_FORCE:-}" ]]; then
-    cat "$path"
-  else
-    "$@" | tee "$path"
-  fi
-}
 ```
 
 ## Get invocation metadata
 
 ```bash
-bb_json get_invocation curl "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
+bb_json get_invocation curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetInvocation" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -108,7 +93,7 @@ fi
 ## Get executions for the invocation
 
 ```bash
-bb_json get_execution curl "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
+bb_json get_execution curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetExecution" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{
@@ -198,7 +183,7 @@ If you only have host ID (`executedActionMetadata.worker`), map it first:
 ```bash
 WORKER_HOST_ID=$(jq -r '.executedActionMetadata.worker // ""' "$OUT_DIR/selected_execution.json")
 
-bb_json get_execution_nodes curl "$BASE_URL/rpc/BuildBuddyService/GetExecutionNodes" \
+bb_json get_execution_nodes curl --fail-with-body --silent --show-error "$BASE_URL/rpc/BuildBuddyService/GetExecutionNodes" \
   -H 'Content-Type: application/json' \
   -H "x-buildbuddy-api-key: $API_KEY" \
   --data '{

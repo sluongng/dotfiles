@@ -7,6 +7,10 @@ metadata:
 
 # BuildBuddy Invocation Compare
 
+For API selection and the public-v1 versus UI-RPC distinction, use the
+[shared API index](../../references/api-reference.md). Load only the matching
+request reference for this workflow.
+
 ## Overview
 
 Compare the relevant evidence from two invocations to explain why actions are

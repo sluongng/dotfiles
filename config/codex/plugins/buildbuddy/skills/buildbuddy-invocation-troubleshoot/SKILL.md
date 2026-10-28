@@ -7,6 +7,10 @@ metadata:
 
 # BuildBuddy Invocation Troubleshoot
 
+For API selection and the public-v1 versus UI-RPC distinction, use the
+[shared API index](../../references/api-reference.md). Load only the matching
+request reference for this workflow.
+
 ## Overview
 
 Use this skill to investigate a BuildBuddy invocation end-to-end: locate the invocation, identify failing targets, collect stdout/stderr, determine whether RBE or remote cache was involved, and download build artifacts (raw BES, build logs, execution profiles, cache scorecard).
@@ -21,7 +25,9 @@ Use this skill to investigate a BuildBuddy invocation end-to-end: locate the inv
 - Collect `group_id` and (if already known) `invocation_id`.
 - Create a temp working directory (per investigation) and store **all** downloaded artifacts and API responses there. Reuse cached files to avoid re-calling the API; delete a cached file or set a force flag when you want a fresh response.
 
-Reference request templates live in `references/requests.md`.
+Request templates live in `references/requests.md`.
+For the public `/api/v1/GetTarget` selector rather than the UI target RPC, see
+[public API retrieval](../../references/public-api.md).
 
 ### 1) Find the invocation ID
 

@@ -1,6 +1,6 @@
 ---
 name: buildbuddy
-description: Route general BuildBuddy troubleshooting requests to the focused skills in this plugin.
+description: Route BuildBuddy troubleshooting, API selection, and analytics questions to focused skills and shared API references.
 ---
 
 # BuildBuddy
@@ -19,6 +19,14 @@ requested operation is exposed by that server, but do not replace the
 API-backed workflows below with MCP-only logic; the MCP surface is narrower.
 Load `../../references/buildbuddy-mcp.md` when the user asks how to configure
 the official MCP server.
+
+## API references
+
+Start with [the API index](../../references/api-reference.md) for API discovery,
+request/response source maps, and the public-v1 versus UI-RPC distinction.
+Use [common conventions](../../references/api-common.md) for auth and JSON, then
+load only the linked request examples needed for the task.
+Workflow procedures stay with their skills; do not load every reference.
 
 ## Routing
 
@@ -43,7 +51,8 @@ Route by user intent:
   `buildbuddy-io/buildbuddy`, `buildbuddy-io/buildbuddy-toolchains`, and
   `buildbuddy-io/buildbuddy-helm`:
   `../ask-buddy/SKILL.md`
-- Billing, usage, trends, heatmaps, drilldowns, cost anomalies, or projections:
+- Billing, usage, Target Performance, cross-invocation action timelines, trends,
+  heatmaps, drilldowns, cost anomalies, or projections:
   `../buildbuddy-usage-analysis/SKILL.md`
 
 ## Safety

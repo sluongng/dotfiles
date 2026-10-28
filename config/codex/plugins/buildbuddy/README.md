@@ -7,9 +7,15 @@ dotfiles:
 - invocation comparison and cache-miss analysis
 - remote action replay command generation
 - flaky-test listing and triage from Test Analytics target stats
-- usage and billing trend analysis
+- target/action performance across invocations, usage, and billing trend analysis
 - source-backed BuildBuddy+Bazel research across Bazel, BuildBuddy,
   BuildBuddy toolchains, and BuildBuddy Helm chart repos
+
+API documentation starts at [references/api-reference.md](references/api-reference.md).
+It is a shared index and source map, with common request conventions in one
+place and focused request examples kept beside each workflow skill.
+This keeps API discovery centralized without loading an unrelated curl catalog
+for every investigation.
 
 BuildBuddy also exposes an official MCP server at
 `https://<your-org>.buildbuddy.io/mcp`. Treat it as an optional convenience

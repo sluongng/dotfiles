@@ -5,6 +5,10 @@ description: Generate or run a customizable bb execute replay for a specific rem
 
 # BuildBuddy Action Reproduce
 
+For API selection and the public-v1 versus UI-RPC distinction, use the
+[shared API index](../../references/api-reference.md). Load only the matching
+request reference for this workflow.
+
 ## Overview
 
 Use this skill to go from invocation identifier to a concrete, reproducible action replay.

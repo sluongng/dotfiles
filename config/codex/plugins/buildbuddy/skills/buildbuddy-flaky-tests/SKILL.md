@@ -5,6 +5,10 @@ description: Find and rank recent BuildBuddy flaky tests, inspect sample failure
 
 # BuildBuddy Flaky Tests
 
+For API selection and the public-v1 versus UI-RPC distinction, use the
+[shared API index](../../references/api-reference.md). Load only the matching
+request reference for this workflow.
+
 ## Overview
 
 Use BuildBuddyService target-stat RPCs to fetch the same data behind the Test
@@ -14,6 +18,8 @@ reproduction, and fixes.
 The helper script calls:
 
 - `GetTargetStats` for the flaky target list.
+- `GetTargetHistory` for tracked CI test history across commits, not a general
+  inventory; its eligibility and query restrictions differ from flake stats.
 - `GetDailyTargetStats` for recent daily aggregate counts.
 - `GetTargetFlakeSamples` for sample flaky invocations for selected labels.
 - `GetUser` or `GetGroup` only to resolve the group ID when needed.

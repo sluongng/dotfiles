@@ -1,22 +1,32 @@
 ---
 name: buildbuddy-usage-analysis
-description: Analyze BuildBuddy billing usage and trends, compare periods, investigate anomalies, and estimate cost savings.
+description: Analyze BuildBuddy usage, target and action performance across invocations, trends, drilldowns, and cost anomalies.
 metadata:
-  short-description: Analyze BuildBuddy usage trends and cost anomalies.
+  short-description: Analyze BuildBuddy usage and target performance.
 ---
 
 # BuildBuddy Usage Analysis
 
 ## Overview
 
-Fetch usage + trends data from BuildBuddyService, store responses in a temp dir, analyze for spikes/drops, and recommend cost savings. Prioritize API key safety and small time windows.
+Choose the matching BuildBuddyService analytics API, store responses in a temp
+directory, and analyze performance or usage across invocations. Keep API keys
+private and time windows bounded. Use the [API index](../../references/api-reference.md)
+when choosing between target results, execution metrics, and test history.
 
 ## Quick start
 
-1) Use `references/requests.md` to set `BASE_URL`, `API_KEY`, `GROUP_ID`, and `OUT_DIR`.
-2) Call `GetUsage` for current and prior months.
-3) Call `GetTrend` for a time window aligned with the usage comparison.
-4) Use the analyzer script or ad‑hoc math to compare and project.
+1) Use the [shared API setup](../../references/api-common.md#shell-setup).
+2) Choose only the data needed for the question:
+   - Billing: `GetUsage` and `GetTrend` for aligned periods.
+   - Target Performance: `GetTargetTrends` to rank targets across invocations.
+   - One target's action history: `GetExecutionTimeline`.
+   - Invocation counts/time grouped by user, repo, branch, or commit: `GetInvocationStat`.
+   - Distribution and breakdowns: `GetStatHeatmap` / `GetStatDrilldown`, then
+     `SearchExecution` for execution rows or `SearchInvocation` for build rows.
+3) Load the matching section of `references/requests.md`; do not fetch billing
+   data for a target-performance-only question.
+4) Analyze the saved results, preserving aggregation and sampling limits.
 
 ## Preconditions and access
 
@@ -30,7 +40,14 @@ Use the request templates in `references/requests.md`:
 
 - `GetUsage` for the current month and the prior month (billing comparisons).
 - `GetTrend` for the same window (time-series context and cache hit rates).
-- If drilling down: `GetStatHeatmap`, `GetStatDrilldown`, then `SearchInvocation` or `SearchExecution` for sample events.
+- `GetTargetTrends` for per-target RBE metric aggregates (substring label filter,
+  actual pagination, not a full target inventory).
+- `GetExecutionTimeline` for one exact target's summaries, buckets, and bounded
+  execution samples; use `SearchExecution` for paginated row retrieval.
+- `GetInvocationStat` for grouped invocation counts and durations.
+- If drilling down: `GetStatHeatmap`, `GetStatDrilldown`, then `SearchInvocation`
+  or `SearchExecution` for example rows. For target clicks, use
+  `query.dimensionFilter`, not the invocation command `pattern`.
 
 Notes:
 - Keep windows small (days/weeks) to reduce payload size.
@@ -69,5 +86,7 @@ When anomalies are found, prioritize cost-saving advice:
 
 ## Resources
 
-- `references/requests.md`: request templates with safe API key handling and UI URLs.
+- [API index](../../references/api-reference.md): cross-skill API selection and source map.
+- [Shared request conventions](../../references/api-common.md): auth, JSON, and caching.
+- `references/requests.md`: focused analytics examples, limits, and UI URLs.
 - `scripts/analyze_usage_trends.py`: anomaly detector for usage/trends JSON.
