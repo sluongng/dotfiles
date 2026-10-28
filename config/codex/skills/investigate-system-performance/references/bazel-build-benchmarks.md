@@ -34,6 +34,16 @@ Count test targets, shards, attempts, cached results, and new executions
 separately when they differ. A cache-enabled speedup with fewer executing tests
 is not a pure transfer-speed improvement.
 
+For warm incremental comparisons, verify Bazel server/JVM continuity within
+each arm and record the actual runtime, not just the Java compilation target.
+Use separate persistent servers when comparing rebuilt Bazel binaries. Prime
+each measured source state and execution path before timing; an already-warm
+JVM can still encounter a path's first-use cost. Compare selected actions and
+input-tree shapes across arms, not cache-hit percentages alone: skipped actions
+or reused aggregate subtrees can remove the work being optimized. Keep local
+no-op, remote action-cache reuse, and remote execution with warm CAS distinct,
+and verify the workload's required output equivalence.
+
 ## Reconcile timing boundaries before assigning a cause
 
 For CI latency, align check registration, parent-pipeline start, downstream
