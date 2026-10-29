@@ -1,24 +1,32 @@
 hl.on("hyprland.start", function()
-    hl.exec_cmd("swaybg -o '*' -i /usr/share/wallpapers/cachyos-wallpapers/Skyscraper.png -m fill")
-    hl.exec_cmd("waybar")
-    hl.exec_cmd("fcitx5 -d")
-    hl.exec_cmd("mako")
-    hl.exec_cmd("nm-applet --indicator")
-    hl.exec_cmd("/usr/lib/polkit-kde-authentication-agent-1")
+    -- exec_cmd is asynchronous. Keep initialization and client startup in one
+    -- shell so portal clients cannot race the graphical-session environment.
     hl.exec_cmd([[
+        "$HOME/.config/hypr/scripts/session-start" ||
+            printf '%s\n' 'Session initialization failed; continuing desktop startup.' >&2
+
+        swaybg -o '*' -i /usr/share/wallpapers/cachyos-wallpapers/Skyscraper.png -m fill &
+        waybar &
+        fcitx5 -d &
+        mako &
+        nm-applet --indicator &
+        /usr/lib/polkit-kde-authentication-agent-1 &
+
         wob_fifo="/tmp/$HYPRLAND_INSTANCE_SIGNATURE.wob"
         [ -p "$wob_fifo" ] || mkfifo -m 600 "$wob_fifo"
-        tail -f "$wob_fifo" | wob
+        tail -f "$wob_fifo" | wob &
+
+        ghostty &
+        google-chrome-stable &
+        slack &
+        steam &
+
+        # Hypridle owns suspend-time locking. Idle-time locking stays disabled
+        # because Hyprlock can collapse Steam Remote Play framerate.
+        hypridle &
     ]])
+end)
 
-    hl.exec_cmd([[systemctl --user import-environment DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS CODEX_APP_SERVER_USE_LOCAL_DAEMON; command -v dbus-update-activation-environment >/dev/null 2>&1 && dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS CODEX_APP_SERVER_USE_LOCAL_DAEMON; systemctl --user start codex-remote-control.service elephant.service app-StreamController@autostart.service]])
-
-    hl.exec_cmd("ghostty")
-    hl.exec_cmd("google-chrome-stable")
-    hl.exec_cmd("slack")
-    hl.exec_cmd("steam")
-
-    -- Hypridle owns suspend-time locking. Idle-time locking remains disabled in
-    -- hypridle.conf because Hyprlock can collapse Steam Remote Play framerate.
-    hl.exec_cmd("hypridle")
+hl.on("hyprland.shutdown", function()
+    hl.exec_cmd("systemctl --user stop hyprland-session.target")
 end)

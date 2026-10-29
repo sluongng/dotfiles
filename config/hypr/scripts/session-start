@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${WAYLAND_DISPLAY:?Run this from the active Hyprland session}"
+: "${HYPRLAND_INSTANCE_SIGNATURE:?Run this from the active Hyprland session}"
+: "${XDG_CURRENT_DESKTOP:?The desktop identity must be set before starting portals}"
+
+session_environment=(
+    DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP
+    XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS
+)
+if [[ -v CODEX_APP_SERVER_USE_LOCAL_DAEMON ]]; then
+    session_environment+=(CODEX_APP_SERVER_USE_LOCAL_DAEMON)
+fi
+systemctl --user import-environment "${session_environment[@]}"
+dbus-update-activation-environment --systemd "${session_environment[@]}"
+
+# Starting the desktop-specific target also gives enabled graphical services
+# their intended lifecycle. The generic graphical target refuses manual starts.
+if ! systemctl --user reset-failed ydotool.service xdg-desktop-portal-gtk.service; then
+    printf '%s\n' 'Could not clear previous desktop-service failures.' >&2
+fi
+if ! systemctl --user start hyprland-session.target; then
+    printf '%s\n' 'Could not start the graphical-session services.' >&2
+fi
+
+# A portal may already have been D-Bus activated before the session existed.
+# Restart it and its backends only after publishing the correct environment.
+if ! systemctl --user restart xdg-desktop-portal-gtk.service \
+    xdg-desktop-portal-hyprland.service xdg-desktop-portal.service; then
+    printf '%s\n' 'Could not initialize desktop portals.' >&2
+fi
+if ! systemctl --user start ydotool.service codex-remote-control.service \
+    elephant.service app-StreamController@autostart.service; then
+    printf '%s\n' 'Some optional desktop services did not start.' >&2
+fi
