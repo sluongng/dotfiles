@@ -62,6 +62,7 @@ hl.config({
     render = {
         direct_scanout = false,
         send_content_type = false,
+        cm_auto_hdr = 0,
     },
     opengl = {
         nvidia_anti_flicker = true,
