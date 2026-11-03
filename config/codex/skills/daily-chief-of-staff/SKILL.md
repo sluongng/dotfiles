@@ -212,8 +212,9 @@ later daily scan.
   links, latest verified evidence, concrete deliverable, validation needs,
   prior task/report route, and authority limits. Keep private briefs in the
   chief-of-staff workspace. The child owns its substantive work and answer;
-  the parent alone owns ledger/routing updates. Do not ask the child to run
-  another agenda scan or recursively launch agenda tasks.
+  the parent alone owns ledger/routing updates. Include the self-contained
+  result and phone-delivery requirements below in every brief. Do not ask the
+  child to run another agenda scan or recursively launch agenda tasks.
 - Match the brief to the next step: diagnosis/review stays bounded to that
   question; a clear local implementation task includes its relevant validation.
   Protect dirty checkouts and active writers with isolated worktrees when
@@ -286,6 +287,25 @@ later daily scan.
   buttons. Verify controller/page rendering, not merely service liveness, without
   pressing dictation, Enter, or task keys. Report a concrete gap if the deck is
   unavailable or cannot be verified.
+
+## Self-contained child results and phone delivery
+
+The user may open a child at its latest reply on a phone, without the parent
+agenda or earlier conversation. Require both that reply and its curated report
+to explain the source context before giving the result: original permalink,
+channel/workspace or DM participants, topic, relevant people and roles, latest
+direction, and the ask or commitment this work addresses. State unknowns rather
+than inventing names or implying old context is current. Follow with the actual
+result, validation limits, remaining owner/decision and next step; a report link
+alone is not enough context.
+
+For chief-of-staff child briefs and result delivery, read
+[result-delivery.md](references/result-delivery.md). Use the installed private
+report helper to provide a direct phone-accessible HTML URL alongside local
+artifacts. Report unavailable publishing honestly; ordinary agenda handoffs do
+not authorize starting servers or changing Tailscale configuration. Expire only
+served report/attachment copies after more than seven days of verified thread
+inactivity, never conversations, ledger entries or canonical artifacts.
 
 ## Ranking
 

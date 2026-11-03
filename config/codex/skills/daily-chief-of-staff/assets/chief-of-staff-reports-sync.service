@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh private report copies and expire inactive thread reports
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/.dotfiles/config/codex/skills/daily-chief-of-staff/scripts/chief_reports.py sync
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/state/chief-of-staff-reports
+UMask=0077

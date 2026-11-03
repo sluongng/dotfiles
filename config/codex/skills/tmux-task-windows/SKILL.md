@@ -21,7 +21,12 @@ their work beyond the user's request.
   expected result, relevant prior evidence, and authorized changes. Preserve the
   requested scope: an implementation task stays implementation, while a request
   to summarize review comments stays analysis. Tell the child to present its
-  final answer in its own thread. Keep private handoffs outside public source.
+  final answer in its own thread. Make that final reply understandable when
+  opened directly at the latest message: recap the task/source and original
+  link, then the result, validation limits and remaining decision or next step.
+  Do not require a return to the parent index for context. Where the workflow
+  provides a phone-accessible report, include its direct URL as well as local
+  artifact links. Keep private handoffs outside public source.
 - Create the window first and launch the interactive Codex TUI from `zsh -lic`.
   Pass the working directory explicitly to BOTH tmux (`-c`) and Codex (`--cd`);
   the shared app-server can otherwise use a different directory from the pane.

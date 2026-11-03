@@ -1,0 +1,17 @@
+[Unit]
+Description=Private chief-of-staff mobile reports
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.dotfiles/config/codex/skills/daily-chief-of-staff/scripts/chief_reports.py serve --port 18841
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/state/chief-of-staff-reports
+UMask=0077
+
+[Install]
+WantedBy=default.target
