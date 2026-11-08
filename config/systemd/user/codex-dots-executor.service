@@ -1,0 +1,18 @@
+[Unit]
+Description=Direct headless Dots executor (outbound Noise transport)
+After=network-online.target codex-remote-control.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.dotfiles/automation/codex/dots-headless.py run
+WorkingDirectory=%h
+Environment=CODEX_HOME=%h/.codex
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin
+UMask=0077
+Restart=on-failure
+RestartSec=30s
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=default.target
