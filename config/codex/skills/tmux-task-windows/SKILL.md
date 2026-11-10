@@ -83,12 +83,29 @@ Report "started" separately from "completed".
 - If no artifact exists and the user asks for a result view, save only the
   relevant user-facing answer to an appropriate local file and open that file.
   Do not include hidden reasoning, raw credentials, or unrelated conversation.
+- When presenting diagrams in a terminal pane, use readable text diagrams or a
+  renderer supported by that view. Mermaid source in chat is not a visible
+  diagram in the requested pane; verify the diagram in the intended view.
 - Use an interactive Codex window when the user needs to continue the task;
   use a pager when they only need to read its result. A log or pager window is
   not a substitute for a requested interactive child thread.
 
 Verify only that the intended artifact or thread is visible, then return its
 window name and route. Never close or replace another running task's window.
+
+## Reboot snapshots and restoration
+
+For a requested tmux reboot snapshot, record pane layouts, directories and exact
+Codex thread IDs. Distinguish editors inside panes from standalone desktop
+processes. Finding a standalone editor process is not evidence that restoring
+tmux should create another terminal window; preserve its state separately and
+reopen it only when it belongs to the requested workspace restoration.
+
+On restore, reconcile the snapshot with live windows and reuse any already
+resumed thread instead of starting a duplicate. Reopen saved conversations
+without submitting prompts or replaying commands. Explain that conversation
+and editor state are recoverable, not process memory or in-flight work. Report
+an isolated layout/editor restore check separately from an actual reboot test.
 
 ## Change directory for subsequent panes
 
