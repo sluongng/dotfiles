@@ -9,8 +9,9 @@ description: "Finish a coding task with independent Codex and Claude Code review
 
 Finish the current development task in the main thread, validate it, run
 independent clean-room reviews of the full branch diff with both Codex and
-Claude Code, fix review findings, and repeat until neither reviewer has
-actionable findings. Commit only after the review loop is clean.
+Claude Code, fix review findings, and repeat until the required reviews have no
+actionable findings. Commit only after the review loop is clean, with the
+Claude usage-limit exception below permitting Codex-only completion.
 
 ## Preconditions
 
@@ -21,8 +22,8 @@ actionable findings. Commit only after the review loop is clean.
   they are allowed and the user has requested this workflow.
 - Keep all implementation work in the main thread. Both reviewers review only.
 - Check that the `claude` CLI is available and authenticated. If either reviewer
-  cannot complete, report the blocker; do not silently use only one reviewer or
-  treat a failed review as clean.
+  cannot complete, report the blocker, except for the Claude usage-limit
+  exception below. Never silently omit a reviewer or call a failed review clean.
 - Preserve unrelated user changes. Do not stage, revert, or rewrite files that
   are outside the task.
 - If the target branch is unclear, infer it from PR metadata, upstream tracking,
@@ -61,6 +62,12 @@ Use the correct diff form for the current state:
 - Include intended untracked files explicitly; `git diff` does not show them.
 - Review the total intended change, not only the last commit.
 
+For a stack, record the ordered layer heads and each layer's exact base. Give
+both reviewers the adjacent-layer diffs and intermediate trees as well as the
+final combined diff. Reverts and later reapplications can cancel out in the
+combined diff while leaving a broken intermediate PR. Review each layer's
+correctness and dependency/validation requirements, not only the final tree.
+
 2. Implement the task in the main thread.
 
 Read the relevant code before editing. Make the narrowest change that completes
@@ -71,7 +78,8 @@ checks. Broaden testing when a failure or unresolved risk warrants it.
 
 3. Launch two independent clean-room reviews.
 
-For each round, run these reviewers in parallel when possible:
+For each round, run these reviewers in parallel when possible, unless the
+Claude usage-limit exception is already in effect:
 
 - **Codex:** spawn one `reviewer` subagent with `fork_turns="none"` and a
   self-contained brief. Use the role's configuration from
@@ -95,6 +103,8 @@ Record HEAD, index/worktree diffs, and intended untracked file contents before
 the round and verify they are unchanged afterward. If either reviewer changes
 them, stop and inspect the unexpected changes; do not declare the round clean
 or automatically discard the changes.
+For a stack, freeze and verify every reviewed layer head, not just the checked-out
+HEAD. Include the stack bases, heads and per-layer scope in both review briefs.
 
 Use a shared prompt shaped like:
 
@@ -113,7 +123,13 @@ Intended file scope:
 Review the total intended diff against the target branch, including committed,
 staged, unstaged, and intended untracked files. Take a code-review stance:
 prioritize correctness bugs, race conditions, regressions, missing validation,
-and test gaps. Do not edit files, commit, publish, or delegate further. Return
+and test gaps. When a change replaces or bypasses a helper, or adds an alternate
+cache/fallback path, trace which layer still enforces the prior input
+transformations, caller authorization, and content verification relevant to that
+path. Compare the old and new paths rather than assuming a shared API provides
+the same guarantees. Flag concrete lost guarantees, distinguishing regressions
+from behavior the task intentionally changes.
+Do not edit files, commit, publish, or delegate further. Return
 findings first, ordered by severity, with file/line references and concrete
 reasoning. If there are no actionable findings, say that clearly and mention
 residual test risk.
@@ -132,14 +148,33 @@ Keep the output file outside the repo too. Allow the process to finish, using
 the execution tool's session/wait mechanism when it yields a running process;
 do not treat a still-running review as a failed or completed one. Check the exit
 status and read its result; authentication errors, tool denials that prevent
-review, and incomplete output are blockers, not findings-free reviews. The
+review, and incomplete output are blockers, not findings-free reviews, except
+for an explicit Claude usage-limit result as described below. The
 read-only review assignment does not authorize edits or external writes,
 regardless of the tools and permissions available through the default
 configuration.
 
+**Claude usage-limit exception**
+
+If Claude explicitly reports a usage or quota limit that prevents completing
+the review, tell the user and proceed without Claude for the rest of the task.
+Record the error and reset time if reported; mark the review as skipped or
+incomplete due to the limit, not clean. Do not wait for the reset, repeatedly
+retry, or switch accounts or models unless the user requests it.
+
+Codex must still complete a clean review of the final tree, and all valid
+findings from any earlier completed Claude reviews must be resolved. After
+fixes, repeat the Codex review; an already clean Codex review may be reused if
+the verified tree is unchanged. Once those requirements and normal validation
+are satisfied, continue to committing and the authorized handoff without
+requiring another Claude review or additional user confirmation.
+
+This exception does not cover authentication failures, tool denials, crashes,
+unexplained incomplete output, or a failed Codex review; those remain blockers.
+
 4. Triage review findings.
 
-After both reviewers finish:
+After the reviews finish, or Claude is skipped under the usage-limit exception:
 
 - Combine and deduplicate their findings, retaining reviewer attribution.
 - Validate each finding against the live code.
@@ -148,9 +183,10 @@ After both reviewers finish:
 - Rerun relevant formatting and tests after fixes.
 - Do not let either reviewer patch the code.
 
-Repeat both clean-room reviews after every fix round. Continue until both
-reviews of the same final tree report no actionable findings, with any disputed
-findings explicitly resolved below.
+Repeat both clean-room reviews after every fix round, or Codex alone when the
+Claude usage-limit exception applies. Continue until the required reviews of
+the same final tree report no actionable findings, with any disputed findings
+explicitly resolved below.
 
 If the same disputed finding repeats, resolve it explicitly with source
 evidence. If progress is blocked by missing requirements or an untestable
@@ -209,7 +245,8 @@ Report:
 
 - what changed
 - review-loop result and number of paired review rounds, with each reviewer's
-  outcome and the models used when reported
+  outcome and the models used when reported; distinguish Codex-only rounds and
+  any Claude review skipped or incomplete because of a usage limit
 - validation commands and outcomes
 - final commit hash and subject
 - any residual risk or skipped validation
