@@ -161,6 +161,11 @@ git log --format=%s -- path/to/area | head -n 20
   a replacement or title change. A push or description update does not imply
   either. For a section-only body edit, preserve the other sections; keep
   draft-first work local until publication is authorized.
+- Keep the PR description scoped to what the diff actually changes. If a
+  requested cohort member or setting is already present in the base, omit
+  incidental references to it rather than presenting it as part of this change.
+  A correction limited to the description does not authorize rewriting the
+  commit message or existing comments.
 - Return the requested draft without a preamble, checklist, or explanation of
   the drafting process. Honor the user's requested length and format.
 - When confidence is low, add one short sentence after the block describing
