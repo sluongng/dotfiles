@@ -1,6 +1,6 @@
 ---
 name: prepare-worktree
-description: "Create or audit Git worktrees and propagate required local context; distinguish manual/headless copying from Codex App .worktreeinclude and setup behavior."
+description: "Create or audit Git worktrees, propagate local context, or archive them for authorized cleanup; distinguish manual/headless copying from Codex App .worktreeinclude and setup behavior."
 ---
 
 # Prepare Worktree
@@ -72,6 +72,24 @@ creation and before starting work in the new checkout.
 
 6. Run a narrow readiness check such as `bazel info`, `buck2 root`, or
    `git status --short`, then report copied and intentionally skipped files.
+
+## Authorized cleanup and recovery
+
+Worktree creation or audit does not authorize removal. When cleanup is requested,
+inventory Git-registered worktrees and their owners; age alone is not evidence
+that a checkout is unused. Preserve active writers and task/review/automation
+routes. For worktrees selected for removal, retain a durable ref to HEAD and
+capture staged, unstaged, untracked, and required ignored local context in a
+private recovery archive, recording how to restore the index separately from the
+working tree. Preserve nested repositories' Git data where needed; a patch or
+top-level commit alone does not capture them. Keep credentials out of commits.
+
+Before removing a checkout, restore its captured state into an unused temporary
+path and compare it with the original, including untracked/local-only files.
+Keep the recovery refs/archive outside the directory being removed, record their
+locations and restoration steps, and leave the original intact if recovery
+cannot be verified. Distinguish archived/recoverable work from disposable build
+outputs; do not infer that all untracked or ignored files are rebuildable.
 
 ## Safety
 
