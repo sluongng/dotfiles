@@ -44,7 +44,9 @@ codex-automaton timer over a long sleeping shell.
    - Use a normal codex-automaton prompt for most future actions. Distill the
      necessary context into the prompt so the future run is self-contained.
    - Use a thread id only when the user specifically wants the same thread
-     reopened. See references/thread-resume.md.
+     reopened. Establish how its current writer will release ownership before
+     the wake; an idle conversation may still hold the writer lease. See
+     references/thread-resume.md before scheduling an exact-thread resume.
 5. Write a one-time automation TOML. Prefer scripts/render_one_time_automation.py
    with --id, --name, --cwd, --on-calendar, --prompt-file, and --out. Set
    `one_shot=true`, normally `persistent=false`, and pass model/effort only when
