@@ -60,6 +60,17 @@ the original. Use genuine redaction, then inspect rendered pages and extractable
 content, metadata, and attachments for residual private data. Preparing a
 document does not establish recipient acceptance or authorize its upload.
 
+## Printing filled forms
+
+Before printing a filled form, verify the printable content, not only its browser
+preview. For unsigned PDFs with interactive fields, preserve the editable copy
+and prepare a separate print-ready copy with field values and selected checkboxes
+baked into page content. Inspect every page of the exact copy to be submitted;
+where available, also inspect the print pipeline's converted output. Confirm the
+entries survive conversion before sending the job. A completed spool job does
+not prove the physical output is correct; do not automatically resend a queued
+job or reprint after a reported defect without the user's authorization.
+
 ## Tests
 
 Inspect analogous existing coverage before adding tests, including relevant
