@@ -67,6 +67,14 @@ Use subagents only for independent bounded audits that materially reduce elapsed
 
 ## Select the work that applies
 
+For a follow-up asking to verify a completed maintenance handoff, read its
+receipt and durable report first. Use read-only checks to corroborate the result,
+distinguishing recorded outcomes from current state. Do not repeat installation,
+enrollment, attachment, or restart merely to verify completion. Missing or
+inconclusive evidence is a verification gap, not a reason to replay the operation.
+If the request also asks to continue unfinished work, preserve the applicable
+authorization and activation guards; a receipt alone does not authorize a retry.
+
 Use the references for the requested components; an audit does not require
 building unchanged packages or activating services.
 
