@@ -70,6 +70,26 @@ gh pr view <number> --repo bazelbuild/bazel --comments
 
 For Discussions, query GraphQL via `gh api graphql` against `bazelbuild/bazel` and search titles/bodies for the topic.
 
+### Regression attribution
+
+When asked what recently broke a workflow, distinguish the introduction of an
+assertion or requirement from the first failing execution and from a change in
+test selection. A source pickaxe or source-level bisect establishes source
+history, not a runtime regression boundary.
+
+Recover the actual last-tested tree and receipts before choosing bisect
+endpoints. For a rebased fork, that may be a historical combined fork tree,
+not an upstream anchor with today's local patches replayed. Check whether the
+specific target and case actually ran: `manual` tags, wildcard expansion,
+workflow exclusions, and filters can make a green run omit the failing case.
+Verify focused filters select the intended case rather than zero tests.
+
+Compare baseline and candidate under matched execution conditions. An old
+revision failing on today's workers establishes reproducibility there, not
+historical worker behavior. If no known-good runtime endpoint exists, report
+that limit; do not label the assertion's origin or a platform configuration
+commit as the regression-causing change without evidence of the transition.
+
 ## Parallelization
 
 Spawn subagents when useful:

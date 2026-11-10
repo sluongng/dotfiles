@@ -151,6 +151,13 @@ topic.
 
 ## Bounded Support Preparation
 
+Match evidence depth to the requested question. When the user asks for the
+latest repository configuration, fetch the relevant ref without moving their
+checkout and answer what it configures; do not automatically expand to live
+deployment, logs, or metrics. Label configuration evidence separately from
+runtime verification and retain material runtime uncertainty. Live checks
+remain appropriate when the task calls for observed deployed behavior.
+
 When the task asks for a support answer or local handoff and runtime evidence
 is missing or inaccessible, prepare a source-backed conditional answer rather
 than forcing a root cause or making a speculative implementation change.
