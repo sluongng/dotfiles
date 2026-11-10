@@ -34,6 +34,16 @@ existing selection instructions. Update documentation when the change introduces
 new setup, migration, or compatibility requirements, or makes existing guidance
 incorrect. Keep the documentation change scoped to that need.
 
+## GitHub CLI authentication
+
+Before declaring that the host has no GitHub CLI login or asking the user to
+repeat `gh auth login`, check the effective `GH_CONFIG_DIR` and
+`XDG_CONFIG_HOME` against the user's established GitHub configuration location.
+A session-local configuration mismatch is not proof of a missing host login.
+When that is the cause, use a per-command `GH_CONFIG_DIR` for the verified
+intended account and recheck authentication. Do not print credential contents,
+copy tokens, change persistent configuration, or silently substitute accounts.
+
 ## Language
 
 Keep conversation in English unless the user requests otherwise. The language
