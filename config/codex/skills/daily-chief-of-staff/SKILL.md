@@ -128,6 +128,13 @@ later daily scan.
   every thread created or updated in those channels during the window. This
   channel-wide requirement is in addition to the user-involvement scan. Do not
   hardcode organization-specific channel names in this tracked skill.
+  Before launching work from a support report, reconcile that candidate's latest
+  source thread with its linked support/issue assignment. Distinguish the
+  implementation assignee from the response or monitoring owner. Unless the
+  user explicitly assigns implementation, another assignee or unverified
+  ownership calls for a bounded evidence handoff or distinct user-owned
+  preparation, not a competing implementation. Record any ownership gap; this
+  candidate-level check need not wait for unrelated source scans to finish.
 - Search results are discovery aids, not completion evidence. Deduplicate by
   `<channel_id>:<parent_thread_ts>` and expand every candidate through its
   latest reply with the thread-reading API before classifying it. Do not
