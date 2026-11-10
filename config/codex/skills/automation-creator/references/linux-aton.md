@@ -106,6 +106,28 @@ requested immediate run, first preview `automation run --id <id> --dry-run`,
 then use `automation run --id <id>` within the job's actual authorization.
 Scheduling alone does not request that immediate run.
 
+## Stopping future runs from inside the job
+
+When a running job is authorized to stop its own future runs, stop only its
+exact instance timer and verify it is inactive before returning the final
+report. Do not stop the current service. The installed Aton update/install
+path can quiesce that service and kill the run before its receipt is saved;
+newer source with timer-only quiescing does not prove the installed binary has
+that behavior. Use a verified non-terminating self-update path if available;
+otherwise use the timer-only stop:
+
+```bash
+systemctl --user stop 'codex-automaton@<id>.timer'
+systemctl --user show 'codex-automaton@<id>.timer' -p ActiveState -p SubState -p NextElapseUSecRealtime
+```
+
+This leaves the stored definition unchanged: an `ACTIVE` definition with an
+inactive timer means future monitoring stopped, not Aton `PAUSED`. It is not
+durable deletion or disablement. Leave definition reconciliation to an
+authorized action outside the running service; do not hand-edit generated
+units or lifecycle records. This procedure requires the job's stopping
+authority and does not override a prohibition on runtime changes.
+
 The CLI has no delete subcommand. If deletion is explicitly requested, pause
 the exact job first and verify it has no active attempt. Remove only its
 installed definition and instance timer, then reload user units. Preserve run

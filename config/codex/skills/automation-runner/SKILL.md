@@ -59,6 +59,11 @@ fi
 - Do not manually write Aton's `last-run.json`, `attempts.jsonl`, terminal locks,
   or lifecycle records. The runner owns those; their state is not a bypassable
   task precondition.
+- If the job authorizes stopping its own future runs, preserve the current
+  service long enough to return its receipt. Follow the self-stop procedure in
+  [the Linux backend reference](../automation-creator/references/linux-aton.md#stopping-future-runs-from-inside-the-job),
+  not an unverified `automation update` or `install` from inside that service.
+  Without stopping authority, report the condition and leave the timer alone.
 
 ## Finish using the actual output contract
 
