@@ -24,8 +24,20 @@ Keep these measurements distinct:
 Use invocation data, build-event protocol (BEP) results, profiles, or logs to
 verify the transitions. Record the cleaning/reset procedure and separate local
 outputs, local test results, disk cache, remote action cache, remote blob store,
-and executor-local state. Clean local outputs or disabled action-cache reads do
-not establish that every remote cache or worker is cold.
+repository downloads/contents, and executor-local state. Clean local outputs or
+disabled action-cache reads do not establish that every remote cache or worker
+is cold.
+
+For a repositories-prepared/actions-cold comparison, prepare both arms outside
+the timer using their intended platform, toolchain, flags, and target selection.
+Plain `query` is unconfigured; configured queries and no-build requests can also
+differ from the measured command's target filtering and exit behavior. Pilot
+the exact preparation request, verify its selected roots and zero executed
+actions/tests, and report preparation time separately. Check the chosen Bazel
+version's interaction between repository caching and action-cache read flags;
+preserve the output-base/server state needed by the timed phase. Repository
+preparation does not imply warm analysis, prebuilt toolchain/bootstrap actions,
+or warm executors; state which costs remain inside the timer.
 
 Record source revision, Bazel/JDK versions, effective flags, execution strategy,
 jobs/concurrency, download policy, targets, and fixtures for each comparison.
@@ -33,6 +45,14 @@ Compare matched concurrency separately from higher-concurrency experiments.
 Count test targets, shards, attempts, cached results, and new executions
 separately when they differ. A cache-enabled speedup with fewer executing tests
 is not a pure transfer-speed improvement.
+
+When consolidating build and test into one test command, check `build_tests_only`
+and effective rc options rather than assuming all non-test build roots remain
+included. For command-selection or sharding changes intended to preserve the
+workload, compare build-root identities and logical test-case identity/outcome
+multisets, not just target or execution counts. Preserve raw differences and
+document any narrow, source-verified normalization of unstable test names. If
+the available artifacts cannot establish equivalence, disclose that limit.
 
 For warm incremental comparisons, verify Bazel server/JVM continuity within
 each arm and record the actual runtime, not just the Java compilation target.
@@ -43,6 +63,16 @@ input-tree shapes across arms, not cache-hit percentages alone: skipped actions
 or reused aggregate subtrees can remove the work being optimized. Keep local
 no-op, remote action-cache reuse, and remote execution with warm CAS distinct,
 and verify the workload's required output equivalence.
+
+## Make comparison plots explicit
+
+Honor the requested plot count and overlay layout; keep supplementary views in
+the report instead of adding competing primary graphs. Label each timeline's
+origin: aligning separate runs at their own command start is not simultaneous
+wall-clock activity. Define what the action count includes; in-flight actions
+may include queueing, setup, and transfers, not just executing processes. Mark
+command starts separately from actual test execution, and show build/test phase
+boundaries so an earlier test-command marker is not mistaken for faster tests.
 
 ## Reconcile timing boundaries before assigning a cause
 
