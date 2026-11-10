@@ -71,6 +71,13 @@ entries survive conversion before sending the job. A completed spool job does
 not prove the physical output is correct; do not automatically resend a queued
 job or reprint after a reported defect without the user's authorization.
 
+## Internal APIs
+
+Prefer one clear internal API over parallel methods or compatibility wrappers
+when migrating the known callers is a small, bounded refactor. Retain a
+compatibility path for actual supported consumers, not merely to avoid updating
+a few callers.
+
 ## Tests
 
 Inspect analogous existing coverage before adding tests, including relevant
@@ -92,11 +99,23 @@ Name table-driven cases by the behavior or domain concept they exercise, not
 opaque ordinals or low-level identifiers. Put each case's differing inputs and
 expectations in explicit fields instead of branching on its position or name.
 
+Use multiline layout for multi-field test cases and fixtures so inputs and
+expectations are easy to scan. In longer tests, use short section comments to
+distinguish setup, execution, and assertions. When a test dimension is simply a
+domain value, iterate over those values directly instead of encoding them as
+multiple flags or redundant case structs.
+
 Use supported user workflows and current configuration as the primary test
 fixtures, with neutral identities. Keep artificial inputs in explicitly named
 compatibility, boundary, or security cases. For routing tests, exercise the real
 resolver and assert the intended distinct destination so a default fallback
 cannot hide a regression.
+
+When a denial or zero-activity assertion could also pass because the fixture is
+invalid or the measured path never ran, include a matching positive control.
+For authorization checks, verify that a permitted identity can access the same
+resource; for zero-accounting checks, verify that genuine transfers are still
+recorded. Add controls only where they rule out a plausible false positive.
 
 ## CI credentials
 
